@@ -15,7 +15,7 @@ import type { ActionGuardActions } from "../../hooks/useActionGuard";
 import ConflictResolutionDialog from "../editor/dialogs/ConflictResolutionDialog";
 import ActionGuardDialog from "../editor/dialogs/ActionGuardDialog";
 
-import { annotationWorkflowService, type AnnotationResult } from "../../../application/services/AnnotationWorkflowService";
+import { annotationWorkflowService } from "../../../application/services/AnnotationWorkflowService";
 import { segmentWorkflowService } from "../../../application/services/SegmentWorkflowService";
 import { editorWorkflowService } from "../../../application/services/EditorWorkflowService";
 import { taggingWorkflowService } from "../../../application/services/TaggingWorkflowSercice";
@@ -29,7 +29,8 @@ import { SegmentDragProvider } from "../editor/context/SegmentDragContext";
 import type { NerSpan } from "../../../types/NotationEditor";
 
 import { COLORS, SPLIT_DELIMITERS, getSpanId, safeSubstring, normalizeReplacement } from "../editor/utils/editorUtils";
-import type { AnnotationLayer } from "../../../types/AnnotationTypes.ts";
+import { useLayerOperations } from "../../hooks/useLayerOperations";
+import type { AnnotationLayer } from "../../../types/AnnotationTypes";
 
 const EditorContainer: React.FC = () => {
   const sessionStore = useSessionStore();
@@ -83,55 +84,7 @@ const EditorContainer: React.FC = () => {
 
   const { guardJoin, guardSplit, guardShift, dialogProps: guardDialogProps, closeDialog: closeGuardDialog } = useActionGuard(guardActions);
 
-  const resolveLayer = (lang: string): AnnotationLayer | null => {
-    if (!session) return null;
-    if (lang === "original") {
-      return {
-        text: session.text || draftText || "",
-        userSpans: session.userSpans ?? [],
-        apiSpans: session.apiSpans ?? [],
-      };
-    }
-    const t = session.translations?.find(tr => tr.language === lang);
-    if (!t) return null;
-    return {
-      text: t.text || "",
-      userSpans: t.userSpans ?? [],
-      apiSpans: t.apiSpans ?? [],
-      segmentTranslations: t.segmentTranslations,
-      editedSegmentTranslations: t.editedSegmentTranslations,
-    };
-  };
-  const applyLayerPatch = (lang: string, patch: AnnotationResult['layerPatch']) => {
-    if (!patch) return;
-    if (lang === "original") {
-      sessionStore.updateSession(patch);
-    } else {
-      const currentSession = useSessionStore.getState().session;
-      const translations = (currentSession?.translations || []).map(t =>
-        t.language === lang ? { ...t, ...patch } : t
-      );
-      sessionStore.updateSession({ translations });
-    }
-  };
-
-  const markSegmentEdited = (segmentId: string | undefined, lang: string) => {
-    const currentSession = useSessionStore.getState().session;
-    if (!segmentId || !currentSession) return;
-    if (lang === "original") {
-      const updatedSegments = (currentSession.segments || []).map(s =>
-        s.id === segmentId ? { ...s, isEdited: true } : s
-      );
-      sessionStore.updateSession({ segments: updatedSegments });
-    } else {
-      const translations = (currentSession.translations || []).map(t =>
-        t.language === lang
-          ? { ...t, editedSegmentTranslations: { ...(t.editedSegmentTranslations || {}), [segmentId]: true } }
-          : t
-      );
-      sessionStore.updateSession({ translations });
-    }
-  };
+  const { resolveLayer, applyLayerPatch, markSegmentEdited } = useLayerOperations();
 
 
   const handleError = useCallback((err: unknown) => {
