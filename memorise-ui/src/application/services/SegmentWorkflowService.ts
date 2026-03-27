@@ -1,4 +1,5 @@
 import { SegmentLogic } from "../../core/domain/entities/SegmentLogic";
+import { SpanLogic } from "../../core/domain/entities/SpanLogic";
 import { getApiService } from "../../infrastructure/providers/apiProvider";
 import type { Notice } from "../../types/Notice";
 import type { SessionPatch } from "../../types/SessionPatch";
@@ -54,7 +55,11 @@ export class SegmentWorkflowService {
         translations: (translations || []).map(t => ({
           ...t,
           segmentTranslations: {},
-          text: ""
+          text: "",
+          userSpans: [],
+          apiSpans: [],
+          deletedApiKeys: [],
+          editedSegmentTranslations: {},
         }))
       };
 
@@ -93,6 +98,12 @@ export class SegmentWorkflowService {
     }
 
     const nextTranslations = (translations || []).map(translation => {
+      const text1 = (translation.segmentTranslations || {})[segment1Id] || "";
+      const text2 = (translation.segmentTranslations || {})[segment2Id] || "";
+      const spaceInserted = (text1 && text2) ? 1 : 0;
+
+      const oldSeg2Start = SegmentLogic.calculateGlobalOffset(segment2Id, segments, translation.segmentTranslations);
+
       const nextSegTrans = SegmentLogic.joinSegmentTranslations(
         translation.segmentTranslations,
         segment1Id,
@@ -108,11 +119,16 @@ export class SegmentWorkflowService {
 
       const nextFullText = nextSegments.map(s => nextSegTrans[s.id] || "").join("");
 
+      const nextUserSpans = SpanLogic.shiftSpansFrom(translation.userSpans || [], oldSeg2Start, spaceInserted);
+      const nextApiSpans = SpanLogic.shiftSpansFrom(translation.apiSpans || [], oldSeg2Start, spaceInserted);
+
       return {
         ...translation,
         segmentTranslations: nextSegTrans,
         editedSegmentTranslations: nextEdited,
-        text: nextFullText
+        text: nextFullText,
+        userSpans: nextUserSpans,
+        apiSpans: nextApiSpans,
       };
     });
 
@@ -147,9 +163,19 @@ export class SegmentWorkflowService {
 
     const updatedTranslations = (translations || []).map(translation => {
       const nextDict = { ...(translation.segmentTranslations || {}) };
+      const deletedText = nextDict[activeSegmentId] || "";
+      const deletedStart = SegmentLogic.calculateGlobalOffset(activeSegmentId, segments, translation.segmentTranslations);
+      const deletedEnd = deletedStart + deletedText.length;
+
       delete nextDict[activeSegmentId];
       const nextFullText = updatedSegments.map(s => nextDict[s.id] || "").join("");
-      return { ...translation, segmentTranslations: nextDict, text: nextFullText };
+
+      let nextUserSpans = SpanLogic.removeSpansInRange(translation.userSpans || [], deletedStart, deletedEnd);
+      nextUserSpans = SpanLogic.shiftSpansFrom(nextUserSpans, deletedEnd, -deletedText.length);
+      let nextApiSpans = SpanLogic.removeSpansInRange(translation.apiSpans || [], deletedStart, deletedEnd);
+      nextApiSpans = SpanLogic.shiftSpansFrom(nextApiSpans, deletedEnd, -deletedText.length);
+
+      return { ...translation, segmentTranslations: nextDict, text: nextFullText, userSpans: nextUserSpans, apiSpans: nextApiSpans };
     });
 
     return {
@@ -257,7 +283,24 @@ export class SegmentWorkflowService {
           }
 
           const nextFullText = updatedSegments.map(s => nextDict[s.id] || "").join("");
-          return { ...translation, segmentTranslations: nextDict, editedSegmentTranslations: nextEdited, text: nextFullText };
+
+          const oldSourceStart = SegmentLogic.calculateGlobalOffset(sourceSegmentId, segments, translation.segmentTranslations);
+          const oldAffectedEnd = affectedIds.reduce((end, id) => {
+            const offset = SegmentLogic.calculateGlobalOffset(id, segments, translation.segmentTranslations);
+            const len = (translation.segmentTranslations?.[id] || "").length;
+            return Math.max(end, offset + len);
+          }, oldSourceStart);
+          const oldAffectedLen = oldAffectedEnd - oldSourceStart;
+
+          const newSourceText = nextDict[sourceSegmentId] || "";
+          const lengthDelta = newSourceText.length - oldAffectedLen;
+
+          let nextUserSpans = SpanLogic.removeSpansInRange(translation.userSpans || [], oldSourceStart, oldAffectedEnd);
+          nextUserSpans = SpanLogic.shiftSpansFrom(nextUserSpans, oldAffectedEnd, lengthDelta);
+          let nextApiSpans = SpanLogic.removeSpansInRange(translation.apiSpans || [], oldSourceStart, oldAffectedEnd);
+          nextApiSpans = SpanLogic.shiftSpansFrom(nextApiSpans, oldAffectedEnd, lengthDelta);
+
+          return { ...translation, segmentTranslations: nextDict, editedSegmentTranslations: nextEdited, text: nextFullText, userSpans: nextUserSpans, apiSpans: nextApiSpans };
         })
       );
     } else {
@@ -265,12 +308,15 @@ export class SegmentWorkflowService {
         const nextDict = { ...(translation.segmentTranslations || {}) };
         const nextEdited = { ...(translation.editedSegmentTranslations || {}) };
 
+        let totalSpaceAdded = 0;
         let combinedTranslation = nextDict[sourceSegmentId] || "";
 
         for (const mergedId of mergedIds) {
           const mergedText = nextDict[mergedId] || "";
           if (mergedText) {
-            combinedTranslation += (combinedTranslation ? " " : "") + mergedText;
+            const spaceNeeded = combinedTranslation ? 1 : 0;
+            totalSpaceAdded += spaceNeeded;
+            combinedTranslation += (spaceNeeded ? " " : "") + mergedText;
           }
           delete nextDict[mergedId];
           if (nextEdited[mergedId]) {
@@ -282,7 +328,32 @@ export class SegmentWorkflowService {
         nextDict[sourceSegmentId] = combinedTranslation;
 
         const nextFullText = updatedSegments.map(s => nextDict[s.id] || "").join("");
-        return { ...translation, segmentTranslations: nextDict, editedSegmentTranslations: nextEdited, text: nextFullText };
+
+        let nextUserSpans = translation.userSpans || [];
+        let nextApiSpans = translation.apiSpans || [];
+
+        if (totalSpaceAdded > 0) {
+          const sourceStart = SegmentLogic.calculateGlobalOffset(sourceSegmentId, segments, translation.segmentTranslations);
+          const sourceLen = (translation.segmentTranslations?.[sourceSegmentId] || "").length;
+          let cumulativeShift = 0;
+          let boundary = sourceStart + sourceLen;
+
+          for (const mergedId of mergedIds) {
+            const mergedText = (translation.segmentTranslations?.[mergedId] || "");
+            if (mergedText && (translation.segmentTranslations?.[sourceSegmentId] || cumulativeShift > 0 || mergedText)) {
+              const hadTextBefore = cumulativeShift > 0 || (translation.segmentTranslations?.[sourceSegmentId] || "").length > 0;
+              if (hadTextBefore && mergedText) {
+                cumulativeShift += 1;
+                nextUserSpans = SpanLogic.shiftSpansFrom(nextUserSpans, boundary, 1);
+                nextApiSpans = SpanLogic.shiftSpansFrom(nextApiSpans, boundary, 1);
+                boundary += 1;
+              }
+            }
+            boundary += mergedText.length;
+          }
+        }
+
+        return { ...translation, segmentTranslations: nextDict, editedSegmentTranslations: nextEdited, text: nextFullText, userSpans: nextUserSpans, apiSpans: nextApiSpans };
       });
     }
 

@@ -5,11 +5,7 @@ import CallSplitIcon from "@mui/icons-material/CallSplit";
 
 import { useSessionStore } from "../../stores/sessionStore";
 import { useNotificationStore } from "../../stores/notificationStore";
-import { useWorkspaceStore } from "../../stores/workspaceStore";
-import { presentError } from "../../../application/errors/errorPresenter";
-import { errorHandlingService } from "../../../infrastructure/services/ErrorHandlingService";
 import { useLanguageOptions } from "../../hooks/useLanguageOptions";
-import { useConflictResolution } from "../../hooks/useConflictResolution";
 import { useActionGuard } from "../../hooks/useActionGuard";
 import type { ActionGuardActions } from "../../hooks/useActionGuard";
 import ConflictResolutionDialog from "../editor/dialogs/ConflictResolutionDialog";
@@ -17,9 +13,9 @@ import ActionGuardDialog from "../editor/dialogs/ActionGuardDialog";
 
 import { annotationWorkflowService } from "../../../application/services/AnnotationWorkflowService";
 import { segmentWorkflowService } from "../../../application/services/SegmentWorkflowService";
-import { editorWorkflowService } from "../../../application/services/EditorWorkflowService";
-import { taggingWorkflowService } from "../../../application/services/TaggingWorkflowSercice";
 import { translationWorkflowService } from "../../../application/services/TranslationWorkflowService";
+import { SegmentLogic } from "../../../core/domain/entities/SegmentLogic";
+import { SpanLogic } from "../../../core/domain/entities/SpanLogic";
 
 import EditorGlobalMenu from "../editor/menus/EditorGlobalMenu.tsx";
 import CategoryMenu from "../editor/menus/CategoryMenu.tsx";
@@ -30,14 +26,12 @@ import type { NerSpan } from "../../../types/NotationEditor";
 
 import { COLORS, SPLIT_DELIMITERS, getSpanId, safeSubstring, normalizeReplacement } from "../editor/utils/editorUtils";
 import { useLayerOperations } from "../../hooks/useLayerOperations";
-import type { AnnotationLayer } from "../../../types/AnnotationTypes";
+import { useEditorOperations } from "../../hooks/useEditorOperations";
 
 const EditorContainer: React.FC = () => {
   const sessionStore = useSessionStore();
   const notify = useNotificationStore.getState().enqueue;
-  const { session, draftText, setDraftText, activeSegmentId, setActiveSegmentId, activeTab } = sessionStore;
-  const setActiveTab = useSessionStore((state) => state.setActiveTab);
-  const updateTranslations = useSessionStore((state) => state.updateTranslations);
+  const { session, draftText, activeSegmentId, setActiveSegmentId } = sessionStore;
 
   const setTagPanelOpen = useSessionStore((state) => state.setTagPanelOpen);
   const isTagPanelOpen = useSessionStore((state) => state.isTagPanelOpen);
@@ -47,13 +41,11 @@ const EditorContainer: React.FC = () => {
   const [cmReplaceFn, setCmReplaceFn] = useState<((text: string) => void) | null>(null);
   const [newSelection, setNewSelection] = useState<{ start: number; end: number; top: number; left: number, segmentId?: string, localLang?: string, virtualStart?: number } | null>(null);
 
-  const [isProcessing, setIsProcessing] = useState(false);
   const [actionLangContext, setActionLangContext] = useState("original");
 
   const [splitAnchor, setSplitAnchor] = useState<{ top: number; left: number, pos: number, segmentId: string } | null>(null);
   const [draggingFromIndex, setDraggingFromIndex] = useState<number | null>(null);
 
-  const { conflictPrompt, requestConflictResolution, resolveConflictPrompt } = useConflictResolution();
   const { languageOptions, isLanguageListLoading } = useLanguageOptions();
 
   const guardActions: ActionGuardActions = useMemo(() => ({
@@ -72,10 +64,23 @@ const EditorContainer: React.FC = () => {
       const fresh = useSessionStore.getState().session;
       const currentLayer = fresh?.translations?.find(t => t.language === lang);
       if (currentLayer) {
-        const newSegs = { ...currentLayer.segmentTranslations };
+        const oldSegTrans = currentLayer.segmentTranslations || {};
+        const deletedText = oldSegTrans[segmentId] || "";
+        const segments = fresh?.segments || [];
+        const deletedStart = SegmentLogic.calculateGlobalOffset(segmentId, segments, oldSegTrans);
+        const deletedEnd = deletedStart + deletedText.length;
+
+        const newSegs = { ...oldSegTrans };
         delete newSegs[segmentId];
+        const newFullText = segments.map(s => newSegs[s.id] || "").join("");
+
+        let nextUserSpans = SpanLogic.removeSpansInRange(currentLayer.userSpans || [], deletedStart, deletedEnd);
+        nextUserSpans = SpanLogic.shiftSpansFrom(nextUserSpans, deletedEnd, -deletedText.length);
+        let nextApiSpans = SpanLogic.removeSpansInRange(currentLayer.apiSpans || [], deletedStart, deletedEnd);
+        nextApiSpans = SpanLogic.shiftSpansFrom(nextApiSpans, deletedEnd, -deletedText.length);
+
         const translations = (fresh?.translations || []).map(t =>
-          t.language === lang ? { ...t, segmentTranslations: newSegs } : t
+          t.language === lang ? { ...t, segmentTranslations: newSegs, text: newFullText, userSpans: nextUserSpans, apiSpans: nextApiSpans } : t
         );
         useSessionStore.getState().updateSession({ translations });
       }
@@ -84,140 +89,12 @@ const EditorContainer: React.FC = () => {
 
   const { guardJoin, guardSplit, guardShift, dialogProps: guardDialogProps, closeDialog: closeGuardDialog } = useActionGuard(guardActions);
 
-  const { resolveLayer, applyLayerPatch, markSegmentEdited } = useLayerOperations();
+  const layers = useLayerOperations();
+  const { resolveLayer, applyLayerPatch, markSegmentEdited } = layers;
 
+  const ops = useEditorOperations(layers);
 
-  const handleError = useCallback((err: unknown) => {
-    const appError = errorHandlingService.isAppError(err) ? err : errorHandlingService.handleApiError(err);
-    const notice = presentError(appError);
-    notify(notice);
-  }, [notify]);
-
-  const handleRunGlobalTranslate = useCallback(async (targetLang: string) => {
-    if (!session) return;
-    setIsProcessing(true);
-    try {
-      const result = await translationWorkflowService.addTranslation(targetLang, {
-        segments: session.segments || [],
-        translations: session.translations || [],
-      });
-
-      if (result.ok) {
-        if (result.translationsPatch) updateTranslations(result.translationsPatch);
-        if (result.newActiveTab) setActiveTab(result.newActiveTab);
-        if (result.newActiveTab && result.translationsPatch) {
-          const newText = result.translationsPatch.find(t => t.language === result.newActiveTab)?.text || "";
-          setDraftText(newText);
-        }
-      }
-      notify(result.notice);
-    } catch (err) {
-      handleError(err);
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [session, updateTranslations, setActiveTab, setDraftText, notify, handleError]);
-
-  const handleTranslateSegment = useCallback(async (segmentId: string, lang: string) => {
-    if (!session) return;
-    setIsProcessing(true);
-    notify({ message: `Translating segment to ${lang}...`, tone: "info" });
-    try {
-      const result = await translationWorkflowService.addSegmentTranslation(lang, segmentId, {
-        segments: session.segments || [],
-        translations: session.translations || [],
-      });
-
-      if (result.ok) {
-        if (result.translationsPatch) updateTranslations(result.translationsPatch);
-        if (result.newActiveTab) setActiveTab(result.newActiveTab);
-      }
-      notify(result.notice);
-    } catch (err) {
-      handleError(err);
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [session, updateTranslations, setActiveTab, notify, handleError]);
-
-  const handleDeleteSegmentTranslation = useCallback((lang: string, segmentId: string) => {
-    const currentLayer = session?.translations?.find(t => t.language === lang);
-    if (currentLayer) {
-      const newSegs = { ...currentLayer.segmentTranslations };
-      delete newSegs[segmentId];
-      const translations = (session?.translations || []).map(t =>
-        t.language === lang ? { ...t, segmentTranslations: newSegs } : t
-      );
-      sessionStore.updateSession({ translations });
-    }
-  }, [session, sessionStore]);
-
-  const handleUpdateSegmentTranslation = useCallback(async (segmentId: string, lang: string) => {
-    if (!session) return;
-    setIsProcessing(true);
-    notify({ message: `Updating translation (${lang})...`, tone: "info" });
-    try {
-      const result = await translationWorkflowService.updateSegmentTranslation(lang, segmentId, {
-        segments: session.segments || [],
-        translations: session.translations || [],
-      });
-      if (result.ok && result.translationsPatch) {
-        updateTranslations(result.translationsPatch);
-      }
-      notify(result.notice);
-    } catch (err) {
-      handleError(err);
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [session, updateTranslations, notify, handleError]);
-
-  // Segment operations
-
-  const handleJoinUp = useCallback((segmentId: string) => {
-    const idx = session?.segments?.findIndex(s => s.id === segmentId) ?? -1;
-    if (idx <= 0 || !session?.segments) return;
-
-    const seg1Id = session.segments[idx - 1].id;
-    const segments = session.segments;
-    const translations = session.translations || [];
-
-    guardJoin(seg1Id, segmentId, segments, translations, () => {
-      const fresh = useSessionStore.getState().session;
-      const result = segmentWorkflowService.joinSegments(seg1Id, segmentId, {
-        translations: fresh?.translations || [],
-        segments: fresh?.segments || [],
-      });
-      if (result.ok && result.patch) {
-        useSessionStore.getState().updateSession(result.patch);
-      }
-      notify(result.notice);
-    });
-  }, [session?.segments, session?.translations, notify, guardJoin]);
-
-  const handleRunSegmentNer = useCallback(async (segmentId: string, lang: string) => {
-    notify({ message: `Running NER on segment (${lang})...`, tone: "info" });
-    setActiveSegmentId(segmentId);
-    const layer = resolveLayer(lang);
-    if (layer && segmentId) {
-      const result = await annotationWorkflowService.runNer({ layer, activeSegmentId: segmentId, segments: session?.segments || [], deletedApiKeys: session?.deletedApiKeys ?? [] }, requestConflictResolution);
-      if (result.ok) {
-        applyLayerPatch(lang, result.layerPatch);
-        sessionStore.updateSession({ deletedApiKeys: result.deletedApiKeys });
-      }
-      notify(result.notice);
-    }
-  }, [notify, setActiveSegmentId, session, draftText, requestConflictResolution]);
-
-  const handleRunSegmentSemTag = useCallback(async (segmentId: string, lang: string) => {
-    notify({ message: `Running Sem-Tag on segment (${lang})...`, tone: "info" });
-    setActiveSegmentId(segmentId);
-    const result = await taggingWorkflowService.runClassify(false, { activeSegmentId: segmentId, segments: session?.segments || [], draftText, translations: session?.translations || [], text: session?.text || "", activeTab: lang, tags: session?.tags || [] });
-    if (result.success && result.tags) {
-      sessionStore.updateSession({ tags: result.tags });
-    }
-    notify(result.notice);
-  }, [notify, setActiveSegmentId, session, draftText, sessionStore]);
+  // --- Span interactions (will be extracted in Step 2) ---
 
   const closeEditMenu = useCallback(() => {
     setActiveSpan(null);
@@ -249,7 +126,7 @@ const EditorContainer: React.FC = () => {
     }
 
     setNewSelection(null);
-  }, [newSelection, setActiveSegmentId, session]);
+  }, [newSelection, setActiveSegmentId, session, resolveLayer, applyLayerPatch, markSegmentEdited]);
 
   const handleSelectionChange = useCallback((sel: { start: number; end: number; top: number; left: number } | null, segmentId: string, localLang: string, virtualStart: number) => {
     if (!sel) {
@@ -274,6 +151,29 @@ const EditorContainer: React.FC = () => {
     }
   }, [session?.segments, draftText, closeEditMenu, setActiveSegmentId]);
 
+  // --- Segment split/merge (will be extracted in Step 3) ---
+
+  const handleJoinUp = useCallback((segmentId: string) => {
+    const idx = session?.segments?.findIndex(s => s.id === segmentId) ?? -1;
+    if (idx <= 0 || !session?.segments) return;
+
+    const seg1Id = session.segments[idx - 1].id;
+    const segments = session.segments;
+    const translations = session.translations || [];
+
+    guardJoin(seg1Id, segmentId, segments, translations, () => {
+      const fresh = useSessionStore.getState().session;
+      const result = segmentWorkflowService.joinSegments(seg1Id, segmentId, {
+        translations: fresh?.translations || [],
+        segments: fresh?.segments || [],
+      });
+      if (result.ok && result.patch) {
+        useSessionStore.getState().updateSession(result.patch);
+      }
+      notify(result.notice);
+    });
+  }, [session?.segments, session?.translations, notify, guardJoin]);
+
   const handleConfirmSplit = useCallback(() => {
     if (!splitAnchor) return;
     const { pos, segmentId } = splitAnchor;
@@ -296,21 +196,6 @@ const EditorContainer: React.FC = () => {
       notify(result.notice);
     });
   }, [splitAnchor, session?.translations, session?.segments, notify, guardSplit]);
-
-  const handleTextChange = useCallback((segmentId: string, text: string, liveCoords: any, deadIds?: string[], localLang?: string) => {
-    const lang = localLang || "original";
-    const layer = resolveLayer(lang);
-    if (!layer) return;
-    const targetSegmentId = segmentId === "root" ? "" : segmentId;
-    const result = editorWorkflowService.handleTextChange(
-      text, targetSegmentId, lang,
-      { fullText: draftText, segments: session?.segments || [] },
-      layer, liveCoords, deadIds
-    );
-    if (!result) return;
-    setDraftText(result.draftText);
-    applyLayerPatch(result.lang, result.layerPatch);
-  }, [session, draftText, setDraftText]);
 
   const handleShiftBoundary = useCallback((sourceSegmentId: string, globalTargetPos: number) => {
     const segments = session?.segments || [];
@@ -336,125 +221,7 @@ const EditorContainer: React.FC = () => {
     });
   }, [session?.segments, session?.translations, notify, guardShift]);
 
-  // Global operations
-
-  const handleRunGlobalNer = useCallback(async () => {
-    setIsProcessing(true); setActiveSegmentId(undefined);
-    try {
-      // Run NER on the original layer first
-      const originalLayer = resolveLayer("original");
-      if (originalLayer) {
-        const result = await annotationWorkflowService.runNer({ layer: originalLayer, segments: session?.segments || [], deletedApiKeys: session?.deletedApiKeys ?? [] }, requestConflictResolution);
-        if (result.ok) {
-          applyLayerPatch("original", result.layerPatch);
-          sessionStore.updateSession({ deletedApiKeys: result.deletedApiKeys });
-        }
-        notify(result.notice);
-      }
-
-      //iterate over each translation layer
-      const translations = useSessionStore.getState().session?.translations || [];
-      for (const t of translations) {
-        const freshSession = useSessionStore.getState().session;
-        const tLayer = freshSession?.translations?.find(tr => tr.language === t.language);
-        if (!tLayer?.text?.trim()) continue;
-
-        const layer: AnnotationLayer = {
-          text: tLayer.text || "",
-          userSpans: tLayer.userSpans ?? [],
-          apiSpans: tLayer.apiSpans ?? [],
-          segmentTranslations: tLayer.segmentTranslations,
-          editedSegmentTranslations: tLayer.editedSegmentTranslations,
-        };
-
-        const result = await annotationWorkflowService.runNer({ layer, segments: freshSession?.segments || [], deletedApiKeys: freshSession?.deletedApiKeys ?? [] }, requestConflictResolution);
-        if (result.ok) {
-          applyLayerPatch(t.language, result.layerPatch);
-          if (result.deletedApiKeys) sessionStore.updateSession({ deletedApiKeys: result.deletedApiKeys });
-        }
-      }
-
-      if (translations.length > 0) {
-        notify({ message: `NER completed for original + ${translations.length} translation(s).`, tone: "success" });
-      }
-    } finally { setIsProcessing(false); }
-  }, [session, draftText, notify, requestConflictResolution]);
-
-  const handleRunGlobalSemTag = useCallback(async () => {
-    setIsProcessing(true);
-    setActiveSegmentId(undefined);
-    try {
-      const segments = session?.segments || [];
-
-      if (segments.length === 0) {
-        // No segments — classify the whole document as a single block
-        const result = await taggingWorkflowService.runClassify(true, { activeSegmentId: undefined, segments: [], draftText, translations: session?.translations || [], text: session?.text || "", activeTab, tags: session?.tags || [] });
-        if (result.success && result.tags) {
-          sessionStore.updateSession({ tags: result.tags });
-        }
-        notify(result.notice);
-      } else {
-        // Classify each segment one by one
-        let currentTags = session?.tags || [];
-        let successCount = 0;
-
-        for (const seg of segments) {
-          const result = await taggingWorkflowService.runClassify(false, {
-            activeSegmentId: seg.id,
-            segments,
-            draftText,
-            translations: session?.translations || [],
-            text: session?.text || "",
-            activeTab,
-            tags: currentTags,
-          });
-          if (result.success && result.tags) {
-            currentTags = result.tags;
-            successCount++;
-          }
-        }
-
-        sessionStore.updateSession({ tags: currentTags });
-        notify({
-          message: successCount > 0
-            ? `Tagged ${successCount} of ${segments.length} segment(s).`
-            : "No segments could be classified.",
-          tone: successCount > 0 ? "success" : "error",
-        });
-      }
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [session, draftText, activeTab, notify]);
-
-
-  const handleSave = useCallback(async () => {
-    if (!session) return;
-    setIsProcessing(true);
-    try {
-      const result = await editorWorkflowService.saveWorkspace(session, draftText);
-      if (result.ok) {
-        if (result.sessionPatch) sessionStore.updateSession(result.sessionPatch);
-        if (result.workspaceMetadataPatch) useWorkspaceStore.getState().updateWorkspaceMetadata(session.id, result.workspaceMetadataPatch);
-      }
-      notify(result.notice);
-    } finally { setIsProcessing(false); }
-  }, [session, draftText, notify]);
-
-  const handleRunGlobalSegment = useCallback(async () => {
-    setIsProcessing(true);
-    try {
-      const result = await segmentWorkflowService.runAutoSegmentation({ text: draftText, translations: session?.translations, segments: session?.segments }, activeTab);
-      if (result.ok && result.patch) {
-        sessionStore.updateSession(result.patch);
-      }
-      if (result.notice) {
-        notify(result.notice);
-      }
-    } finally {
-      setIsProcessing(false);
-    }
-  }, [session?.segments, session?.translations, activeTab, notify, sessionStore]);
+  // --- Span text update ---
 
   const handleUpdateSpanText = useCallback((newText: string) => {
     if (!activeSpan) return;
@@ -476,7 +243,7 @@ const EditorContainer: React.FC = () => {
     cmReplaceFn?.(normalized);
     markSegmentEdited(activeSegmentId, actionLangContext);
     closeEditMenu();
-  }, [activeSpan, cmReplaceFn, closeEditMenu, actionLangContext, session, draftText, activeSegmentId]);
+  }, [activeSpan, cmReplaceFn, closeEditMenu, actionLangContext, session, draftText, activeSegmentId, resolveLayer, applyLayerPatch, markSegmentEdited, sessionStore, notify]);
 
   const virtualElement = newSelection ? ({ getBoundingClientRect: () => ({ top: newSelection.top, left: newSelection.left, bottom: newSelection.top, right: newSelection.left, width: 0, height: 0 }), nodeType: 1 } as unknown as HTMLElement) : null;
 
@@ -485,17 +252,16 @@ const EditorContainer: React.FC = () => {
 
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", pt: 2, pb: 1, zIndex: 50 }}>
         <EditorGlobalMenu
-          onNer={handleRunGlobalNer}
-          onSegment={handleRunGlobalSegment}
-          onSemTag={handleRunGlobalSemTag}
-          onSave={handleSave}
-          onTranslateAll={handleRunGlobalTranslate}
-          isProcessing={isProcessing}
+          onNer={ops.handleRunGlobalNer}
+          onSegment={ops.handleRunGlobalSegment}
+          onSemTag={ops.handleRunGlobalSemTag}
+          onSave={ops.handleSave}
+          onTranslateAll={ops.handleRunGlobalTranslate}
+          isProcessing={ops.isProcessing}
           isTagPanelOpen={isTagPanelOpen}
           onToggleTagPanel={(isOpen) => {
             setTagPanelOpen(isOpen);
             if (isOpen) {
-
               setActiveSegmentId(undefined);
             }
           }}
@@ -519,17 +285,17 @@ const EditorContainer: React.FC = () => {
                 handlers={{
                   onActivate: () => setActiveSegmentId("root"),
                   onJoinUp: handleJoinUp,
-                  onRunNer: handleRunSegmentNer,
-                  onRunSemTag: handleRunSegmentSemTag,
+                  onRunNer: ops.handleRunSegmentNer,
+                  onRunSemTag: ops.handleRunSegmentSemTag,
                   onSpanClick: handleSpanClick,
                   onSelectionChange: handleSelectionChange,
-                  onTextChange: handleTextChange,
+                  onTextChange: ops.handleTextChange,
                   onShiftBoundary: handleShiftBoundary,
                 }}
                 translationHandlers={{
-                  onAddTranslation: handleTranslateSegment,
-                  onDeleteTranslation: handleDeleteSegmentTranslation,
-                  onUpdateTranslation: handleUpdateSegmentTranslation,
+                  onAddTranslation: ops.handleTranslateSegment,
+                  onDeleteTranslation: ops.handleDeleteSegmentTranslation,
+                  onUpdateTranslation: ops.handleUpdateSegmentTranslation,
                   languageOptions: languageOptions,
                   isLanguageListLoading: isLanguageListLoading,
                 }}
@@ -545,19 +311,19 @@ const EditorContainer: React.FC = () => {
                 const handlers: SegmentHandlers = {
                   onActivate: () => setActiveSegmentId(segment.id),
                   onJoinUp: handleJoinUp,
-                  onRunNer: handleRunSegmentNer,
-                  onRunSemTag: handleRunSegmentSemTag,
+                  onRunNer: ops.handleRunSegmentNer,
+                  onRunSemTag: ops.handleRunSegmentSemTag,
                   onSpanClick: handleSpanClick,
                   onSelectionChange: handleSelectionChange,
-                  onTextChange: handleTextChange,
+                  onTextChange: ops.handleTextChange,
                   onShiftBoundary: handleShiftBoundary,
                   onInvalidDrop: () => notify({ message: "Cannot drop boundary here — target is above the source or showing a translation view.", tone: "warning" }),
                 };
 
                 const translationHandlers: SegmentTranslationHandlers = {
-                  onAddTranslation: handleTranslateSegment,
-                  onDeleteTranslation: handleDeleteSegmentTranslation,
-                  onUpdateTranslation: handleUpdateSegmentTranslation,
+                  onAddTranslation: ops.handleTranslateSegment,
+                  onDeleteTranslation: ops.handleDeleteSegmentTranslation,
+                  onUpdateTranslation: ops.handleUpdateSegmentTranslation,
                   languageOptions: languageOptions,
                   isLanguageListLoading: isLanguageListLoading,
                 };
@@ -633,11 +399,11 @@ const EditorContainer: React.FC = () => {
         </MenuItem>
       </Menu>
 
-      {conflictPrompt && (
+      {ops.conflictPrompt && (
         <ConflictResolutionDialog
-          prompt={conflictPrompt}
-          onKeepExisting={() => resolveConflictPrompt("existing")}
-          onKeepApi={() => resolveConflictPrompt("api")}
+          prompt={ops.conflictPrompt}
+          onKeepExisting={() => ops.resolveConflictPrompt("existing")}
+          onKeepApi={() => ops.resolveConflictPrompt("api")}
         />
       )}
 
