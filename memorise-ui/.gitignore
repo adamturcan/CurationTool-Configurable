@@ -23,6 +23,11 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment (keep .env.example committed)
+.env
+.env.local
+.env.*.local
+
 # Thesaurus files
 public/thesaurus-index.json
 
