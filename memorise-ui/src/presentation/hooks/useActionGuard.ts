@@ -57,6 +57,9 @@ function findSegmentTranslations(
 
 /**
  * Finds untranslated segments within a set across all translation layers.
+ * Only flags a language when SOME of the affected segments have translations
+ * but others don't (inconsistency). If none of the affected segments have
+ * translations in a layer, that layer is skipped entirely.
  */
 function detectUntranslated(
   segmentIds: string[],
@@ -67,13 +70,20 @@ function detectUntranslated(
   const orderMap = new Map(segments.map(s => [s.id, s.order]));
 
   for (const t of translations) {
-    for (const segId of segmentIds) {
-      if (!t.segmentTranslations?.[segId]?.trim()) {
-        gaps.push({
-          lang: t.language,
-          segmentId: segId,
-          segmentOrder: orderMap.get(segId) ?? 0,
-        });
+    const hasList = segmentIds.map(id => !!t.segmentTranslations?.[id]?.trim());
+    const someHave = hasList.some(Boolean);
+    const allHave = hasList.every(Boolean);
+
+    // Only flag when there's an inconsistency — some have, some don't
+    if (someHave && !allHave) {
+      for (let i = 0; i < segmentIds.length; i++) {
+        if (!hasList[i]) {
+          gaps.push({
+            lang: t.language,
+            segmentId: segmentIds[i],
+            segmentOrder: orderMap.get(segmentIds[i]) ?? 0,
+          });
+        }
       }
     }
   }
