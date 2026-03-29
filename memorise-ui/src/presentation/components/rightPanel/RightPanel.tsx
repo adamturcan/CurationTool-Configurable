@@ -5,9 +5,9 @@ import TagTable, { type TagRow } from "./tags/TagTable";
 import type { ThesaurusItem } from "./inputs/TagThesaurusInput";
 import type { ThesaurusIndexItem } from "../../../types";
 
-export type { TagRow };
+import { COLORS } from "../../../shared/constants/ui";
 
-const COLORS = { text: "#0F172A", border: "#E2E8F0", pillBg: "white" };
+export type { TagRow };
 
 interface Props {
   tags: TagRow[];

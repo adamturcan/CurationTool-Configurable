@@ -2,8 +2,7 @@ import React from "react";
 import { Box, IconButton, Typography } from "@mui/material";
 import ClearIcon from "@mui/icons-material/Clear";
 import { alpha } from "@mui/material/styles";
-
-const COLORS = { magenta: "#C2185B", dateBlue: "#1976D2" };
+import { COLORS } from "../../../../shared/constants/ui";
 
 export type TagRow = {
   name: string;

@@ -14,22 +14,12 @@ import WorkspacesIcon from "@mui/icons-material/Workspaces";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useNavigate } from "react-router-dom";
 import type { Workspace } from "../../types";
+import { COLORS, CUSTOM_TAG_COLOR } from "../../shared/constants/ui";
 
 interface Props {
   username: string;
   workspaces: Workspace[];
 }
-
-const COLORS = {
-  titleGold: "#DDD1A0", // memorise gold for headings
-  text: "#0F172A", // deep slate for max contrast
-  textSub: "#334155",
-  border: "#E2E8F0", // slate-200
-  hover: "#F8FAFC", // slate-50
-  accent: "#1D4ED8",
-  accentHover: "#1E40AF",
-  avatarBg: "#DDA0AF", // memorise pink-100
-};
 
 const AccountPage: React.FC<Props> = ({ username, workspaces }) => {
   const lastLogin = new Date().toLocaleString();
@@ -52,7 +42,7 @@ const AccountPage: React.FC<Props> = ({ username, workspaces }) => {
         fontWeight={900}
         mb={3}
         sx={{
-          color: COLORS.titleGold,
+          color: COLORS.gold,
           textTransform: "uppercase",
           letterSpacing: 1,
           textShadow: "0 2px 4px rgba(0,0,0,0.35)",
@@ -76,7 +66,7 @@ const AccountPage: React.FC<Props> = ({ username, workspaces }) => {
           {/* Header */}
           <Box display="flex" alignItems="center" mb={2}>
             <Avatar
-              sx={{ bgcolor: COLORS.avatarBg, width: 64, height: 64, mr: 2 }}
+              sx={{ bgcolor: CUSTOM_TAG_COLOR, width: 64, height: 64, mr: 2 }}
             >
               <AccountCircleIcon sx={{ fontSize: 40 }} />
             </Avatar>
@@ -118,7 +108,7 @@ const AccountPage: React.FC<Props> = ({ username, workspaces }) => {
                 "&:hover": { backgroundColor: COLORS.hover },
               }}
             >
-              <WorkspacesIcon sx={{ fontSize: 36, color: COLORS.accent }} />
+              <WorkspacesIcon sx={{ fontSize: 36, color: COLORS.brand }} />
               <Typography
                 variant="h6"
                 fontWeight={800}
@@ -137,8 +127,8 @@ const AccountPage: React.FC<Props> = ({ username, workspaces }) => {
                 sx={{
                   mt: 1,
                   px: 2.5,
-                  backgroundColor: COLORS.accent,
-                  "&:hover": { backgroundColor: COLORS.accentHover },
+                  backgroundColor: COLORS.brand,
+                  "&:hover": { backgroundColor: COLORS.brandHover },
                   color: "#FFFFFF",
                   borderRadius: "20px",
                   fontWeight: 800,

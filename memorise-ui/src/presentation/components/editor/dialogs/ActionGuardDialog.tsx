@@ -20,7 +20,7 @@ import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import WarningAmberIcon from "@mui/icons-material/WarningAmber";
 import BlockIcon from "@mui/icons-material/Block";
 import InfoOutlinedIcon from "@mui/icons-material/InfoOutlined";
-import { COLORS } from "../utils/editorUtils";
+import { COLORS } from "../../../../shared/constants/ui";
 
 // Types
 

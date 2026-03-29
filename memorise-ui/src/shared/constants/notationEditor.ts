@@ -1,12 +1,3 @@
-
-/** App palette */
-export const COLORS = {
-  text: "#0F172A",
-  border: "#E2E8F0",
-  borderHover: "#CBD5E1",
-  borderFocus: "#94A3B8",
-} as const;
-
 /** visible entity colors */
 export const ENTITY_COLORS: Record<string, string> = {
   PER: "#C2185B",      // Person (magenta)

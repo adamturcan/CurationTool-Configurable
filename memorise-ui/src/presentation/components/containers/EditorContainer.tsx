@@ -10,7 +10,7 @@ import { EditorGlobalMenu, CategoryMenu } from "../editor/menus";
 import { SegmentBlock } from "../editor/SegmentBlock";
 import type { SegmentHandlers, SegmentTranslationHandlers } from "../editor/SegmentBlock";
 import { SegmentDragProvider } from "../editor/context/SegmentDragContext";
-import { COLORS } from "../editor/utils/editorUtils";
+import { COLORS } from "../../../shared/constants/ui";
 
 const EditorContainer: React.FC = () => {
   const notify = useNotificationStore.getState().enqueue;

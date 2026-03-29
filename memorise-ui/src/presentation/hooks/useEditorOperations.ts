@@ -22,7 +22,7 @@ export function useEditorOperations(layers: LayerOps) {
 
   const sessionStore = useSessionStore();
   const notify = useNotificationStore.getState().enqueue;
-  const { session, draftText, setDraftText, activeSegmentId, setActiveSegmentId, activeTab } = sessionStore;
+  const { session, draftText, setDraftText, setActiveSegmentId, activeTab } = sessionStore;
   const setActiveTab = useSessionStore((state) => state.setActiveTab);
   const updateTranslations = useSessionStore((state) => state.updateTranslations);
 

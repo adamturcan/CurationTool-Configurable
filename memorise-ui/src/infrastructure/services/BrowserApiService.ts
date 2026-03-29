@@ -4,9 +4,9 @@ import type {
 } from '../../core/interfaces/services/ApiService';
 import { errorHandlingService } from './ErrorHandlingService';
 
-const NER_ENDPOINT = "https://ner-api.dev.memorise.sdu.dk/recognize";
-const SEGMENT_ENDPOINT = "https://textseg-api.dev.memorise.sdu.dk/segment";
-const CLASSIFY_ENDPOINT = "https://semtag-api.dev.memorise.sdu.dk/classify";
+const NER_ENDPOINT = import.meta.env.VITE_NER_API_URL ?? "https://ner-api.dev.memorise.sdu.dk/recognize";
+const SEGMENT_ENDPOINT = import.meta.env.VITE_SEGMENT_API_URL ?? "https://textseg-api.dev.memorise.sdu.dk/segment";
+const CLASSIFY_ENDPOINT = import.meta.env.VITE_CLASSIFY_API_URL ?? "https://semtag-api.dev.memorise.sdu.dk/classify";
 
 const TRANSLATION_API_BASE =
   (import.meta.env.VITE_TRANSLATION_API_URL ?? "https://mt-api.dev.memorise.sdu.dk").replace(/\/$/, "");

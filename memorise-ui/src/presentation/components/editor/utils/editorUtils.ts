@@ -1,13 +1,5 @@
 import type { NerSpan } from "../../../../types";
 
-export const COLORS = { 
-  gold: "#DDD1A0", 
-  magenta: "#C2185B", 
-  dateBlue: "#1976D2", 
-  darkBlue: "#21426C", 
-  green: "#388E3C" 
-};
-
 export const SPLIT_DELIMITERS = ["!", "?", ".", "-", ",", ":"];
 
 export const getSpanId = (s: NerSpan) => s.id ?? `span-${s.start}-${s.end}-${s.entity}`;

@@ -20,7 +20,8 @@ import SyncIcon from '@mui/icons-material/Sync';
 import { CodeMirrorWrapper } from "./codemirror/CodeMirrorWrapper";
 import { SegmentLogic } from "../../../core/domain/entities/SegmentLogic";
 import type { NerSpan, SelectionBox, SpanCoordMap, Segment, Workspace, Translation } from "../../../types";
-import { COLORS, getSpanId } from "./utils/editorUtils";
+import { getSpanId } from "./utils/editorUtils";
+import { COLORS } from "../../../shared/constants/ui";
 import { useSegmentDrag } from "./context/SegmentDragContext";
 import type { LanguageOption } from "../../hooks";
 

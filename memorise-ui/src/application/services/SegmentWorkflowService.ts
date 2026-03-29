@@ -64,7 +64,7 @@ export class SegmentWorkflowService {
         notice: { message: `Auto-segmented into ${newSegments.length} segment(s).`, tone: "success" }
       };
 
-    } catch (error) {
+    } catch {
       return {
         ok: false,
         notice: { message: "Segmentation analysis failed.", tone: "error" }

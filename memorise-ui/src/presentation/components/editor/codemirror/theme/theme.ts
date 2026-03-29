@@ -1,7 +1,7 @@
 import { EditorView } from "@codemirror/view";
 import { ENTITY_COLORS, hexToRgba } from "../../../../../shared/constants/notationEditor";
 
-const baseThemeStyles: Record<string, any> = {
+const baseThemeStyles: Record<string, Record<string, string>> = {
   "&": {
     height: "100%",
     fontSize: "15px",

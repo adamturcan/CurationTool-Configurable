@@ -17,7 +17,8 @@ import type {
   ConflictSource,
   ConflictEntry,
 } from "../../../../core/services/annotation/resolveApiSpanConflicts";
-import { ENTITY_COLORS, COLORS, hexToRgba } from "../../../../shared/constants/notationEditor";
+import { ENTITY_COLORS, hexToRgba } from "../../../../shared/constants/notationEditor";
+import { COLORS } from "../../../../shared/constants/ui";
 
 interface Props {
   prompt: ConflictPrompt;

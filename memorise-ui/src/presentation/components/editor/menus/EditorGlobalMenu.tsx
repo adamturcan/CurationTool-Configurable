@@ -12,6 +12,7 @@ import TranslateIcon from "@mui/icons-material/Translate";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
 
 import type { LanguageOption } from "../../../hooks";
+import { COLORS } from "../../../../shared/constants/ui";
 
 interface EditorGlobalMenuProps {
   onNer: () => void;
@@ -28,15 +29,6 @@ interface EditorGlobalMenuProps {
   languageOptions: LanguageOption[];
   isLanguageListLoading: boolean;
 }
-
-const COLORS = {
-  gold: "#DDD1A0",
-  magenta: "#C2185B",
-  dateBlue: "#1976D2",
-  darkBlue: "#21426C",
-  green: "#388E3C",
-  orange: "#F57C00",
-};
 
 const tooltipProps = {
   tooltip: {
@@ -63,7 +55,6 @@ const EditorGlobalMenu: React.FC<EditorGlobalMenuProps> = ({
   isTagPanelOpen,
   onToggleTagPanel,
   isProcessing,
-  hasSegments: _hasSegments = false,
   isAlreadySegmented = false,
   hasActiveSegment = false,
   languageOptions,

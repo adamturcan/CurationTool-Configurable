@@ -31,19 +31,7 @@ import type { WorkspaceMetadata } from "../../core/entities/Workspace";
 import { PdfExportService } from "../../infrastructure/services/PdfExportService";
 import { useWorkspaceStore } from "../stores";
 import { getWorkspaceApplicationService } from "../../infrastructure/providers/workspaceProvider";
-
-const COLORS = {
-  text: "#0F172A",
-  textSub: "#334155",
-  border: "#E2E8F0",
-  borderSoft: "#CBD5E1",
-  hover: "#F8FAFC",
-  brand: "#1D4ED8",
-  brandHover: "#1E40AF",
-  danger: "#DC2626",
-  dangerHover: "#B91C1C",
-  titleGold: "#DDD1A0", 
-};
+import { COLORS } from "../../shared/constants/ui";
 const Transition = React.forwardRef(function Transition(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   props: TransitionProps & { children: React.ReactElement<any, any> },
@@ -218,7 +206,7 @@ const ManageWorkspacesPage: React.FC = () => {
         mb={2}
         ml={{ xs: 0, sm: 3 }}
         sx={{
-          color: COLORS.titleGold,
+          color: COLORS.gold,
           textTransform: "uppercase",
           letterSpacing: 1,
           textShadow: "0 2px 4px rgba(0,0,0,0.35)",
@@ -247,7 +235,7 @@ const ManageWorkspacesPage: React.FC = () => {
             overflowX: "hidden",
             p: 2,
             "&::-webkit-scrollbar-thumb": {
-              background: COLORS.borderSoft,
+              background: COLORS.borderHover,
               borderRadius: 8,
             },
           }}
@@ -356,7 +344,7 @@ const ManageWorkspacesPage: React.FC = () => {
                       sx={{
                         mr: 1,
                         color: COLORS.text,
-                        borderColor: COLORS.borderSoft,
+                        borderColor: COLORS.borderHover,
                         textTransform: "uppercase",
                         fontWeight: 700,
                         "&:hover": {
@@ -444,7 +432,7 @@ const ManageWorkspacesPage: React.FC = () => {
                   sx={{
                     justifyContent: "flex-start",
                     color: COLORS.text,
-                    borderColor: COLORS.borderSoft,
+                    borderColor: COLORS.borderHover,
                     textTransform: "none",
                     fontWeight: 600,
                     py: 1.5,
@@ -466,7 +454,7 @@ const ManageWorkspacesPage: React.FC = () => {
                   sx={{
                     justifyContent: "flex-start",
                     color: COLORS.text,
-                    borderColor: COLORS.borderSoft,
+                    borderColor: COLORS.borderHover,
                     textTransform: "none",
                     fontWeight: 600,
                     py: 1.5,
@@ -551,7 +539,7 @@ const ManageWorkspacesPage: React.FC = () => {
             variant="outlined"
             sx={{
               color: COLORS.text,
-              borderColor: COLORS.borderSoft,
+              borderColor: COLORS.borderHover,
               textTransform: "uppercase",
               fontWeight: 800,
               "&:hover": {

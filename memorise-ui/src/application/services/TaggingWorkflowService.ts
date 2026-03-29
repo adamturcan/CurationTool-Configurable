@@ -90,8 +90,7 @@ export class TaggingWorkflowService {
 
       return { ok: true, notice: { message: "Classification completed.", tone: "success" }, tags: [...filteredTags, ...newTags] };
 
-    } catch (error) {
-
+    } catch {
       return { ok: false, notice: { message: "Failed to classify text.", tone: "error" } };
     }
   }
@@ -124,7 +123,7 @@ export class TaggingWorkflowService {
       };
 
       return { ok: true, notice: { message: "Tag added successfully.", tone: "success" }, tags: [newTag, ...allTags] };
-    } catch (error) {
+    } catch {
       return { ok: false, notice: { message: "Failed to add tag.", tone: "error" } };
     }
   }
