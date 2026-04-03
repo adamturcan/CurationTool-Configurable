@@ -1,7 +1,8 @@
 import { EditorView } from "@codemirror/view";
-import { spanDecorationField, getSpanId } from "./spanDecorations";
+import { spanDecorationField } from "./spanDecorations";
+import { getSpanId } from "../../../utils/editorUtils";
 import { intentionalTextReplace } from "./spanProtection";
-import type { NerSpan } from "../../../../../../types/NotationEditor";
+import type { NerSpan } from "../../../../../../types";
 
 export const handleSpanClickEvent = (
   target: HTMLElement,

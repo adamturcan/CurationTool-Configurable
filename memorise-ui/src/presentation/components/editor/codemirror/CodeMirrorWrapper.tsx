@@ -3,7 +3,8 @@ import CodeMirror, { type ReactCodeMirrorRef } from "@uiw/react-codemirror";
 import { EditorView } from "@codemirror/view";
 import { Transaction } from "@codemirror/state";
 
-import type { NerSpan } from "../../../../types/NotationEditor";
+import type { NerSpan, SelectionBox, SpanCoordMap } from "../../../../types";
+import { getSpanId } from "../utils/editorUtils";
 
 import { editorTheme } from "./theme/theme";
 import { spansFacet, spanDecorationField } from "./features/spans/spanDecorations";
@@ -14,14 +15,12 @@ import { createSelectionObserver } from "./features/core/selectionObserver";
 interface Props {
   value: string;
   spans: NerSpan[];
-  onChange: (value: string, liveCoords?: Map<string, { start: number; end: number }>, deadIds?: string[]) => void;
+  onChange: (value: string, liveCoords?: SpanCoordMap, deadIds?: string[]) => void;
   onSpanClick?: (span: NerSpan, anchorElement: HTMLElement, replaceTextFn: (newText: string) => void) => void;
-  onSelectionChange?: (selection: { start: number; end: number; top: number; left: number } | null) => void;
+  onSelectionChange?: (selection: SelectionBox | null) => void;
   placeholder?: string;
   onDropTextPosition?: (localOffset: number, dataTransfer: DataTransfer) => void;
 }
-
-const getSpanId = (s: NerSpan) => s.id ?? `span-${s.start}-${s.end}-${s.entity}`;
 
 export const CodeMirrorWrapper: React.FC<Props> = ({
   value, spans, onChange, onSpanClick, onSelectionChange, placeholder, onDropTextPosition
@@ -48,7 +47,6 @@ export const CodeMirrorWrapper: React.FC<Props> = ({
             event.preventDefault();
 
             const pos = view.posAtCoords({ x: event.clientX, y: event.clientY }, false);
-            console.log("[CMWrapper Drop] Client coords: ", event.clientX, event.clientY, "-> Extracted View Pos:", pos);
 
             if (pos !== null) {
               onDropTextPosition(pos, event.dataTransfer);
@@ -93,7 +91,7 @@ export const CodeMirrorWrapper: React.FC<Props> = ({
 
           const decorations = viewUpdate.state.field(spanDecorationField);
           const iter = decorations.iter();
-          const liveCoords = new Map<string, { start: number; end: number }>();
+          const liveCoords: SpanCoordMap = new Map();
 
           while (iter.value !== null) {
             const id = iter.value.spec.attributes["data-span-id"];

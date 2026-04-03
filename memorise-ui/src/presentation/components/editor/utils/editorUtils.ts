@@ -1,12 +1,4 @@
-import type { NerSpan } from "../../../../types/NotationEditor";
-
-export const COLORS = { 
-  gold: "#DDD1A0", 
-  magenta: "#C2185B", 
-  dateBlue: "#1976D2", 
-  darkBlue: "#21426C", 
-  green: "#388E3C" 
-};
+import type { NerSpan } from "../../../../types";
 
 export const SPLIT_DELIMITERS = ["!", "?", ".", "-", ",", ":"];
 

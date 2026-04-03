@@ -1,8 +1,7 @@
 import { Decoration, type DecorationSet, EditorView } from "@codemirror/view";
-import { StateField, Facet } from "@codemirror/state";
-import type { NerSpan } from "../../../../../../types/NotationEditor";
-
-export const getSpanId = (s: NerSpan) => s.id ?? `span-${s.start}-${s.end}-${s.entity}`;
+import { type Range, StateField, Facet } from "@codemirror/state";
+import type { NerSpan } from "../../../../../../types";
+import { getSpanId } from "../../../utils/editorUtils";
 
 export const spansFacet = Facet.define<NerSpan[], NerSpan[]>({
   combine: (values) => values[values.length - 1] || [],
@@ -11,7 +10,7 @@ export const spansFacet = Facet.define<NerSpan[], NerSpan[]>({
 const buildDecorations = (spans: NerSpan[], docLength: number) => {
   if (!spans || spans.length === 0) return Decoration.none;
 
-  const marks: any[] = [];
+  const marks: Range<Decoration>[] = [];
   for (const span of spans) {
     const start = Number(span.start);
     const end = Number(span.end);
@@ -43,7 +42,7 @@ export const spanDecorationField = StateField.define<DecorationSet>({
     if (currentSpans !== oldSpans) return buildDecorations(currentSpans, tr.state.doc.length);
 
     let nextDecorations = decorations.map(tr.changes);
-    const size = (nextDecorations as any).size || 0;
+    const size = nextDecorations.size || 0;
 
     if (tr.docChanged && size === 0 && currentSpans.length > 0) {
       nextDecorations = buildDecorations(currentSpans, tr.state.doc.length);

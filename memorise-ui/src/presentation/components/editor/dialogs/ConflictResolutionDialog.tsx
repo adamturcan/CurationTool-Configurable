@@ -17,7 +17,7 @@ import type {
   ConflictSource,
   ConflictEntry,
 } from "../../../../core/services/annotation/resolveApiSpanConflicts";
-import { ENTITY_COLORS, COLORS, hexToRgba } from "../../../../shared/constants/notationEditor";
+import { ENTITY_COLORS, hexToRgba } from "../../../../shared/constants/notationEditor";
 
 interface Props {
   prompt: ConflictPrompt;
@@ -30,7 +30,7 @@ const chipBySource: Record<ConflictSource, { label: string; color: "primary" | "
   api: { label: "Existing API span", color: "secondary", variant: "outlined" },
 };
 
-const getEntityColor = (entity: string) => ENTITY_COLORS[entity] ?? COLORS.borderFocus;
+const getEntityColor = (entity: string) => ENTITY_COLORS[entity] ?? "#94A3B8";
 
 const ConflictResolutionDialog: React.FC<Props> = ({
   prompt,

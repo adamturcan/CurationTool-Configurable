@@ -1,20 +1,41 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import type { Workspace, Translation } from '../../types/Workspace';
-import type { NerSpan } from '../../types/NotationEditor';
-import type { Segment } from '../../types/Segment';
-import { populateSegmentText } from '../../types/Segment';
+import type { Workspace, Translation, NerSpan, Segment } from '../../types';
+import { populateSegmentText } from '../../types';
 
 
 const areSpansEqual = (a: NerSpan[], b: NerSpan[]) => {
   if (a === b) return true;
   if (a.length !== b.length) return false;
-  return a.every((s, i) => 
-    s.start === b[i].start && 
-    s.end === b[i].end && 
+  return a.every((s, i) =>
+    s.start === b[i].start &&
+    s.end === b[i].end &&
     s.entity === b[i].entity &&
-    s.id === b[i].id &&         
-    s.origin === b[i].origin    
+    s.id === b[i].id &&
+    s.origin === b[i].origin
+  );
+};
+
+const areSegmentsEqual = (a: Segment[], b: Segment[]) => {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  return a.every((s, i) =>
+    s.id === b[i].id &&
+    s.start === b[i].start &&
+    s.end === b[i].end &&
+    s.text === b[i].text &&
+    s.order === b[i].order &&
+    s.isEdited === b[i].isEdited
+  );
+};
+
+const areTranslationsEqual = (a: Translation[], b: Translation[]) => {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  return a.every((t, i) =>
+    t.language === b[i].language &&
+    t.text === b[i].text &&
+    t.updatedAt === b[i].updatedAt
   );
 };
 
@@ -50,7 +71,7 @@ interface SessionStore {
   setActiveTab: (tab: string) => void;
   
   setActiveSegmentId: (id: string | undefined) => void;
-  updateActiveLayer: (updates: any) => void;
+  updateActiveLayer: (updates: Partial<Workspace> | Partial<Translation>) => void;
 }
 
 export const useSessionStore = create<SessionStore>()(
@@ -190,8 +211,7 @@ export const useSessionStore = create<SessionStore>()(
         
         const currentSegments = state.session.segments ?? [];
         
-        if (currentSegments.length === nextSegments.length && 
-            currentSegments === nextSegments) return;
+        if (areSegmentsEqual(currentSegments, nextSegments)) return;
 
         set({
           session: { ...state.session, segments: nextSegments },
@@ -206,8 +226,7 @@ export const useSessionStore = create<SessionStore>()(
         
         const currentTranslations = state.session.translations ?? [];
         
-        if (currentTranslations.length === nextTranslations.length && 
-            currentTranslations === nextTranslations) return;
+        if (areTranslationsEqual(currentTranslations, nextTranslations)) return;
 
         set({
           session: { ...state.session, translations: nextTranslations },
@@ -235,7 +254,7 @@ export const useSessionStore = create<SessionStore>()(
         set({ activeSegmentId: id });
       },
 
-      updateActiveLayer: (updates: any) => set((state) => {
+      updateActiveLayer: (updates: Partial<Workspace> | Partial<Translation>) => set((state) => {
         if (!state.session) return state; 
       
         if (state.activeTab === "original") {

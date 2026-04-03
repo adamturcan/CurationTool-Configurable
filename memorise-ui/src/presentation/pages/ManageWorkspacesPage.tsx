@@ -29,21 +29,11 @@ import CodeIcon from "@mui/icons-material/Code";
 import type { TransitionProps } from "@mui/material/transitions";
 import type { WorkspaceMetadata } from "../../core/entities/Workspace";
 import { PdfExportService } from "../../infrastructure/services/PdfExportService";
-import { useWorkspaceStore } from "../stores/workspaceStore";
+import { useWorkspaceStore } from "../stores";
 import { getWorkspaceApplicationService } from "../../infrastructure/providers/workspaceProvider";
+import { shadows } from "../../shared/theme";
+import { sx as sxUtil } from "../../shared/styles";
 
-const COLORS = {
-  text: "#0F172A",
-  textSub: "#334155",
-  border: "#E2E8F0",
-  borderSoft: "#CBD5E1",
-  hover: "#F8FAFC",
-  brand: "#1D4ED8",
-  brandHover: "#1E40AF",
-  danger: "#DC2626",
-  dangerHover: "#B91C1C",
-  titleGold: "#DDD1A0", 
-};
 const Transition = React.forwardRef(function Transition(
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   props: TransitionProps & { children: React.ReactElement<any, any> },
@@ -54,7 +44,7 @@ const Transition = React.forwardRef(function Transition(
 
 const ManageWorkspacesPage: React.FC = () => {
   const navigate = useNavigate();
-  
+
   const workspaces = useWorkspaceStore((state) => state.workspaces);
 
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -124,12 +114,12 @@ const ManageWorkspacesPage: React.FC = () => {
     try {
       const service = getWorkspaceApplicationService();
       const fullWorkspace = await service.getWorkspaceById(metadata.id);
-      
+
       if (!fullWorkspace) {
         console.error(`Full workspace data not found for ID: ${metadata.id}`);
         return;
       }
-      
+
       const exportData = {
         id: fullWorkspace.id,
         name: fullWorkspace.name,
@@ -148,7 +138,7 @@ const ManageWorkspacesPage: React.FC = () => {
       };
 
       const jsonString = JSON.stringify(exportData, null, 2);
-      
+
       const blob = new Blob([jsonString], { type: "application/json" });
       const url = URL.createObjectURL(blob);
       const link = document.createElement("a");
@@ -168,7 +158,7 @@ const ManageWorkspacesPage: React.FC = () => {
     try {
       const service = getWorkspaceApplicationService();
       const fullWorkspace = await service.getWorkspaceById(metadata.id);
-      
+
       if (!fullWorkspace) {
         console.error(`Full workspace data not found for ID: ${metadata.id}`);
         return;
@@ -191,13 +181,13 @@ const ManageWorkspacesPage: React.FC = () => {
 
   const handleExportType = async (type: "json" | "pdf") => {
     if (!workspaceToExport) return;
-    
+
     if (type === "json") {
       await handleExport(workspaceToExport);
     } else {
       await handleExportPdf(workspaceToExport);
     }
-    
+
     closeExportDialog();
   };
 
@@ -208,7 +198,7 @@ const ManageWorkspacesPage: React.FC = () => {
         py: 3,
         width: "100%",
         height: "100%",
-        color: COLORS.text,
+        color: "text.primary",
         fontFamily: "'DM Sans', sans-serif",
       }}
     >
@@ -218,10 +208,10 @@ const ManageWorkspacesPage: React.FC = () => {
         mb={2}
         ml={{ xs: 0, sm: 3 }}
         sx={{
-          color: COLORS.titleGold,
+          color: "gold.main",
           textTransform: "uppercase",
           letterSpacing: 1,
-          textShadow: "0 2px 4px rgba(0,0,0,0.35)",
+          textShadow: shadows.text,
         }}
       >
         Manage Workspaces
@@ -231,13 +221,15 @@ const ManageWorkspacesPage: React.FC = () => {
         component={Paper}
         sx={{
           maxHeight: "85vh",
-          overflow: "hidden",
+          overflowX: "auto",
+          overflowY: "hidden",
           ml: { xs: 0, sm: 2 },
           borderRadius: 3,
-          border: `1px solid ${COLORS.border}`,
-          background: "#FFFFFF",
-          backdropFilter: "blur(6px)",      
-          boxShadow: "0 14px 40px rgba(0,0,0,0.6), 0 4px 12px rgba(0,0,0,0.25)",
+          border: 1,
+          borderColor: "divider",
+          bgcolor: "background.paper",
+          backdropFilter: "blur(6px)",
+          boxShadow: shadows.lg,
         }}
       >
         <Box
@@ -247,7 +239,7 @@ const ManageWorkspacesPage: React.FC = () => {
             overflowX: "hidden",
             p: 2,
             "&::-webkit-scrollbar-thumb": {
-              background: COLORS.borderSoft,
+              background: "#CBD5E1",
               borderRadius: 8,
             },
           }}
@@ -256,10 +248,11 @@ const ManageWorkspacesPage: React.FC = () => {
             <TableHead
               sx={{
                 "& .MuiTableCell-head": {
-                  backgroundColor: "#FFFFFF", 
-                  color: COLORS.text,
+                  bgcolor: "background.paper",
+                  color: "text.primary",
                   fontWeight: 700,
-                  borderBottom: `1px solid ${COLORS.border}`,
+                  borderBottom: 1,
+                  borderColor: "divider",
                 },
               }}
             >
@@ -278,16 +271,17 @@ const ManageWorkspacesPage: React.FC = () => {
                     key={ws.id}
                     hover
                     sx={{
-                      "&:hover": { backgroundColor: COLORS.hover },
+                      "&:hover": { backgroundColor: "action.hover" },
                       "& .MuiTableCell-root": {
-                        borderBottom: `1px solid ${COLORS.border}`,
+                        borderBottom: 1,
+                        borderColor: "divider",
                       },
                     }}
                   >
-                    <TableCell sx={{ width: "40%", color: COLORS.text }}>
+                    <TableCell sx={{ width: "40%", color: "text.primary" }}>
                       {editingId === ws.id ? (
                         <Box
-                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                          sx={{ ...sxUtil.flexRow, gap: 1 }}
                         >
                           <TextField
                             size="small"
@@ -304,25 +298,25 @@ const ManageWorkspacesPage: React.FC = () => {
                           <IconButton
                             size="small"
                             onClick={saveEdit}
-                            sx={{ color: COLORS.brand }}
+                            sx={{ color: "primary.main" }}
                           >
                             <CheckIcon />
                           </IconButton>
                           <IconButton
                             size="small"
                             onClick={cancelEdit}
-                            sx={{ color: COLORS.textSub }}
+                            sx={{ color: "text.secondary" }}
                           >
                             <CloseIcon />
                           </IconButton>
                         </Box>
                       ) : (
                         <Box
-                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                          sx={{ ...sxUtil.flexRow, gap: 1 }}
                         >
                           <Typography
                             sx={{
-                              color: COLORS.text,
+                              color: "text.primary",
                               fontWeight: 800,
                             }}
                           >
@@ -331,7 +325,7 @@ const ManageWorkspacesPage: React.FC = () => {
                           <IconButton
                             size="small"
                             onClick={() => startEdit(ws)}
-                            sx={{ color: COLORS.brand }}
+                            sx={{ color: "primary.main" }}
                             aria-label="Rename"
                           >
                             <EditNoteIcon />
@@ -340,9 +334,9 @@ const ManageWorkspacesPage: React.FC = () => {
                       )}
                     </TableCell>
 
-                  <TableCell sx={{ color: COLORS.textSub }}>{ws.id}</TableCell>
+                  <TableCell sx={{ color: "text.secondary" }}>{ws.id}</TableCell>
 
-                  <TableCell sx={{ width: "20%", color: COLORS.textSub }}>
+                  <TableCell sx={{ width: "20%", color: "text.secondary" }}>
                     {ws.updatedAt
                       ? new Date(ws.updatedAt).toLocaleString()
                       : "—"}
@@ -355,13 +349,13 @@ const ManageWorkspacesPage: React.FC = () => {
                       onClick={() => handleOpen(ws.id)}
                       sx={{
                         mr: 1,
-                        color: COLORS.text,
-                        borderColor: COLORS.borderSoft,
+                        color: "text.primary",
+                        borderColor: "#CBD5E1",
                         textTransform: "uppercase",
                         fontWeight: 700,
                         "&:hover": {
-                          backgroundColor: "#FFFFFF",
-                          borderColor: COLORS.textSub,
+                          bgcolor: "background.paper",
+                          borderColor: "text.secondary",
                         },
                       }}
                     >
@@ -370,8 +364,8 @@ const ManageWorkspacesPage: React.FC = () => {
                     <IconButton
                       size="small"
                       onClick={() => openExportDialog(ws)}
-                      sx={{ 
-                        color: COLORS.brand,
+                      sx={{
+                        color: "primary.main",
                         mr: 1,
                       }}
                       aria-label="Export"
@@ -382,7 +376,7 @@ const ManageWorkspacesPage: React.FC = () => {
                     <IconButton
                       size="small"
                       onClick={() => openDeleteDialog(ws.id, ws.name)}
-                      sx={{ color: COLORS.danger }}
+                      sx={{ color: "error.main" }}
                       aria-label="Delete"
                     >
                       <DeleteOutlineIcon />
@@ -405,18 +399,18 @@ const ManageWorkspacesPage: React.FC = () => {
         PaperProps={{
           sx: {
             borderRadius: 3,
-            border: `1px solid ${COLORS.border}`,
-            background: "#FFFFFF",
-            boxShadow:
-              "0 2px 4px rgba(15,23,42,0.06), 0 20px 48px rgba(15,23,42,0.22)",
+            border: 1,
+            borderColor: "divider",
+            bgcolor: "background.paper",
+            boxShadow: shadows.lg,
             maxWidth: "400px",
             width: "100%",
           },
         }}
       >
-        <DialogTitle 
-          sx={{ 
-            color: COLORS.text, 
+        <DialogTitle
+          sx={{
+            color: "text.primary",
             fontWeight: 900,
             pb: 1,
           }}
@@ -428,32 +422,32 @@ const ManageWorkspacesPage: React.FC = () => {
             <Box>
               <Typography
                 variant="body2"
-                sx={{ 
-                  color: COLORS.textSub, 
+                sx={{
+                  color: "text.secondary",
                   mb: 3,
                   fontWeight: 500,
                 }}
               >
                 {workspaceToExport.name}
               </Typography>
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              <Box sx={{ ...sxUtil.flexColumn, gap: 2 }}>
                 <Button
                   variant="outlined"
                   onClick={() => handleExportType("json")}
                   startIcon={<CodeIcon />}
                   sx={{
                     justifyContent: "flex-start",
-                    color: COLORS.text,
-                    borderColor: COLORS.borderSoft,
+                    color: "text.primary",
+                    borderColor: "#CBD5E1",
                     textTransform: "none",
                     fontWeight: 600,
                     py: 1.5,
                     px: 2,
                     borderRadius: 2,
                     "&:hover": {
-                      backgroundColor: COLORS.hover,
-                      borderColor: COLORS.brand,
-                      color: COLORS.brand,
+                      backgroundColor: "action.hover",
+                      borderColor: "primary.main",
+                      color: "primary.main",
                     },
                   }}
                 >
@@ -465,17 +459,17 @@ const ManageWorkspacesPage: React.FC = () => {
                   startIcon={<PictureAsPdfIcon />}
                   sx={{
                     justifyContent: "flex-start",
-                    color: COLORS.text,
-                    borderColor: COLORS.borderSoft,
+                    color: "text.primary",
+                    borderColor: "#CBD5E1",
                     textTransform: "none",
                     fontWeight: 600,
                     py: 1.5,
                     px: 2,
                     borderRadius: 2,
                     "&:hover": {
-                      backgroundColor: COLORS.hover,
-                      borderColor: "#B91C1C",
-                      color: "#B91C1C",
+                      backgroundColor: "action.hover",
+                      borderColor: "error.dark",
+                      color: "error.dark",
                     },
                   }}
                 >
@@ -490,11 +484,11 @@ const ManageWorkspacesPage: React.FC = () => {
             onClick={closeExportDialog}
             variant="text"
             sx={{
-              color: COLORS.textSub,
+              color: "text.secondary",
               textTransform: "none",
               fontWeight: 600,
               "&:hover": {
-                backgroundColor: COLORS.hover,
+                backgroundColor: "action.hover",
               },
             }}
           >
@@ -512,19 +506,19 @@ const ManageWorkspacesPage: React.FC = () => {
         PaperProps={{
           sx: {
             borderRadius: 3,
-            border: `1px solid ${COLORS.border}`,
+            border: 1,
+            borderColor: "divider",
             background:
               "linear-gradient(180deg, rgba(255,255,255,0.96) 0%, rgba(255,255,255,0.9) 100%)",
             backdropFilter: "blur(6px)",
-            boxShadow:
-              "0 2px 4px rgba(15,23,42,0.06), 0 20px 48px rgba(15,23,42,0.22)",
+            boxShadow: shadows.lg,
           },
         }}
       >
-        <DialogTitle sx={{ color: COLORS.text, fontWeight: 900 }}>
+        <DialogTitle sx={{ color: "text.primary", fontWeight: 900 }}>
           Delete workspace?
         </DialogTitle>
-        <DialogContent sx={{ color: COLORS.textSub }}>
+        <DialogContent sx={{ color: "text.secondary" }}>
           {toDelete ? (
             <Box sx={{ mt: 0.5 }}>
               <Typography variant="body1" sx={{ mb: 0.5 }}>
@@ -532,7 +526,7 @@ const ManageWorkspacesPage: React.FC = () => {
               </Typography>
               <Typography
                 variant="subtitle1"
-                sx={{ fontWeight: 800, color: COLORS.text }}
+                sx={{ fontWeight: 800, color: "text.primary" }}
               >
                 {toDelete.name}
               </Typography>
@@ -550,13 +544,13 @@ const ManageWorkspacesPage: React.FC = () => {
             onClick={closeDeleteDialog}
             variant="outlined"
             sx={{
-              color: COLORS.text,
-              borderColor: COLORS.borderSoft,
+              color: "text.primary",
+              borderColor: "#CBD5E1",
               textTransform: "uppercase",
               fontWeight: 800,
               "&:hover": {
-                backgroundColor: "#FFFFFF",
-                borderColor: COLORS.textSub,
+                bgcolor: "background.paper",
+                borderColor: "text.secondary",
               },
             }}
           >
@@ -568,8 +562,8 @@ const ManageWorkspacesPage: React.FC = () => {
             sx={{
               textTransform: "uppercase",
               fontWeight: 900,
-              bgcolor: COLORS.danger,
-              "&:hover": { bgcolor: COLORS.dangerHover },
+              bgcolor: "error.main",
+              "&:hover": { bgcolor: "error.dark" },
             }}
           >
             Delete

@@ -1,18 +1,12 @@
-import type { NerSpan } from '../../types/NotationEditor';
-import type {
-  LanguageCode,
-  TranslationRequest,
-  TranslationResponse,
-} from '../../types/Translation';
+import type { NerSpan, LanguageCode, TranslationRequest, TranslationResponse, Segment } from '../../types';
 import type {
   ApiService as ApiServiceContract,
 } from '../../core/interfaces/services/ApiService';
 import { errorHandlingService } from './ErrorHandlingService';
-import type { Segment } from '../../types/Segment';
 
-const NER_ENDPOINT = "https://ner-api.dev.memorise.sdu.dk/recognize";
-const SEGMENT_ENDPOINT = "https://textseg-api.dev.memorise.sdu.dk/segment";
-const CLASSIFY_ENDPOINT = "https://semtag-api.dev.memorise.sdu.dk/classify";
+const NER_ENDPOINT = import.meta.env.VITE_NER_API_URL ?? "https://ner-api.dev.memorise.sdu.dk/recognize";
+const SEGMENT_ENDPOINT = import.meta.env.VITE_SEGMENT_API_URL ?? "https://textseg-api.dev.memorise.sdu.dk/segment";
+const CLASSIFY_ENDPOINT = import.meta.env.VITE_CLASSIFY_API_URL ?? "https://semtag-api.dev.memorise.sdu.dk/classify";
 
 const TRANSLATION_API_BASE =
   (import.meta.env.VITE_TRANSLATION_API_URL ?? "https://mt-api.dev.memorise.sdu.dk").replace(/\/$/, "");
@@ -139,7 +133,7 @@ export class BrowserApiService implements ApiServiceContract {
 
         const segmentEnd = segmentStart + segmentText.length;
         segments.push({
-          id: `seg-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+          id: crypto.randomUUID(),
           start: segmentStart,
           end: segmentEnd,
           order: data.results[i].label,

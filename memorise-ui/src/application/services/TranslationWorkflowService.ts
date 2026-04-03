@@ -1,12 +1,10 @@
 import { getApiService } from "../../infrastructure/providers/apiProvider";
 import { errorHandlingService } from "../../infrastructure/services/ErrorHandlingService";
-import type { Translation } from "../../types/Workspace";
-import type { Notice } from "../../types/Notice";
-import type { Segment } from "../../types/Segment";
+import { SegmentLogic } from "../../core/domain/entities/SegmentLogic";
+import { SpanLogic } from "../../core/domain/entities/SpanLogic";
+import type { Translation, Segment, WorkflowResult } from "../../types";
 
-export type TranslationResult = {
-  ok: boolean;
-  notice: Notice;
+export type TranslationResult = WorkflowResult & {
   translationsPatch?: Translation[];
   newActiveTab?: string;
   editorKey?: string;
@@ -145,9 +143,24 @@ export class TranslationWorkflowService {
     try {
       const res = await this.apiService.translate({ text: seg.text, targetLang });
       const existing = session.translations?.find(t => t.language === targetLang);
-      const updatedSegmentTranslations = { ...(existing?.segmentTranslations || {}), [segmentId]: res.translatedText };
+      const oldSegTrans = existing?.segmentTranslations || {};
+      const updatedSegmentTranslations = { ...oldSegTrans, [segmentId]: res.translatedText };
       const updatedFullText = (session.segments || []).map(s => updatedSegmentTranslations[s.id] || "").join("");
       const now = Date.now();
+
+      const oldText = oldSegTrans[segmentId] || "";
+      const oldEnd = SegmentLogic.calculateGlobalOffset(segmentId, session.segments, oldSegTrans) + oldText.length;
+      const delta = res.translatedText.length - oldText.length;
+
+      const oldStart = oldEnd - oldText.length;
+      let nextUserSpans = existing?.userSpans ?? [];
+      let nextApiSpans = existing?.apiSpans ?? [];
+      if (oldText.length > 0) {
+        nextUserSpans = SpanLogic.removeSpansInRange(nextUserSpans, oldStart, oldEnd);
+        nextApiSpans = SpanLogic.removeSpansInRange(nextApiSpans, oldStart, oldEnd);
+      }
+      nextUserSpans = SpanLogic.shiftSpansFrom(nextUserSpans, oldEnd, delta);
+      nextApiSpans = SpanLogic.shiftSpansFrom(nextApiSpans, oldEnd, delta);
 
       const updatedTranslation: Translation = {
         language: targetLang,
@@ -155,10 +168,11 @@ export class TranslationWorkflowService {
         sourceLang: res.sourceLang ?? existing?.sourceLang ?? "auto",
         createdAt: existing?.createdAt ?? now,
         updatedAt: now,
-        userSpans: existing?.userSpans ?? [],
-        apiSpans: existing?.apiSpans ?? [],
+        userSpans: nextUserSpans,
+        apiSpans: nextApiSpans,
         deletedApiKeys: existing?.deletedApiKeys ?? [],
         segmentTranslations: updatedSegmentTranslations,
+        editedSegmentTranslations: existing?.editedSegmentTranslations,
       };
 
       const translationsPatch = existing
@@ -199,9 +213,20 @@ export class TranslationWorkflowService {
 
     try {
       const res = await this.apiService.translate({ text: seg.text, targetLang });
-      const updatedSegmentTranslations = { ...(translation.segmentTranslations || {}), [segmentId]: res.translatedText };
+      const oldSegTrans = translation.segmentTranslations || {};
+      const updatedSegmentTranslations = { ...oldSegTrans, [segmentId]: res.translatedText };
       const updatedFullText = (session.segments || []).map(s => updatedSegmentTranslations[s.id] || "").join("");
       const now = Date.now();
+
+      const oldText = oldSegTrans[segmentId] || "";
+      const oldStart = SegmentLogic.calculateGlobalOffset(segmentId, session.segments, oldSegTrans);
+      const oldEnd = oldStart + oldText.length;
+      const delta = res.translatedText.length - oldText.length;
+
+      let nextUserSpans = SpanLogic.removeSpansInRange(translation.userSpans || [], oldStart, oldEnd);
+      nextUserSpans = SpanLogic.shiftSpansFrom(nextUserSpans, oldEnd, delta);
+      let nextApiSpans = SpanLogic.removeSpansInRange(translation.apiSpans || [], oldStart, oldEnd);
+      nextApiSpans = SpanLogic.shiftSpansFrom(nextApiSpans, oldEnd, delta);
 
       const translationsPatch = (session.translations || []).map(t =>
         t.language === targetLang
@@ -212,6 +237,8 @@ export class TranslationWorkflowService {
             text: updatedFullText,
             sourceLang: res.sourceLang ?? t.sourceLang,
             updatedAt: now,
+            userSpans: nextUserSpans,
+            apiSpans: nextApiSpans,
           }
           : t
       );
