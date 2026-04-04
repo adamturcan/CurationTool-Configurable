@@ -4,12 +4,19 @@ import { SegmentLogic } from "../../core/entities/SegmentLogic";
 import { SpanLogic } from "../../core/entities/SpanLogic";
 import type { TranslationDTO, Segment, WorkflowResult } from "../../types";
 
-export type TranslationResult = WorkflowResult & {
+type TranslationResult = WorkflowResult & {
   translationsPatch?: TranslationDTO[];
   newActiveTab?: string;
   editorKey?: string;
 };
 
+/**
+ * Translation operations: add a full translation page, translate/update/delete
+ * individual segments. All methods return TranslationResult with a translations
+ * patch for the session store.
+ *
+ * @category Application
+ */
 export class TranslationWorkflowService {
   private apiService = getApiService();
   private errorService = errorHandlingService;
@@ -77,56 +84,6 @@ export class TranslationWorkflowService {
       const appError = this.errorService.handleApiError(error, { operation: "add translation" });
       this.errorService.logError(appError);
       return { ok: false, notice: { message: "Failed to translate document.", tone: "error" } };
-    }
-  }
-
-  async updateTranslation(
-    targetLang: string,
-    session: { segments: Segment[]; translations: TranslationDTO[] }
-  ): Promise<TranslationResult> {
-    if (!session.segments || session.segments.length === 0) {
-      return { ok: false, notice: { message: "Document must be segmented before translating.", tone: "error" } };
-    }
-    try {
-      const segmentTranslations: Record<string, string> = {};
-      let sourceLang = "auto";
-
-      const results = await Promise.all(
-        session.segments.map(async (seg) => {
-          if (!seg.text?.trim()) return { id: seg.id, text: "" };
-          const res = await this.apiService.translate({ text: seg.text, targetLang });
-          if (res.sourceLang) sourceLang = res.sourceLang;
-          return { id: seg.id, text: res.translatedText };
-        })
-      );
-
-      results.forEach(r => { segmentTranslations[r.id] = r.text; });
-
-      const translatedFullText = session.segments.map(s => segmentTranslations[s.id] || "").join("");
-      const now = Date.now();
-
-      const translationsPatch = (session.translations || []).map(t =>
-        t.language === targetLang
-          ? {
-            ...t,
-            text: translatedFullText,
-            segmentTranslations,
-            sourceLang: sourceLang !== "auto" ? sourceLang : t.sourceLang,
-            updatedAt: now
-          }
-          : t
-      );
-
-      return {
-        ok: true,
-        notice: { message: `Updated ${targetLang} translation.`, tone: "success" },
-        translationsPatch,
-        editorKey: `${targetLang}:${now}`,
-      };
-    } catch (error) {
-      const appError = this.errorService.handleApiError(error, { operation: "update translation" });
-      this.errorService.logError(appError);
-      return { ok: false, notice: { message: "Failed to update translation.", tone: "error" } };
     }
   }
 
@@ -255,17 +212,42 @@ export class TranslationWorkflowService {
     }
   }
 
-  deleteTranslation(
-    language: string,
-    session: { translations: TranslationDTO[]; activeTab: string }
+  /** Removes a single segment's translation and adjusts spans accordingly */
+  deleteSegmentTranslation(
+    lang: string,
+    segmentId: string,
+    session: { segments: Segment[]; translations: TranslationDTO[] }
   ): TranslationResult {
-    const translationsPatch = (session.translations || []).filter(t => t.language !== language);
-    const resetToOriginal = session.activeTab === language;
+    const currentLayer = session.translations?.find(t => t.language === lang);
+    if (!currentLayer) {
+      return { ok: false, notice: { message: "Translation layer not found.", tone: "error" } };
+    }
+
+    const oldSegTrans = currentLayer.segmentTranslations || {};
+    const deletedText = oldSegTrans[segmentId] || "";
+    const deletedStart = SegmentLogic.calculateGlobalOffset(segmentId, session.segments, oldSegTrans);
+    const deletedEnd = deletedStart + deletedText.length;
+
+    const newSegs = { ...oldSegTrans };
+    delete newSegs[segmentId];
+
+    const newFullText = session.segments.map(s => newSegs[s.id] || "").join("");
+
+    let nextUserSpans = SpanLogic.removeSpansInRange(currentLayer.userSpans || [], deletedStart, deletedEnd);
+    nextUserSpans = SpanLogic.shiftSpansFrom(nextUserSpans, deletedEnd, -deletedText.length);
+    let nextApiSpans = SpanLogic.removeSpansInRange(currentLayer.apiSpans || [], deletedStart, deletedEnd);
+    nextApiSpans = SpanLogic.shiftSpansFrom(nextApiSpans, deletedEnd, -deletedText.length);
+
+    const translationsPatch = session.translations.map(t =>
+      t.language === lang
+        ? { ...t, segmentTranslations: newSegs, text: newFullText, userSpans: nextUserSpans, apiSpans: nextApiSpans }
+        : t
+    );
+
     return {
       ok: true,
-      notice: { message: "Translation deleted.", tone: "success" },
+      notice: { message: "Segment translation deleted.", tone: "success" },
       translationsPatch,
-      newActiveTab: resetToOriginal ? "original" : undefined,
     };
   }
 }

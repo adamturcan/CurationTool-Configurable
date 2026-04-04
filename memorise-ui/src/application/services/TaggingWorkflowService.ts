@@ -3,12 +3,18 @@ import { loadThesaurusIndex } from "../../shared/utils/thesaurusHelpers";
 import type { ThesaurusIndexItem, TagItem, Segment, TranslationDTO, WorkflowResult } from "../../types";
 
 
-export type ClassificationResult = WorkflowResult & {
+type ClassificationResult = WorkflowResult & {
   tags?: TagItem[];
 }
 
 
 
+/**
+ * Semantic tagging operations: run API classification, add/delete user tags.
+ * Tags are scoped per segment (or whole document if no active segment).
+ *
+ * @category Application
+ */
 export class TaggingWorkflowService {
   private apiService = getApiService();
 

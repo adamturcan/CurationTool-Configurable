@@ -28,9 +28,13 @@ const LANGUAGE_CODE_MAP: Record<string, LanguageCode> = {
 
 
 /**
- * All external HTTP calls for NER, segmentation, classification,
- * and translation live here. Presentation and workflow services
- * access them via the provider layer.
+ * Implements ApiService contract with HTTP calls to external NLP APIs.
+ * Accessed via getApiService() provider — never instantiated directly.
+ *
+ * Endpoints are configured via VITE_* env vars with SDU defaults as fallback.
+ * Language list is cached after first fetch with a bundled fallback if API is down.
+ *
+ * @category Infrastructure
  */
 export class BrowserApiService implements ApiServiceContract {
 

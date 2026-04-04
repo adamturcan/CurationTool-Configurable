@@ -3,29 +3,22 @@ import { devtools } from 'zustand/middleware';
 import type { Notice } from '../../types';
 
 /**
- * Notification Store
- * 
- * Manages a queue-based system for global application messages.
- * Notifications are displayed to users via the NotificationSnackbar component.
- * Supports different tones (info, success, warning, error) and persistent messages.
+ * Queue-based notification store for toast/snackbar messages.
+ * enqueue() adds to queue, dequeue() advances to next.
+ *
+ * @category Stores
  */
 
-export interface NotificationWithId extends Notice {
+interface NotificationWithId extends Notice {
   id: string;
   timestamp: number;
 }
 
-export interface NotificationStore {
-  // Queue of notifications to display
+interface NotificationStore {
   notifications: NotificationWithId[];
-  
-  // Currently displayed notification (head of queue)
   current: NotificationWithId | null;
-  
-  // Actions
   enqueue: (notice: Notice) => void;
   dequeue: () => void;
-  clear: () => void;
 }
 
 let notificationId = 0;
@@ -62,13 +55,6 @@ export const useNotificationStore = create<NotificationStore>()(
             notifications: remaining,
             current: remaining[0] || null,
           };
-        });
-      },
-
-      clear: () => {
-        set({
-          notifications: [],
-          current: null,
         });
       },
     }),

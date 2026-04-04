@@ -1,3 +1,10 @@
+/**
+ * Workspace metadata list for sidebar navigation.
+ * Lightweight — only id, name, owner, updatedAt. Full workspace
+ * data is loaded into sessionStore when a workspace is opened.
+ *
+ * @category Stores
+ */
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import type { WorkspaceMetadata } from '../../core/entities/Workspace';

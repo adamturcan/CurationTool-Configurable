@@ -2,6 +2,12 @@
  * Input validation helpers for use cases. Each validator trims the input,
  * throws a structured AppError if empty, and returns the clean string.
  *
+ * Use cases form the stable API between application services and the
+ * persistence layer. They depend on WorkspaceRepository (interface),
+ * not on any concrete implementation — so switching from localStorage
+ * to a server-backed database only requires swapping the repository
+ * in the provider, without changing use cases or anything above them.
+ *
  * @category Use Cases
  */
 import { errorHandlingService } from '../../infrastructure/services/ErrorHandlingService';

@@ -3,11 +3,18 @@ import { SpanLogic } from "../../core/entities/SpanLogic";
 import { getApiService } from "../../infrastructure/providers/apiProvider";
 import type { SessionPatch, TranslationDTO, Segment, WorkflowResult } from "../../types";
 
-export type SegmentationResult = WorkflowResult & {
+type SegmentationResult = WorkflowResult & {
   patch?: SessionPatch;
 }
 
 
+/**
+ * Segment operations: auto-segmentation via API, split, join, and
+ * boundary drag. Each method updates both master segments and all
+ * translation layers (span coordinates, segment translations, full text).
+ *
+ * @category Application
+ */
 export class SegmentWorkflowService {
   private apiService = getApiService();
 

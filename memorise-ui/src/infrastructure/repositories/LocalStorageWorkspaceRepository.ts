@@ -19,6 +19,13 @@ const LEGACY_USER_PREFIX = `${LEGACY_BASE_KEY}:`;
 const EMPTY_LIST: WorkspacePersistence[] = [];
 const REPOSITORY_NAME = "LocalStorageWorkspaceRepository";
 
+/**
+ * WorkspaceRepository implementation backed by browser localStorage.
+ * Handles CRUD, legacy data migration, and segment metadata persistence.
+ * All operations are wrapped in errorHandlingService for consistent error handling.
+ *
+ * @category Infrastructure
+ */
 export class LocalStorageWorkspaceRepository implements WorkspaceRepository {
   async findById(id: string): Promise<Workspace | null> {
     return errorHandlingService.withRepositoryError(
@@ -57,16 +64,6 @@ export class LocalStorageWorkspaceRepository implements WorkspaceRepository {
     );
   }
 
-  async findAll(): Promise<Workspace[]> {
-    return errorHandlingService.withRepositoryError(
-      {
-        operation: "load workspaces",
-        repository: REPOSITORY_NAME,
-      },
-      () => this.readAll().map((ws) => this.toDomain(ws))
-    );
-  }
-
   async save(workspace: Workspace): Promise<void> {
     return errorHandlingService.withRepositoryError(
       {
@@ -101,20 +98,6 @@ export class LocalStorageWorkspaceRepository implements WorkspaceRepository {
         const workspaces = this.readAll();
         const next = workspaces.filter((ws) => ws.id !== id);
         this.writeAll(next);
-      }
-    );
-  }
-
-  async exists(id: string): Promise<boolean> {
-    return errorHandlingService.withRepositoryError(
-      {
-        operation: "check workspace",
-        repository: REPOSITORY_NAME,
-        workspaceId: id,
-      },
-      () => {
-        const workspaces = this.readAll();
-        return workspaces.some((ws) => ws.id === id);
       }
     );
   }

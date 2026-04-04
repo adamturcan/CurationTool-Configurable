@@ -3,17 +3,24 @@ import { SegmentLogic } from "../../core/entities/SegmentLogic";
 import type { NerSpan, AnnotationLayer, Segment, WorkspaceDTO, SpanCoordMap, WorkflowResult } from "../../types";
 import { getWorkspaceApplicationService } from "../../infrastructure/providers/workspaceProvider";
 
-export type TextChangeResult = {
+type TextChangeResult = {
   draftText: string;
   layerPatch: Partial<AnnotationLayer> & { segments?: Segment[]; segmentTranslations?: Record<string, string>; editedSegmentTranslations?: Record<string, boolean> };
   lang: string;
 }
 
-export type SaveResult = WorkflowResult & {
+type SaveResult = WorkflowResult & {
   sessionPatch?: { text: string; isDirty: false };
   workspaceMetadataPatch?: { updatedAt: number };
 }
 
+/**
+ * Text editing workflow: syncs live span coordinates from CodeMirror,
+ * updates segment boundaries after edits, and persists via save.
+ * Handles both original text and translation layer edits.
+ *
+ * @category Application
+ */
 export class EditorWorkflowService {
 
   handleTextChange(

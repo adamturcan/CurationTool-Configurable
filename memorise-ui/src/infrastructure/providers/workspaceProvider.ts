@@ -1,3 +1,9 @@
+/**
+ * Singleton provider for WorkspaceApplicationService and its repository.
+ * Supports DI overrides for testing. Production code uses getWorkspaceApplicationService().
+ *
+ * @category Infrastructure
+ */
 import { LocalStorageWorkspaceRepository } from '../repositories/LocalStorageWorkspaceRepository';
 import type { WorkspaceRepository } from '../../core/interfaces/WorkspaceRepository';
 import { WorkspaceApplicationService } from '../../application/services/WorkspaceApplicationService';

@@ -15,6 +15,13 @@ interface WorkspaceApplicationServiceDeps {
   workspaceRepository: WorkspaceRepository;
 }
 
+/**
+ * Facade for workspace CRUD. Orchestrates use cases and handles
+ * segment metadata preservation across load/save cycles.
+ * Accessed via getWorkspaceApplicationService() provider.
+ *
+ * @category Application
+ */
 export class WorkspaceApplicationService {
   private readonly deps: WorkspaceApplicationServiceDeps;
   private readonly createUseCase: CreateWorkspaceUseCase;

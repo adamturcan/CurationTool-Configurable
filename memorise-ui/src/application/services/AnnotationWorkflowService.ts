@@ -4,6 +4,7 @@ import type { NerSpan, AnnotationLayer, Segment, WorkflowResult } from "../../ty
 import { SegmentLogic } from "../../core/entities/SegmentLogic";
 import { v4 as uuidv4 } from "uuid";
 
+/** Result of an annotation operation — carries span patches and dismissed API keys */
 export type AnnotationResult = WorkflowResult & {
   layerPatch?: { userSpans?: NerSpan[]; apiSpans?: NerSpan[] };
   deletedApiKeys?: string[];
@@ -11,6 +12,12 @@ export type AnnotationResult = WorkflowResult & {
 
 
 
+/**
+ * NER span operations: run recognition, create/delete/update individual spans.
+ * All methods return AnnotationResult with a layer patch for the session store.
+ *
+ * @category Application
+ */
 export class AnnotationWorkflowService {
   private apiService = getApiService();
 
@@ -138,24 +145,6 @@ export class AnnotationWorkflowService {
     };
   }
 
-  deleteMultipleSpans(spanIds: string[], session: { layer: AnnotationLayer, deletedApiKeys: string[] }): AnnotationResult {
-
-    const { layer, deletedApiKeys } = session;
-    if (!layer) return { ok: false, notice: { message: "Layer not found.", tone: "error" } };
-
-    const idsToRemove = new Set(spanIds);
-    const nextUserSpans = (layer.userSpans ?? []).filter(s => !idsToRemove.has(this.getSpanId(s)));
-    const newBannedKeys = (layer.apiSpans ?? [])
-      .filter(s => idsToRemove.has(this.getSpanId(s)))
-      .map(s => `${s.start}:${s.end}:${s.entity}`);
-
-    return {
-      ok: true, notice: { message: "Spans deleted.", tone: "success" }, layerPatch: {
-        userSpans: nextUserSpans,
-        apiSpans: layer.apiSpans?.filter(s => !idsToRemove.has(this.getSpanId(s)))
-      }, deletedApiKeys: [...new Set([...deletedApiKeys, ...newBannedKeys])]
-    };
-  }
 }
 
 export const annotationWorkflowService = new AnnotationWorkflowService();

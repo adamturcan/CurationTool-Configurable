@@ -1,3 +1,10 @@
+/**
+ * Converts AppErrors to user-facing Notice objects for the snackbar.
+ * Uses an error catalog for known codes, pattern matching for unknown ones,
+ * and severity-to-tone mapping as a fallback.
+ *
+ * @category Application
+ */
 import type { AppError } from '../../infrastructure/services/ErrorHandlingService';
 import type { Notice, NoticeTone } from '../../types';
 

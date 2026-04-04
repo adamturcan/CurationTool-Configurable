@@ -1,3 +1,12 @@
+/**
+ * Unified error handling. Normalizes API errors, validation errors,
+ * and repository errors into a common AppError shape with severity,
+ * error codes, and user-friendly messages.
+ *
+ * @category Infrastructure
+ */
+
+/** Structured error type used across all layers */
 export interface AppError {
   message: string;
   code?: string;
@@ -7,6 +16,7 @@ export interface AppError {
   __isAppError?: true; 
 }
 
+/** Additional context attached to errors — operation name and optional user-facing message */
 export interface ErrorContext extends Record<string, unknown> {
   userMessage?: string;
   operation?: string;
