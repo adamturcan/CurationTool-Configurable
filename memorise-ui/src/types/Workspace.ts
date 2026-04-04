@@ -8,7 +8,7 @@ import type { Segment } from "./Segment";
  *
  * @category Types
  */
-export type Workspace = {
+export type WorkspaceDTO = {
   id: string;
   name: string;
   isTemporary?: boolean;
@@ -23,7 +23,7 @@ export type Workspace = {
 
   tags?: TagItem[];
   segments?: Segment[];
-  translations?: Translation[];
+  translations?: TranslationDTO[];
 };
 
 /**
@@ -32,7 +32,7 @@ export type Workspace = {
  *
  * @category Types
  */
-export type Translation = {
+export type TranslationDTO = {
   language: string;
   text: string;
   sourceLang: string;

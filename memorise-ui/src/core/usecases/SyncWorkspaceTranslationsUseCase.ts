@@ -1,16 +1,17 @@
 import type { WorkspaceRepository } from '../interfaces/WorkspaceRepository';
-import type { Translation } from '../../types';
+import type { TranslationDTO } from '../../types';
 import { WorkspaceTranslation } from '../entities/Workspace';
-import { errorHandlingService } from '../../infrastructure/services/ErrorHandlingService';
-import { requireWorkspaceId, requireTranslationLanguage } from './validators';
+import { requireWorkspaceId, requireTranslationLanguage, requireExistingWorkspace } from './validators';
 
 const OPERATION = 'SyncWorkspaceTranslationsUseCase';
 
+/** Replaces all translations on a workspace — translations array is the new complete set */
 export interface SyncWorkspaceTranslationsRequest {
   workspaceId: string;
-  translations: Translation[];
+  translations: TranslationDTO[];
 }
 
+/** Replaces all translations on a workspace with a new set from DTOs */
 export class SyncWorkspaceTranslationsUseCase {
   private readonly workspaceRepository: WorkspaceRepository;
 
@@ -20,19 +21,7 @@ export class SyncWorkspaceTranslationsUseCase {
 
   async execute(request: SyncWorkspaceTranslationsRequest) {
     const workspaceId = requireWorkspaceId(request.workspaceId, OPERATION);
-    const workspace = await this.workspaceRepository.findById(workspaceId);
-
-    if (!workspace) {
-      throw errorHandlingService.createAppError({
-        message: `Workspace ${workspaceId} was not found.`,
-        code: 'WORKSPACE_NOT_FOUND',
-        severity: 'warn',
-        context: {
-          operation: OPERATION,
-          workspaceId,
-        },
-      });
-    }
+    const workspace = await requireExistingWorkspace(this.workspaceRepository, workspaceId, OPERATION);
 
     const translations = (request.translations ?? []).map((translation) => {
       requireTranslationLanguage(translation.language, OPERATION);

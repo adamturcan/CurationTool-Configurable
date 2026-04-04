@@ -7,6 +7,7 @@ export interface LoadWorkspacesRequest {
   ownerId: string;
 }
 
+/** Loads all workspaces for a given owner from the repository */
 export class LoadWorkspacesUseCase {
   private readonly workspaceRepository: WorkspaceRepository;
 

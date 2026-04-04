@@ -19,7 +19,7 @@ import SyncIcon from '@mui/icons-material/Sync';
 
 import { CodeMirrorWrapper } from "./codemirror/CodeMirrorWrapper";
 import { SegmentLogic } from "../../../core/entities/SegmentLogic";
-import type { NerSpan, SelectionBox, SpanCoordMap, Segment, Workspace, Translation } from "../../../types";
+import type { NerSpan, SelectionBox, SpanCoordMap, Segment, WorkspaceDTO, TranslationDTO } from "../../../types";
 import { getSpanId } from "./utils/editorUtils";
 import { ENTITY_COLORS } from "../../../shared/constants/notationEditor";
 import { shadows } from "../../../shared/theme";
@@ -64,7 +64,7 @@ export interface SegmentDragHandlers {
 export interface SegmentBlockProps {
   segment: Segment;
   index: number;
-  session: Workspace | null;
+  session: WorkspaceDTO | null;
   display: SegmentDisplayProps;
   handlers: SegmentHandlers;
   translationHandlers: SegmentTranslationHandlers;
@@ -95,11 +95,11 @@ export const SegmentBlock: React.FC<SegmentBlockProps> = ({
     return () => registerNode(index, null);
   }, [index, registerNode]);
 
-  const availableLangs = useMemo(() => (session?.translations || []).filter((t: Translation) => t.segmentTranslations?.[segment.id] !== undefined).map((t: Translation) => t.language), [session?.translations, segment.id]);
+  const availableLangs = useMemo(() => (session?.translations || []).filter((t: TranslationDTO) => t.segmentTranslations?.[segment.id] !== undefined).map((t: TranslationDTO) => t.language), [session?.translations, segment.id]);
 
   const isSegmentEdited = useMemo(() => {
     if (localLang === "original") return !!segment.isEdited;
-    const tLayer = session?.translations?.find((t: Translation) => t.language === localLang);
+    const tLayer = session?.translations?.find((t: TranslationDTO) => t.language === localLang);
     return !!tLayer?.editedSegmentTranslations?.[segment.id];
   }, [localLang, segment.isEdited, segment.id, session?.translations]);
 
@@ -113,7 +113,7 @@ export const SegmentBlock: React.FC<SegmentBlockProps> = ({
 
   const virtualSegment = useMemo(() => {
     if (localLang === "original") return segment;
-    const tLayer = session?.translations?.find((t: Translation) => t.language === localLang);
+    const tLayer = session?.translations?.find((t: TranslationDTO) => t.language === localLang);
     return SegmentLogic.calculateVirtualBoundaries(session?.segments || [], tLayer?.segmentTranslations || {}).find((b: Segment) => b.id === segment.id) || segment;
   }, [localLang, segment, session]);
 
@@ -126,7 +126,7 @@ export const SegmentBlock: React.FC<SegmentBlockProps> = ({
       const api = (session?.apiSpans || []).filter((s: NerSpan) => !bannedKeys.has(`${s.start}:${s.end}:${s.entity}`));
       rawSpans = [...api, ...(session?.userSpans || [])];
     } else {
-      const tLayer = session?.translations?.find((t: Translation) => t.language === localLang);
+      const tLayer = session?.translations?.find((t: TranslationDTO) => t.language === localLang);
       const api = (tLayer?.apiSpans || []).filter((s: NerSpan) => !bannedKeys.has(`${s.start}:${s.end}:${s.entity}`));
       rawSpans = [...api, ...(tLayer?.userSpans || [])];
     }

@@ -2,10 +2,10 @@ import { getApiService } from "../../infrastructure/providers/apiProvider";
 import { errorHandlingService } from "../../infrastructure/services/ErrorHandlingService";
 import { SegmentLogic } from "../../core/entities/SegmentLogic";
 import { SpanLogic } from "../../core/entities/SpanLogic";
-import type { Translation, Segment, WorkflowResult } from "../../types";
+import type { TranslationDTO, Segment, WorkflowResult } from "../../types";
 
 export type TranslationResult = WorkflowResult & {
-  translationsPatch?: Translation[];
+  translationsPatch?: TranslationDTO[];
   newActiveTab?: string;
   editorKey?: string;
 };
@@ -16,7 +16,7 @@ export class TranslationWorkflowService {
 
   async addTranslation(
     targetLang: string,
-    session: { segments: Segment[]; translations: Translation[] }
+    session: { segments: Segment[]; translations: TranslationDTO[] }
   ): Promise<TranslationResult> {
     if (!session.segments || session.segments.length === 0) {
       return { ok: false, notice: { message: "Document must be segmented before translating.", tone: "error" } };
@@ -45,7 +45,7 @@ export class TranslationWorkflowService {
       const translatedFullText = session.segments.map(s => segmentTranslations[s.id] || "").join("");
       const now = Date.now();
 
-      const newTranslation: Translation = {
+      const newTranslation: TranslationDTO = {
         language: targetLang,
         text: translatedFullText,
         sourceLang: sourceLang !== "auto" ? sourceLang : (existing?.sourceLang ?? "auto"),
@@ -82,7 +82,7 @@ export class TranslationWorkflowService {
 
   async updateTranslation(
     targetLang: string,
-    session: { segments: Segment[]; translations: Translation[] }
+    session: { segments: Segment[]; translations: TranslationDTO[] }
   ): Promise<TranslationResult> {
     if (!session.segments || session.segments.length === 0) {
       return { ok: false, notice: { message: "Document must be segmented before translating.", tone: "error" } };
@@ -133,7 +133,7 @@ export class TranslationWorkflowService {
   async addSegmentTranslation(
     targetLang: string,
     segmentId: string,
-    session: { segments: Segment[]; translations: Translation[] }
+    session: { segments: Segment[]; translations: TranslationDTO[] }
   ): Promise<TranslationResult> {
     const seg = session.segments?.find(s => s.id === segmentId);
     if (!seg?.text?.trim()) {
@@ -162,7 +162,7 @@ export class TranslationWorkflowService {
       nextUserSpans = SpanLogic.shiftSpansFrom(nextUserSpans, oldEnd, delta);
       nextApiSpans = SpanLogic.shiftSpansFrom(nextApiSpans, oldEnd, delta);
 
-      const updatedTranslation: Translation = {
+      const updatedTranslation: TranslationDTO = {
         language: targetLang,
         text: updatedFullText,
         sourceLang: res.sourceLang ?? existing?.sourceLang ?? "auto",
@@ -195,7 +195,7 @@ export class TranslationWorkflowService {
   async updateSegmentTranslation(
     targetLang: string,
     segmentId: string,
-    session: { segments: Segment[]; translations: Translation[] }
+    session: { segments: Segment[]; translations: TranslationDTO[] }
   ): Promise<TranslationResult> {
     const translation = session.translations?.find(t => t.language === targetLang);
     if (!translation) {
@@ -257,7 +257,7 @@ export class TranslationWorkflowService {
 
   deleteTranslation(
     language: string,
-    session: { translations: Translation[]; activeTab: string }
+    session: { translations: TranslationDTO[]; activeTab: string }
   ): TranslationResult {
     const translationsPatch = (session.translations || []).filter(t => t.language !== language);
     const resetToOriginal = session.activeTab === language;

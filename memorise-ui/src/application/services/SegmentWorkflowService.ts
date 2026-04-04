@@ -1,7 +1,7 @@
 import { SegmentLogic } from "../../core/entities/SegmentLogic";
 import { SpanLogic } from "../../core/entities/SpanLogic";
 import { getApiService } from "../../infrastructure/providers/apiProvider";
-import type { SessionPatch, Translation, Segment, WorkflowResult } from "../../types";
+import type { SessionPatch, TranslationDTO, Segment, WorkflowResult } from "../../types";
 
 export type SegmentationResult = WorkflowResult & {
   patch?: SessionPatch;
@@ -11,7 +11,7 @@ export type SegmentationResult = WorkflowResult & {
 export class SegmentWorkflowService {
   private apiService = getApiService();
 
-  async runAutoSegmentation(session: { text?: string, translations?: Translation[], segments?: Segment[] }, activeTab: string): Promise<SegmentationResult> {
+  async runAutoSegmentation(session: { text?: string, translations?: TranslationDTO[], segments?: Segment[] }, activeTab: string): Promise<SegmentationResult> {
     const { text, translations, segments } = session;
 
     if ((segments?.length ?? 0) > 1) {
@@ -74,7 +74,7 @@ export class SegmentWorkflowService {
 
 
 
-  joinSegments(segment1Id: string, segment2Id: string, session: { translations: Translation[], segments: Segment[] }): SegmentationResult {
+  joinSegments(segment1Id: string, segment2Id: string, session: { translations: TranslationDTO[], segments: Segment[] }): SegmentationResult {
     const { segments, translations } = session;
 
     if (!segments) {
@@ -137,7 +137,7 @@ export class SegmentWorkflowService {
     };
   }
 
-  splitSegment(position: number, session: { text: string, translations: Translation[], segments: Segment[] }, activeSegmentId: string): SegmentationResult {
+  splitSegment(position: number, session: { text: string, translations: TranslationDTO[], segments: Segment[] }, activeSegmentId: string): SegmentationResult {
     const { segments, translations, text } = session;
 
     if (!segments || !activeSegmentId) {
@@ -183,7 +183,7 @@ export class SegmentWorkflowService {
     };
   }
 
-  async shiftSegmentBoundary(sourceSegmentId: string, globalTargetPosition: number, session: { text: string, translations: Translation[], segments: Segment[] }): Promise<SegmentationResult> {
+  async shiftSegmentBoundary(sourceSegmentId: string, globalTargetPosition: number, session: { text: string, translations: TranslationDTO[], segments: Segment[] }): Promise<SegmentationResult> {
     const { segments, translations, text } = session;
 
     if (!segments) {
@@ -236,7 +236,7 @@ export class SegmentWorkflowService {
       })
       .map(s => s.id);
 
-    let updatedTranslations: Translation[];
+    let updatedTranslations: TranslationDTO[];
 
     if (isForwardShift && translations.length > 0 && updatedSource) {
       updatedTranslations = await Promise.all(

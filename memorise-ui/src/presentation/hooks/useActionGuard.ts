@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import type { ActionGuardDialogProps, ResolutionStep } from "../components/editor/dialogs";
-import type { Translation, Segment } from "../../types";
+import type { TranslationDTO, Segment } from "../../types";
 
 // Gap detection helpers
 
@@ -16,7 +16,7 @@ export type TranslationGap = {
 function detectIrregularTranslations(
   segmentIds: string[],
   segments: Segment[],
-  translations: Translation[]
+  translations: TranslationDTO[]
 ): TranslationGap[] {
   const gaps: TranslationGap[] = [];
   const orderMap = new Map(segments.map(s => [s.id, s.order]));
@@ -47,7 +47,7 @@ function detectIrregularTranslations(
  */
 function findSegmentTranslations(
   segmentId: string,
-  translations: Translation[]
+  translations: TranslationDTO[]
 ): string[] {
   return translations
     .filter(t => !!t.segmentTranslations?.[segmentId]?.trim())
@@ -63,7 +63,7 @@ function findSegmentTranslations(
 function detectUntranslated(
   segmentIds: string[],
   segments: Segment[],
-  translations: Translation[]
+  translations: TranslationDTO[]
 ): TranslationGap[] {
   const gaps: TranslationGap[] = [];
   const orderMap = new Map(segments.map(s => [s.id, s.order]));
@@ -104,14 +104,14 @@ export interface UseActionGuardReturn {
     seg1Id: string,
     seg2Id: string,
     segments: Segment[],
-    translations: Translation[],
+    translations: TranslationDTO[],
     onProceed: () => void
   ) => void;
 
   guardSplit: (
     segmentId: string,
     segments: Segment[],
-    translations: Translation[],
+    translations: TranslationDTO[],
     onProceed: () => void
   ) => void;
 
@@ -119,7 +119,7 @@ export interface UseActionGuardReturn {
     sourceSegId: string,
     targetPos: number,
     segments: Segment[],
-    translations: Translation[],
+    translations: TranslationDTO[],
     onProceed: () => void
   ) => void;
 
@@ -144,7 +144,7 @@ export function useActionGuard(actions: ActionGuardActions): UseActionGuardRetur
       seg1Id: string,
       seg2Id: string,
       segments: Segment[],
-      translations: Translation[],
+      translations: TranslationDTO[],
       onProceed: () => void
     ) => {
       if (!translations.length) {
@@ -187,7 +187,7 @@ export function useActionGuard(actions: ActionGuardActions): UseActionGuardRetur
     (
       segmentId: string,
       segments: Segment[],
-      translations: Translation[],
+      translations: TranslationDTO[],
       onProceed: () => void
     ) => {
       const langs = findSegmentTranslations(segmentId, translations);
@@ -229,7 +229,7 @@ export function useActionGuard(actions: ActionGuardActions): UseActionGuardRetur
       sourceSegId: string,
       targetPos: number,
       segments: Segment[],
-      translations: Translation[],
+      translations: TranslationDTO[],
       onProceed: () => void
     ) => {
       if (!translations.length) {

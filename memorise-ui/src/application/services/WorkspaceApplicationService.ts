@@ -1,5 +1,5 @@
 import type { WorkspaceRepository } from '../../core/interfaces/WorkspaceRepository';
-import type { Workspace as WorkspaceDTO, TagItem, Translation, NerSpan, Segment } from '../../types';
+import type { WorkspaceDTO, TagItem, TranslationDTO, NerSpan, Segment } from '../../types';
 import { CreateWorkspaceUseCase } from '../../core/usecases/CreateWorkspaceUseCase';
 import { DeleteWorkspaceUseCase } from '../../core/usecases/DeleteWorkspaceUseCase';
 import {
@@ -101,7 +101,7 @@ export class WorkspaceApplicationService {
     apiSpans?: NerSpan[];
     deletedApiKeys?: string[];
     tags?: TagItem[];
-    translations?: Translation[];
+    translations?: TranslationDTO[];
     updatedAt?: number;
   }): Promise<WorkspaceDTO> {
     const workspace = await this.createUseCase.execute(params);
@@ -114,11 +114,6 @@ export class WorkspaceApplicationService {
   }): Promise<WorkspaceDTO | null> {
     const workspace = await this.updateUseCase.execute(params);
     if (!workspace) return null;
-    
-    // CRITICAL FIX: Explicitly save segments to the repository if they are in the patch
-    if (params.patch.segments !== undefined && this.deps.workspaceRepository.updateSegments) {
-      await this.deps.workspaceRepository.updateSegments(workspace.id, params.patch.segments);
-    }
 
     // Preserve segments from stored data to return the complete DTO
     const rawPersistence = await this.getRawPersistenceForWorkspace(workspace.id);
@@ -142,14 +137,11 @@ export class WorkspaceApplicationService {
       }
     }
 
-    // Track which workspaces need segment updates
-    const workspacesWithSegments = new Map<string, WorkspaceDTO['segments']>();
-    
     for (const dto of workspaces) {
       if (!dto.id) continue;
-      
+
       if (existingIds.has(dto.id)) {
-        // Update existing workspace
+        // Update existing workspace — use case handles segments too
         await this.updateUseCase.execute({
           workspaceId: dto.id,
           patch: this.dtoToPatch(dto),
@@ -169,26 +161,12 @@ export class WorkspaceApplicationService {
           updatedAt: dto.updatedAt,
         });
       }
-      
-      // Track segments if present in DTO
-      if (dto.segments !== undefined) {
-        workspacesWithSegments.set(dto.id, dto.segments);
-      }
-    }
-    
-    // Update segments in persistence for workspaces that have them
-    // This is needed because segments are metadata not in the domain entity
-    if (workspacesWithSegments.size > 0 && this.deps.workspaceRepository.updateSegments) {
-      // Use the repository's updateSegments method if available
-      for (const [workspaceId, segments] of workspacesWithSegments) {
-        await this.deps.workspaceRepository.updateSegments(workspaceId, segments);
-      }
     }
   }
 
   async syncWorkspaceTranslations(params: {
     workspaceId: string;
-    translations: Translation[];
+    translations: TranslationDTO[];
   }): Promise<WorkspaceDTO | null> {
     const workspace = await this.syncTranslationsUseCase.execute(params);
     if (!workspace) return null;
@@ -240,6 +218,7 @@ export class WorkspaceApplicationService {
       deletedApiKeys: dto.deletedApiKeys,
       tags: dto.tags,
       translations: dto.translations,
+      segments: dto.segments,
       updatedAt: dto.updatedAt,
     };
   }

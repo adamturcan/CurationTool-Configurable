@@ -19,7 +19,7 @@ import {
 import BubbleSidebar from "./presentation/components/sidebar/BubbleSidebar";
 import { useWorkspaceStore, useNotificationStore } from "./presentation/stores";
 import { getWorkspaceApplicationService } from "./infrastructure/providers/workspaceProvider";
-import type { Workspace } from "./types";
+import type { WorkspaceDTO } from "./types";
 import { NotificationSnackbar } from "./presentation/components/shared/NotificationSnackbar";
 import { StateSynchronizer } from "./presentation/components/shared/StateSynchronizer";
 
@@ -34,7 +34,7 @@ const USER_KEY = "memorise.user.v1";
 
 // Component that creates a new workspace and redirects to it or manage page
 const NewWorkspaceRedirect: React.FC<{
-  onCreate: () => Promise<Workspace | null>; // Updated to expect a Promise
+  onCreate: () => Promise<WorkspaceDTO | null>; // Updated to expect a Promise
 }> = ({ onCreate }) => {
   const navigate = useNavigate();
   
@@ -101,7 +101,7 @@ const App: React.FC = () => {
   };
 
   // Create a new workspace draft, persist it, and update UI metadata
-  const handleAddWorkspace = useCallback(async (): Promise<Workspace | null> => {
+  const handleAddWorkspace = useCallback(async (): Promise<WorkspaceDTO | null> => {
     if (!username) return null;
 
     const currentWorkspaces = useWorkspaceStore.getState().workspaces;

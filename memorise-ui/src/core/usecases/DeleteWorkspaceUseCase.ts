@@ -1,6 +1,5 @@
 import type { WorkspaceRepository } from '../interfaces/WorkspaceRepository';
-import { errorHandlingService } from '../../infrastructure/services/ErrorHandlingService';
-import { requireWorkspaceId } from './validators';
+import { requireWorkspaceId, requireExistingWorkspace } from './validators';
 
 const OPERATION = 'DeleteWorkspaceUseCase';
 
@@ -8,6 +7,7 @@ export interface DeleteWorkspaceRequest {
   workspaceId: string;
 }
 
+/** Deletes a workspace by ID after verifying it exists */
 export class DeleteWorkspaceUseCase {
   private readonly workspaceRepository: WorkspaceRepository;
 
@@ -17,20 +17,7 @@ export class DeleteWorkspaceUseCase {
 
   async execute(request: DeleteWorkspaceRequest): Promise<void> {
     const workspaceId = requireWorkspaceId(request.workspaceId, OPERATION);
-    const exists = await this.workspaceRepository.exists(workspaceId);
-
-    if (!exists) {
-      throw errorHandlingService.createAppError({
-        message: `Workspace ${workspaceId} was not found.`,
-        code: 'WORKSPACE_NOT_FOUND',
-        severity: 'warn',
-        context: {
-          operation: OPERATION,
-          workspaceId,
-        },
-      });
-    }
-
+    await requireExistingWorkspace(this.workspaceRepository, workspaceId, OPERATION);
     await this.workspaceRepository.delete(workspaceId);
   }
 }

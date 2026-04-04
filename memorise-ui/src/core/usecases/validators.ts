@@ -1,6 +1,15 @@
+/**
+ * Input validation helpers for use cases. Each validator trims the input,
+ * throws a structured AppError if empty, and returns the clean string.
+ *
+ * @category Use Cases
+ */
 import { errorHandlingService } from '../../infrastructure/services/ErrorHandlingService';
 import type { AppError } from '../../infrastructure/services/ErrorHandlingService';
+import type { Workspace } from '../entities/Workspace';
+import type { WorkspaceRepository } from '../interfaces/WorkspaceRepository';
 
+/** Config for requireNonEmptyString — identifies the field for error reporting */
 interface ValidationOptions {
   operation: string;
   field: string;
@@ -8,6 +17,7 @@ interface ValidationOptions {
   severity?: AppError['severity'];
 }
 
+/** Base validator: trims string, throws structured AppError if empty or non-string */
 export function requireNonEmptyString(
   value: unknown,
   options: ValidationOptions
@@ -70,6 +80,24 @@ export function requireTranslationLanguage(
     field: 'language',
     code: 'WORKSPACE_TRANSLATION_LANGUAGE_REQUIRED',
   });
+}
+
+/** Loads a workspace by ID from the repository, throws WORKSPACE_NOT_FOUND if missing */
+export async function requireExistingWorkspace(
+  repository: WorkspaceRepository,
+  workspaceId: string,
+  operation: string
+): Promise<Workspace> {
+  const workspace = await repository.findById(workspaceId);
+  if (!workspace) {
+    throw errorHandlingService.createAppError({
+      message: `Workspace ${workspaceId} was not found.`,
+      code: 'WORKSPACE_NOT_FOUND',
+      severity: 'warn',
+      context: { operation, workspaceId },
+    });
+  }
+  return workspace;
 }
 
 

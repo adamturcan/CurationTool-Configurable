@@ -13,13 +13,13 @@ import {
 import WorkspacesIcon from "@mui/icons-material/Workspaces";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import { useNavigate } from "react-router-dom";
-import type { Workspace } from "../../types";
+import type { WorkspaceDTO } from "../../types";
 import { CUSTOM_TAG_COLOR } from "../../shared/constants/ui";
 import { shadows } from "../../shared/theme";
 
 interface Props {
   username: string;
-  workspaces: Workspace[];
+  workspaces: WorkspaceDTO[];
 }
 
 const AccountPage: React.FC<Props> = ({ username, workspaces }) => {

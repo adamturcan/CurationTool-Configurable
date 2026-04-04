@@ -1,6 +1,6 @@
 import { SpanLogic } from "../../core/entities/SpanLogic";
 import { SegmentLogic } from "../../core/entities/SegmentLogic";
-import type { NerSpan, AnnotationLayer, Segment, Workspace, SpanCoordMap, WorkflowResult } from "../../types";
+import type { NerSpan, AnnotationLayer, Segment, WorkspaceDTO, SpanCoordMap, WorkflowResult } from "../../types";
 import { getWorkspaceApplicationService } from "../../infrastructure/providers/workspaceProvider";
 
 export type TextChangeResult = {
@@ -136,7 +136,7 @@ export class EditorWorkflowService {
     };
   }
 
-  async saveWorkspace(session: Workspace, draftText: string): Promise<SaveResult> {
+  async saveWorkspace(session: WorkspaceDTO, draftText: string): Promise<SaveResult> {
     if (!session || !session.id) {
       return { ok: false, notice: { message: "No active workspace to save.", tone: "error" } };
     }

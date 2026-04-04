@@ -1,7 +1,7 @@
 import { readJSON, writeJSON, removeItem } from "../storage/localStorageHelpers";
 import type { WorkspaceRepository } from "../../core/interfaces/WorkspaceRepository";
 import { Workspace } from "../../core/entities/Workspace";
-import type { Workspace as WorkspaceDTO, Translation, Segment } from "../../types";
+import type { WorkspaceDTO, TranslationDTO, Segment } from "../../types";
 
 /** Workspace DTO with required fields guaranteed — the shape written to localStorage */
 type WorkspacePersistence = WorkspaceDTO & {
@@ -192,7 +192,7 @@ export class LocalStorageWorkspaceRepository implements WorkspaceRepository {
     };
   }
 
-  private sanitizeTranslation(translation: Partial<Translation>): Translation {
+  private sanitizeTranslation(translation: Partial<TranslationDTO>): TranslationDTO {
     const now = Date.now();
     return {
       language: translation?.language ?? "unknown",

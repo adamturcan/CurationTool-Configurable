@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import type { Workspace, Translation, NerSpan, Segment } from '../../types';
+import type { WorkspaceDTO, TranslationDTO, NerSpan, Segment } from '../../types';
 import { populateSegmentText } from '../../types';
 
 
@@ -29,7 +29,7 @@ const areSegmentsEqual = (a: Segment[], b: Segment[]) => {
   );
 };
 
-const areTranslationsEqual = (a: Translation[], b: Translation[]) => {
+const areTranslationsEqual = (a: TranslationDTO[], b: TranslationDTO[]) => {
   if (a === b) return true;
   if (a.length !== b.length) return false;
   return a.every((t, i) =>
@@ -40,7 +40,7 @@ const areTranslationsEqual = (a: Translation[], b: Translation[]) => {
 };
 
 interface SessionStore {
-  session: Workspace | null;      
+  session: WorkspaceDTO | null;
   draftText: string;              
   activeTab: string;
   
@@ -50,7 +50,7 @@ interface SessionStore {
   isDirty: boolean;
   lastChangedAt: number;
   
-  loadSession: (workspace: Workspace) => void;
+  loadSession: (workspace: WorkspaceDTO) => void;
   resetSession: () => void;
   setLoading: () => void;
 
@@ -65,13 +65,13 @@ interface SessionStore {
   updateApiSpans: (spans: NerSpan[]) => void;
   updateDeletedApiKeys: (keys: string[]) => void;
   updateSegments: (segments: Segment[]) => void;
-  updateTranslations: (translations: Translation[]) => void;
-  updateSession: (updates: Partial<Workspace>) => void;
+  updateTranslations: (translations: TranslationDTO[]) => void;
+  updateSession: (updates: Partial<WorkspaceDTO>) => void;
   
   setActiveTab: (tab: string) => void;
   
   setActiveSegmentId: (id: string | undefined) => void;
-  updateActiveLayer: (updates: Partial<Workspace> | Partial<Translation>) => void;
+  updateActiveLayer: (updates: Partial<WorkspaceDTO> | Partial<TranslationDTO>) => void;
 }
 
 export const useSessionStore = create<SessionStore>()(
@@ -95,7 +95,7 @@ export const useSessionStore = create<SessionStore>()(
           ? populateSegmentText(workspace.segments, workspace.text || "")
           : [];
 
-        const normalized: Workspace = {
+        const normalized: WorkspaceDTO = {
           ...workspace,
           userSpans: workspace.userSpans ?? [],
           apiSpans: workspace.apiSpans ?? [],
@@ -254,7 +254,7 @@ export const useSessionStore = create<SessionStore>()(
         set({ activeSegmentId: id });
       },
 
-      updateActiveLayer: (updates: Partial<Workspace> | Partial<Translation>) => set((state) => {
+      updateActiveLayer: (updates: Partial<WorkspaceDTO> | Partial<TranslationDTO>) => set((state) => {
         if (!state.session) return state; 
       
         if (state.activeTab === "original") {

@@ -1,6 +1,6 @@
 import { getApiService } from "../../infrastructure/providers/apiProvider";
 import { loadThesaurusIndex } from "../../shared/utils/thesaurusHelpers";
-import type { ThesaurusIndexItem, TagItem, Segment, Translation, WorkflowResult } from "../../types";
+import type { ThesaurusIndexItem, TagItem, Segment, TranslationDTO, WorkflowResult } from "../../types";
 
 
 export type ClassificationResult = WorkflowResult & {
@@ -17,7 +17,7 @@ export class TaggingWorkflowService {
   }
 
 
-  async runClassify(forceGlobal: boolean = false, session: { activeSegmentId: string | undefined, segments: Segment[], draftText: string, translations: Translation[], text: string, activeTab: string, tags: TagItem[] }): Promise<ClassificationResult> {
+  async runClassify(forceGlobal: boolean = false, session: { activeSegmentId: string | undefined, segments: Segment[], draftText: string, translations: TranslationDTO[], text: string, activeTab: string, tags: TagItem[] }): Promise<ClassificationResult> {
 
     const { activeTab, activeSegmentId, segments, translations, text, draftText, tags } = session;
 

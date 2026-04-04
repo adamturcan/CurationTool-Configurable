@@ -1,4 +1,4 @@
-import type { NerSpan, TagItem, Workspace as WorkspaceDTO, Translation as TranslationDTO } from '../../types';
+import type { NerSpan, TagItem, WorkspaceDTO, TranslationDTO } from '../../types';
 
 /**
  * Lightweight metadata for workspace listing and quick operations.
