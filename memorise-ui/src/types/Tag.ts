@@ -1,5 +1,7 @@
+/** Whether a tag was created by the user or returned by the classification API */
 export type TagSource = "api" | "user";
 
+/** Semantic tag attached to a span or the whole document, optionally linked to a thesaurus entry */
 export interface TagItem {
   name: string;
   source: TagSource;
