@@ -57,7 +57,7 @@ const NewWorkspaceRedirect: React.FC<{
   return null;
 };
 
-// App component
+/** Root application component handling auth, routing, sidebar, and workspace lifecycle */
 const App: React.FC = () => {
   // Get current route location and navigation function
   const location = useLocation();

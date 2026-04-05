@@ -1,9 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef } from "react";
 
-export interface SegmentDragState {
-  draggingFromIndex: number | null;
-}
-
 interface SegmentDragContextValue {
   notifyDragStart: (idx: number) => void;
   notifyDragEnd: () => void;
@@ -15,6 +11,7 @@ interface SegmentDragContextValue {
 
 const SegmentDragContext = createContext<SegmentDragContextValue | null>(null);
 
+/** Provides drag state and boundary visibility management for segment reordering */
 export const SegmentDragProvider: React.FC<{
   children: React.ReactNode;
   onDraggingChange: (idx: number | null) => void;

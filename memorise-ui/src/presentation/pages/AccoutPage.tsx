@@ -22,6 +22,7 @@ interface Props {
   workspaces: WorkspaceDTO[];
 }
 
+/** Renders the account overview page with user stats and workspace count */
 const AccountPage: React.FC<Props> = ({ username, workspaces }) => {
   const lastLogin = new Date().toLocaleString();
   const navigate = useNavigate();

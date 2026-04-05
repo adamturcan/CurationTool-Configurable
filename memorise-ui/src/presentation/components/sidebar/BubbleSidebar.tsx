@@ -25,6 +25,7 @@ interface Props {
   workspaces: WorkspaceMetadata[];
 }
 
+/** Renders the fixed sidebar with workspace bubbles, navigation, and account actions */
 const BubbleSidebar: React.FC<Props> = ({
   workspaces,
   open,

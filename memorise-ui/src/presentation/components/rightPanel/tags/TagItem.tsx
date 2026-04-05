@@ -19,6 +19,7 @@ interface TagItemProps {
   onDelete: (name: string, keywordId?: number, parentId?: number) => void;
 }
 
+/** Renders a single tag pill with source-colored styling and delete button */
 const TagItem: React.FC<TagItemProps> = React.memo(({ row, onDelete }) => {
   const isUser = row.source === "user";
   const mainColor = isUser ? ENTITY_COLORS.PER : ENTITY_COLORS.DATE;

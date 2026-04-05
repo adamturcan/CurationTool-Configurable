@@ -8,6 +8,7 @@ interface StateSynchronizerProps {
   children?: React.ReactNode;
 }
 
+/** Hydrates workspace metadata and session state from storage on route/user changes */
 export const StateSynchronizer: React.FC<StateSynchronizerProps> = ({ username, children }) => {
   const location = useLocation(); 
   const isDirty = useSessionStore((state) => state.isDirty);

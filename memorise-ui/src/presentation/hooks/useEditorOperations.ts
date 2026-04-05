@@ -15,6 +15,7 @@ import type { useLayerOperations } from "./useLayerOperations";
 
 type LayerOps = ReturnType<typeof useLayerOperations>;
 
+/** Coordinates API calls for NER, segmentation, translation, tagging, and save */
 export function useEditorOperations(layers: LayerOps) {
   const { resolveLayer, applyLayerPatch } = layers;
 

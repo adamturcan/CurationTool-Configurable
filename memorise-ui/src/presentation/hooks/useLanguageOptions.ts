@@ -4,8 +4,10 @@ import { getApiService } from "../../infrastructure/providers/apiProvider";
 /**
  * Loads the list of supported translation languages from the API service once, with loading state.
  */
+/** A selectable language entry with its code and display label */
 export type LanguageOption = { code: string; label: string };
 
+/** Fetches the list of supported translation languages from the API on mount */
 export function useLanguageOptions() {
   const [options, setOptions] = useState<LanguageOption[]>([]);
   const [isLoading, setIsLoading] = useState(false);

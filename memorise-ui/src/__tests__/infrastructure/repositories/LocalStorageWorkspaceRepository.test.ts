@@ -76,7 +76,7 @@ describe("LocalStorageWorkspaceRepository", () => {
     );
 
     await repository.delete("ws-1");
-    const all = await repository.findAll();
+    const all = await repository.findByOwner("user-1");
     expect(all).toHaveLength(1);
     expect(all[0].id).toBe("ws-2");
   });

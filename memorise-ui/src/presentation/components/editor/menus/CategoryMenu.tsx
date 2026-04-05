@@ -10,6 +10,7 @@ interface ExtendedMenuProps extends CategoryMenuProps {
   onTextUpdate?: (newText: string) => void;
 }
 
+/** Renders a context menu for selecting NER entity categories and editing span text */
 const CategoryMenu: React.FC<ExtendedMenuProps> = ({
   anchorEl,
   onClose,

@@ -1,17 +1,4 @@
-/**
- * Thesaurus Web Worker - Background search for 750k keywords
- * 
- * This worker:
- * - Loads the pre-processed thesaurus index (5-10MB)
- * - Initializes Fuse.js for fuzzy search
- * - Handles search requests in background thread (doesn't block UI)
- * - Returns top 20 matches sorted by relevance
- * 
- * Benefits:
- * - UI stays responsive during search
- * - Search completes in ~50-100ms
- * - No freezing or lag
- */
+/** Web Worker that loads the thesaurus index and runs Fuse.js fuzzy searches off the main thread. */
 
 import Fuse from 'fuse.js';
 import type { ThesaurusIndexItem } from '../types';
@@ -24,11 +11,6 @@ let isReady = false;
  */
 (async () => {
   try {
-    console.log('[Worker] Loading thesaurus index...');
-    console.log('[Worker] Current location:', self.location.href);
-    const startTime = performance.now();
-    
-    // Try multiple paths (handles different base URL configurations)
     const pathsToTry = [
       '/NPRG045/thesaurus-index.json',  // Production base
       '/thesaurus-index.json',          // Dev/no base
@@ -40,35 +22,25 @@ let isReady = false;
     // Try each path until one works
     for (const path of pathsToTry) {
       try {
-        console.log(`[Worker] Trying: ${path}`);
         const res = await fetch(path);
-        if (res.ok) {
+        const contentType = res.headers.get('content-type') || '';
+        if (res.ok && contentType.includes('application/json')) {
           response = res;
-          console.log(`[Worker] ✅ Found at: ${path}`);
           break;
         }
-        console.log(`[Worker] ❌ Not found at ${path} (${res.status})`);
-      } catch (err) {
-        console.log(`[Worker] ❌ Error fetching ${path}:`, err);
+      } catch {
+        continue;
       }
     }
     
     if (!response) {
-      throw new Error('Could not load thesaurus-index.json from any path. Make sure file exists in public/ folder.');
+      throw new Error('Could not load thesaurus-index.json from any path');
     }
-    
-    console.log(`[Worker] Fetch response status: ${response.status}`);
-    
-    console.log('[Worker] Parsing JSON...');
+
     const index: ThesaurusIndexItem[] = await response.json();
-    console.log(`[Worker] Loaded ${index.length.toLocaleString()} keywords`);
-    
-    // Validate data structure
     if (!Array.isArray(index) || index.length === 0) {
       throw new Error('Invalid index format: expected non-empty array');
     }
-    
-    console.log('[Worker] Initializing Fuse.js...');
     // Initialize Fuse.js for fuzzy search
     fuse = new Fuse(index, {
       keys: [
@@ -82,20 +54,13 @@ let isReady = false;
       includeScore: true,                       // For debugging
     });
     
-    const elapsed = performance.now() - startTime;
-    console.log(`[Worker] ✅ Ready in ${elapsed.toFixed(0)}ms`);
-    
     isReady = true;
     self.postMessage({ type: 'READY' });
     
   } catch (error) {
-    console.error('[Worker] ❌ Failed to load thesaurus:', error);
-    console.error('[Worker] Error details:', {
-      message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
-    });
-    self.postMessage({ 
-      type: 'ERROR', 
+    console.error('[ThesaurusWorker] Failed to load:', error instanceof Error ? error.message : error);
+    self.postMessage({
+      type: 'ERROR',
       error: error instanceof Error ? error.message : String(error)
     });
   }

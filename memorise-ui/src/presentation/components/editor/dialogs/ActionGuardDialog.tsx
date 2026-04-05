@@ -68,6 +68,7 @@ const MODE_TITLE_COLOR: Record<ActionGuardMode, string> = {
 
 // Component
 
+/** Renders a multi-mode guard dialog for blocking, confirming, or resolving destructive actions */
 const ActionGuardDialog: React.FC<ActionGuardDialogProps> = ({
   open,
   onClose,

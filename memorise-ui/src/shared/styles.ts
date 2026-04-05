@@ -1,6 +1,5 @@
+/** Reusable MUI sx shorthand patterns for common flex and text layouts. */
 import type { SxProps, Theme } from "@mui/material";
-
-/** Reusable sx patterns **/
 export const sx = {
   flexRow: {
     display: "flex",

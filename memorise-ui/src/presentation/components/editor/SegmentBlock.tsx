@@ -29,7 +29,7 @@ import type { LanguageOption } from "../../hooks";
 
 // Prop groups
 
-export interface SegmentDisplayProps {
+interface SegmentDisplayProps {
   isActive: boolean;
   isDragging: boolean;
   dropDisabled: boolean;
@@ -55,13 +55,13 @@ export interface SegmentTranslationHandlers {
   isLanguageListLoading: boolean;
 }
 
-export interface SegmentDragHandlers {
+interface SegmentDragHandlers {
   prevSegmentId?: string;
 }
 
 // Component props
 
-export interface SegmentBlockProps {
+interface SegmentBlockProps {
   segment: Segment;
   index: number;
   session: WorkspaceDTO | null;
@@ -73,6 +73,7 @@ export interface SegmentBlockProps {
 
 // Component
 
+/** Renders a single text segment with CodeMirror editor, translation controls, and drag handles */
 export const SegmentBlock: React.FC<SegmentBlockProps> = ({
   segment, index, session,
   display: { isActive, isDragging, dropDisabled },
@@ -111,12 +112,16 @@ export const SegmentBlock: React.FC<SegmentBlockProps> = ({
     }
   }, [isActive]);
 
+  // For translations, segment boundaries differ from the original because translated
+  // text has different lengths. Recompute start/end from translated text lengths.
   const virtualSegment = useMemo(() => {
     if (localLang === "original") return segment;
     const tLayer = session?.translations?.find((t: TranslationDTO) => t.language === localLang);
     return SegmentLogic.calculateVirtualBoundaries(session?.segments || [], tLayer?.segmentTranslations || {}).find((b: Segment) => b.id === segment.id) || segment;
   }, [localLang, segment, session]);
 
+  // Extract spans that overlap this segment's range, convert from global to local
+  // (0-based) coordinates, and filter out dismissed API spans.
   const localSpans = useMemo(() => {
     if (!isActive) return [];
 
@@ -161,8 +166,10 @@ export const SegmentBlock: React.FC<SegmentBlockProps> = ({
     onSelectionChange(sel, segment.id, localLang, virtualSegment.start);
   }, [onSelectionChange, segment.id, localLang, virtualSegment.start]);
 
+  // Disable drops on translation tabs — segment boundary shifts only work on original text
   const effectiveDropDisabled = dropDisabled || (isDragging && localLang !== "original");
 
+  // Handles drag-to-reorder: converts local drop offset to global position for boundary shift
   const handleDropTextPosition = useCallback((localOffset: number, dataTransfer: DataTransfer) => {
     const sourceSegmentId = dataTransfer.getData("application/segment-id");
     if (!sourceSegmentId) return;

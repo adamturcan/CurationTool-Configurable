@@ -1,10 +1,4 @@
-/**
- * Helper functions for working with the thesaurus
- * 
- * These utilities help map tags to their thesaurus entries and
- * build hierarchical data structures for display.
- */
-
+/** Thesaurus lookup, hierarchy building, and tag-to-category mapping utilities. */
 import type { ThesaurusIndexItem } from '../../types';
 import type { TagRow } from '../../presentation/components/rightPanel/RightPanel';
 
@@ -184,36 +178,7 @@ export function buildTagHierarchy(
   return rootMap;
 }
 
-/**
- * Flatten hierarchy tree for simple rendering
- * Returns array of [groupKey, tags, metadata] for display
- */
-export type FlatGroup = {
-  key: string;
-  label: string;
-  tags: TagRow[];
-  depth: number;
-  fullPath: string[];
-  hasChildren: boolean;
-  parentKey: string | null;
-};
-
-/**
- * Check if a node or any of its descendants have tags
- */
-function hasAnyTags(node: HierarchyNode): boolean {
-  if (node.tags.length > 0) return true;
-  
-  for (const child of node.children.values()) {
-    if (hasAnyTags(child)) return true;
-  }
-  
-  return false;
-}
-
-/**
- * Count all tags in a node and its descendants (recursive)
- */
+/** Count all tags in a node and its descendants (recursive). */
 export function countAllTags(node: HierarchyNode): number {
   let count = node.tags.length;
   
@@ -224,125 +189,4 @@ export function countAllTags(node: HierarchyNode): number {
   return count;
 }
 
-/**
- * Simple approach: Just add the new tag and let the hierarchy building handle the rest
- * The buildTagHierarchy function already creates the proper structure
- */
-export function restructureTagsForHierarchy(
-  tags: TagRow[],
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  _thesaurusIndex: ThesaurusIndexItem[]
-): TagRow[] {
-  // Just return the tags as-is, the hierarchy building in TagTable will handle the structure
-  return tags;
-}
-
-/**
- * Create intermediate categories for tags that need to be nested
- * This function ensures that when a tag should be nested under a path,
- * all intermediate categories are created as virtual tags
- */
-export function createIntermediateCategories(
-  tags: TagRow[],
-  thesaurusIndex: ThesaurusIndexItem[]
-): TagRow[] {
-  const result: TagRow[] = [...tags];
-  const addedCategories = new Set<string>(); // Track what we've added to prevent duplicates
-  
-  // For each tag that has a thesaurus entry with a path
-  for (const tag of tags) {
-    if (!tag.keywordId) continue;
-    
-    const thesaurusEntry = thesaurusIndex.find(item => item.id === tag.keywordId);
-    if (!thesaurusEntry || !thesaurusEntry.path || thesaurusEntry.path.length <= 1) continue;
-    
-    const path = thesaurusEntry.path;
-    
-    // Create intermediate categories for each path segment (except the last one which is the tag itself)
-    for (let i = 0; i < path.length - 1; i++) {
-      const categoryName = path[i];
-      const categoryPath = path.slice(0, i + 1);
-      const parentPath = categoryPath.slice(0, -1);
-      
-      // Create a unique key for this category
-      const categoryKey = `${categoryName}::${JSON.stringify(parentPath)}`;
-      
-      // Skip if we already added this category in this run
-      if (addedCategories.has(categoryKey)) continue;
-      
-      // Check if this intermediate category already exists as a tag with the same path
-      const existingCategory = result.find(t => 
-        t.name === categoryName && 
-        t.hierarchicalPath && 
-        JSON.stringify(t.hierarchicalPath) === JSON.stringify(parentPath)
-      );
-      
-      // If it already exists, mark it as added and continue
-      if (existingCategory) {
-        addedCategories.add(categoryKey);
-        continue;
-      }
-      
-      // Find the thesaurus entry for this exact category path
-      const categoryThesaurusEntry = thesaurusIndex.find(item => 
-        item.labelLower === categoryName.toLowerCase() && 
-        JSON.stringify(item.path) === JSON.stringify(categoryPath)
-      );
-      
-      // Only create the category if we found it in the thesaurus
-      if (categoryThesaurusEntry) {
-        result.push({
-          name: categoryName,
-          source: "user", // Mark as user-created category
-          keywordId: categoryThesaurusEntry.id,
-          hierarchicalPath: parentPath, // Parent path
-          isCategory: true // Flag to indicate this is a category, not a regular tag
-        });
-        
-        addedCategories.add(categoryKey);
-      }
-    }
-  }
-  
-  return result;
-}
-
-export function flattenHierarchy(
-  hierarchy: Map<string, HierarchyNode>
-): FlatGroup[] {
-  const result: FlatGroup[] = [];
-  
-  function traverse(
-    node: HierarchyNode,
-    parentKey: string | null = null
-  ) {
-    // Skip nodes with no tags and no children with tags
-    if (!hasAnyTags(node)) return;
-    
-    const key = node.fullPath.join(' › ');
-    
-    // Add current node only if it has tags OR has children with tags
-    result.push({
-      key,
-      label: node.label,
-      tags: node.tags,
-      depth: node.depth,
-      fullPath: node.fullPath,
-      hasChildren: node.children.size > 0,
-      parentKey,
-    });
-    
-    // Recursively add children (only non-empty ones)
-    for (const child of node.children.values()) {
-      traverse(child, key);
-    }
-  }
-  
-  // Traverse all root nodes
-  for (const root of hierarchy.values()) {
-    traverse(root);
-  }
-  
-  return result;
-}
 

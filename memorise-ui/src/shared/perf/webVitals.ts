@@ -1,17 +1,5 @@
+/** Reports Core Web Vitals (LCP, INP, CLS, FCP, TTFB) to the console. */
 import { onCLS, onINP, onFCP, onLCP, onTTFB } from "web-vitals";
-
-/**
- * Reports Web Vitals metrics to console (and can be extended to send to analytics endpoint).
- * 
- * Web Vitals are key performance metrics that measure user experience:
- * - LCP (Largest Contentful Paint): Loading performance
- * - INP (Interaction to Next Paint): Interactivity (replaces FID in v5+)
- * - CLS (Cumulative Layout Shift): Visual stability
- * - FCP (First Contentful Paint): Initial rendering
- * - TTFB (Time to First Byte): Server response time
- * 
- * @see https://web.dev/vitals/
- */
 export function reportWebVitals() {
   const logMetric = (metric: { name: string; value: number; id: string; rating: string }) => {
     const { name, value, id, rating } = metric;

@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { type ConflictPrompt } from "../../core/services/resolveApiSpanConflicts";
 
+/** Manages interactive NER span conflict prompts via a promise-based dialog flow */
 export function useConflictResolution() {
   const [conflictPrompt, setConflictPrompt] = useState<ConflictPrompt | null>(null);
   const conflictResolverRef = useRef<((choice: "api" | "existing") => void) | null>(null);

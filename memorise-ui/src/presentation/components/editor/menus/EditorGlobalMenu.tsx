@@ -48,6 +48,7 @@ const tooltipProps = {
   }
 };
 
+/** Renders the floating toolbar with save, NER, segmentation, translation, and tagging actions */
 const EditorGlobalMenu: React.FC<EditorGlobalMenuProps> = ({
   onNer,
   onSegment,

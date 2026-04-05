@@ -8,6 +8,7 @@ import { SegmentLogic } from "../../core/entities/SegmentLogic";
 import { SpanLogic } from "../../core/entities/SpanLogic";
 import type { SplitAnchor } from "./useSpanInteractions";
 
+/** Manages segment split, join, and boundary-shift operations with translation guards */
 export function useSegmentSplitMerge() {
   const sessionStore = useSessionStore();
   const notify = useNotificationStore.getState().enqueue;

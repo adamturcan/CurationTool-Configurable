@@ -12,6 +12,7 @@ interface HierarchyGroupProps {
   onDelete: (name: string, keywordId?: number, parentId?: number) => void;
 }
 
+/** Renders a collapsible group of tags arranged in a thesaurus hierarchy tree */
 const HierarchyGroup: React.FC<HierarchyGroupProps> = React.memo(({ node, depth = 0, collapsed, toggle, onDelete }) => {
   const groupKey = node.fullPath.join(' › ');
   const isCollapsed = !!collapsed[groupKey];

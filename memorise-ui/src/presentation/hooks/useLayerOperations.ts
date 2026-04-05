@@ -3,10 +3,13 @@ import { useSessionStore } from "../stores";
 import type { AnnotationResult } from "../../application/services/AnnotationWorkflowService";
 import type { AnnotationLayer } from "../../types";
 
+/** Resolves, patches, and tracks edit state for original and translation annotation layers */
 export function useLayerOperations() {
   const sessionStore = useSessionStore();
   const { session, draftText } = sessionStore;
 
+  // Builds an AnnotationLayer snapshot for the given language tab —
+  // either from the workspace root (original) or from a translation entry.
   const resolveLayer = useCallback(
     (lang: string): AnnotationLayer | null => {
       if (!session) return null;
@@ -30,6 +33,8 @@ export function useLayerOperations() {
     [session, draftText]
   );
 
+  // Writes span/text patches back to the correct layer in the session store.
+  // For "original" patches go directly; for translations, the matching entry is updated.
   const applyLayerPatch = useCallback(
     (lang: string, patch: AnnotationResult["layerPatch"]) => {
       if (!patch) return;

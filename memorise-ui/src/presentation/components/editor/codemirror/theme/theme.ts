@@ -58,4 +58,5 @@ Object.entries(ENTITY_COLORS).forEach(([entity, hexColor]) => {
   };
 });
 
+/** CodeMirror base theme defining editor layout and NER entity color styles */
 export const editorTheme = EditorView.baseTheme(baseThemeStyles);

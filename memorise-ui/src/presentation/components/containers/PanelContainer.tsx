@@ -6,6 +6,7 @@ import { useSessionStore, useNotificationStore } from "../../stores";
 import { useThesaurusDisplay, useThesaurusWorker } from "../../hooks";
 import { taggingWorkflowService } from "../../../application/services/TaggingWorkflowService";
 
+/** Connects the right tag panel to session state, thesaurus, and tagging workflow */
 const PanelContainer: React.FC = () => {
   const { id: routeId } = useParams();
   const session = useSessionStore((state) => state.session);

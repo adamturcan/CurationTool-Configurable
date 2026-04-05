@@ -4,7 +4,7 @@ import type { NerSpan } from '@/types/NotationEditor';
 import {
   resolveApiSpanConflicts,
   type ConflictPrompt,
-} from '@/core/services/annotation/resolveApiSpanConflicts';
+} from '@/core/services/resolveApiSpanConflicts';
 
 const buildSpan = (start: number, end: number, entity: string): NerSpan => ({
   start,

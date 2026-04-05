@@ -4,7 +4,8 @@ import type { TranslationDTO, Segment } from "../../types";
 
 // Gap detection helpers
 
-export type TranslationGap = {
+/** Identifies a missing translation for a specific segment and language */
+type TranslationGap = {
   lang: string;
   segmentId: string;
   segmentOrder: number;
@@ -92,6 +93,7 @@ function detectUntranslated(
 
 // Hook
 
+/** Callbacks injected by the consumer to keep the hook decoupled from services */
 export interface ActionGuardActions {
   /** Translate a single segment — injected by the consumer so the hook stays decoupled from services. */
   translateSegment: (segmentId: string, lang: string) => Promise<void>;
@@ -99,7 +101,8 @@ export interface ActionGuardActions {
   deleteSegmentTranslation: (lang: string, segmentId: string) => void;
 }
 
-export interface UseActionGuardReturn {
+/** Return type for the useActionGuard hook */
+interface UseActionGuardReturn {
   guardJoin: (
     seg1Id: string,
     seg2Id: string,
@@ -132,6 +135,7 @@ export interface UseActionGuardReturn {
   closeDialog: () => void;
 }
 
+/** Guards segment operations (join/split/shift) by detecting translation conflicts and prompting resolution */
 export function useActionGuard(actions: ActionGuardActions): UseActionGuardReturn {
   const [dialogProps, setDialogProps] = useState<ActionGuardDialogProps | null>(null);
 

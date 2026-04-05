@@ -1,3 +1,4 @@
+/** MUI theme configuration with custom palette, typography, and component overrides. */
 import { createTheme, responsiveFontSizes } from "@mui/material";
 
 /** Named shadow tokens */

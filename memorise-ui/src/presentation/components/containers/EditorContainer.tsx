@@ -14,6 +14,7 @@ import { ENTITY_COLORS } from "../../../shared/constants/notationEditor";
 import { shadows } from "../../../shared/theme";
 import { sx as sxUtil } from "../../../shared/styles";
 
+/** Orchestrates the editor view with segment blocks, menus, and conflict dialogs */
 const EditorContainer: React.FC = () => {
   const notify = useNotificationStore.getState().enqueue;
   const { session, draftText, activeSegmentId, setActiveSegmentId } = useSessionStore();

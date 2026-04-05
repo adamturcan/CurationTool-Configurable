@@ -32,6 +32,7 @@ const chipBySource: Record<ConflictSource, { label: string; color: "primary" | "
 
 const getEntityColor = (entity: string) => ENTITY_COLORS[entity] ?? "#94A3B8";
 
+/** Renders a dialog for resolving overlapping NER annotation conflicts */
 const ConflictResolutionDialog: React.FC<Props> = ({
   prompt,
   onKeepExisting,

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import type { ThesaurusIndexItem } from '../../types';
 
+/** Spawns and manages the thesaurus Web Worker, exposing a search function and readiness state */
 export function useThesaurusWorker() {
   const workerRef = useRef<Worker | null>(null);
   const [ready, setReady] = useState(false);

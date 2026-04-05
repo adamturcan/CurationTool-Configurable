@@ -54,6 +54,7 @@ const ThesaurusOption = React.memo(({ liProps, option }: { liProps: React.HTMLAt
 ));
 ThesaurusOption.displayName = "ThesaurusOption";
 
+/** Renders a debounced autocomplete input for adding tags from thesaurus or free text */
 const TagThesaurusInput: React.FC<Props> = ({
   onAdd, fetchSuggestions, restrictToThesaurus, defaultRestrictToThesaurus = false,
   placeholder = "Search thesaurus or add tag...", isThesaurusLoading = false,

@@ -5,7 +5,7 @@ import {
   requireOwnerId,
   requireWorkspaceName,
   requireTranslationLanguage,
-} from '@/core/usecases/shared/validators';
+} from '@/core/usecases/validators';
 import { errorHandlingService } from '@/infrastructure/services/ErrorHandlingService';
 
 describe('use case validators', () => {

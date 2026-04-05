@@ -3,6 +3,7 @@ import { type Range, StateField, Facet } from "@codemirror/state";
 import type { NerSpan } from "../../../../../../types";
 import { getSpanId } from "../../../utils/editorUtils";
 
+/** Creates CodeMirror decorations for NER span highlighting and tracking */
 export const spansFacet = Facet.define<NerSpan[], NerSpan[]>({
   combine: (values) => values[values.length - 1] || [],
 });

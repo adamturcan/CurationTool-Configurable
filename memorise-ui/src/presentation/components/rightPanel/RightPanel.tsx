@@ -28,6 +28,7 @@ interface Props {
   activeContext: string;
 }
 
+/** Renders the animated right panel shell with tag table and thesaurus input */
 const RightPanel: React.FC<Props> = (props) => {
   return (
     // 1. THE INVISIBLE GHOST LAYOUT

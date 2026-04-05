@@ -28,6 +28,7 @@ const COLORS = {
   pageBg: "linear-gradient(135deg, #C6AE82 0%, #9B7A4A 50%, #654A33 100%)",
 };
 
+/** Renders the login page with username input and sign-in form */
 const LoginPage: React.FC<Props> = ({ onLogin, defaultUsername = "" }) => {
   const [username, setUsername] = useState(defaultUsername);
   const [touched, setTouched] = useState(false);

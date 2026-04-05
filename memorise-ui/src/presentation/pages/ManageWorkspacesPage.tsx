@@ -42,6 +42,7 @@ const Transition = React.forwardRef(function Transition(
   return <Slide direction="up" ref={ref} {...props} />;
 });
 
+/** Renders the workspace management page with rename, delete, and export actions */
 const ManageWorkspacesPage: React.FC = () => {
   const navigate = useNavigate();
 

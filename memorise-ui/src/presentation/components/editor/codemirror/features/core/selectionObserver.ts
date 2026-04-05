@@ -2,6 +2,7 @@ import React from "react";
 import { EditorView } from "@codemirror/view";
 import type { NerSpan, SelectionBox } from "../../../../../../types";
 
+/** Creates a CodeMirror extension that emits selection coordinates for span creation menus */
 export const createSelectionObserver = (
   spans: NerSpan[],
   onSelectionChange?: (sel: SelectionBox | null) => void,

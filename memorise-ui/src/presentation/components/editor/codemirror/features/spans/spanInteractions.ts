@@ -4,6 +4,7 @@ import { getSpanId } from "../../../utils/editorUtils";
 import { intentionalTextReplace } from "./spanProtection";
 import type { NerSpan } from "../../../../../../types";
 
+/** Handles click events on NER span elements to open the category edit menu */
 export const handleSpanClickEvent = (
   target: HTMLElement,
   view: EditorView,
