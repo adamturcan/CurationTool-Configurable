@@ -18,8 +18,8 @@ import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import SyncIcon from '@mui/icons-material/Sync';
 
 import { CodeMirrorWrapper } from "./codemirror/CodeMirrorWrapper";
-import { SegmentLogic } from "../../../core/domain/entities/SegmentLogic";
-import type { NerSpan, SelectionBox, SpanCoordMap, Segment, Workspace, Translation } from "../../../types";
+import { SegmentLogic } from "../../../core/entities/SegmentLogic";
+import type { NerSpan, SelectionBox, SpanCoordMap, Segment, WorkspaceDTO, TranslationDTO } from "../../../types";
 import { getSpanId } from "./utils/editorUtils";
 import { ENTITY_COLORS } from "../../../shared/constants/notationEditor";
 import { shadows } from "../../../shared/theme";
@@ -29,7 +29,7 @@ import type { LanguageOption } from "../../hooks";
 
 // Prop groups
 
-export interface SegmentDisplayProps {
+interface SegmentDisplayProps {
   isActive: boolean;
   isDragging: boolean;
   dropDisabled: boolean;
@@ -55,16 +55,16 @@ export interface SegmentTranslationHandlers {
   isLanguageListLoading: boolean;
 }
 
-export interface SegmentDragHandlers {
+interface SegmentDragHandlers {
   prevSegmentId?: string;
 }
 
 // Component props
 
-export interface SegmentBlockProps {
+interface SegmentBlockProps {
   segment: Segment;
   index: number;
-  session: Workspace | null;
+  session: WorkspaceDTO | null;
   display: SegmentDisplayProps;
   handlers: SegmentHandlers;
   translationHandlers: SegmentTranslationHandlers;
@@ -73,6 +73,7 @@ export interface SegmentBlockProps {
 
 // Component
 
+/** Renders a single text segment with CodeMirror editor, translation controls, and drag handles */
 export const SegmentBlock: React.FC<SegmentBlockProps> = ({
   segment, index, session,
   display: { isActive, isDragging, dropDisabled },
@@ -95,11 +96,11 @@ export const SegmentBlock: React.FC<SegmentBlockProps> = ({
     return () => registerNode(index, null);
   }, [index, registerNode]);
 
-  const availableLangs = useMemo(() => (session?.translations || []).filter((t: Translation) => t.segmentTranslations?.[segment.id] !== undefined).map((t: Translation) => t.language), [session?.translations, segment.id]);
+  const availableLangs = useMemo(() => (session?.translations || []).filter((t: TranslationDTO) => t.segmentTranslations?.[segment.id] !== undefined).map((t: TranslationDTO) => t.language), [session?.translations, segment.id]);
 
   const isSegmentEdited = useMemo(() => {
     if (localLang === "original") return !!segment.isEdited;
-    const tLayer = session?.translations?.find((t: Translation) => t.language === localLang);
+    const tLayer = session?.translations?.find((t: TranslationDTO) => t.language === localLang);
     return !!tLayer?.editedSegmentTranslations?.[segment.id];
   }, [localLang, segment.isEdited, segment.id, session?.translations]);
 
@@ -111,12 +112,16 @@ export const SegmentBlock: React.FC<SegmentBlockProps> = ({
     }
   }, [isActive]);
 
+  // For translations, segment boundaries differ from the original because translated
+  // text has different lengths. Recompute start/end from translated text lengths.
   const virtualSegment = useMemo(() => {
     if (localLang === "original") return segment;
-    const tLayer = session?.translations?.find((t: Translation) => t.language === localLang);
+    const tLayer = session?.translations?.find((t: TranslationDTO) => t.language === localLang);
     return SegmentLogic.calculateVirtualBoundaries(session?.segments || [], tLayer?.segmentTranslations || {}).find((b: Segment) => b.id === segment.id) || segment;
   }, [localLang, segment, session]);
 
+  // Extract spans that overlap this segment's range, convert from global to local
+  // (0-based) coordinates, and filter out dismissed API spans.
   const localSpans = useMemo(() => {
     if (!isActive) return [];
 
@@ -126,7 +131,7 @@ export const SegmentBlock: React.FC<SegmentBlockProps> = ({
       const api = (session?.apiSpans || []).filter((s: NerSpan) => !bannedKeys.has(`${s.start}:${s.end}:${s.entity}`));
       rawSpans = [...api, ...(session?.userSpans || [])];
     } else {
-      const tLayer = session?.translations?.find((t: Translation) => t.language === localLang);
+      const tLayer = session?.translations?.find((t: TranslationDTO) => t.language === localLang);
       const api = (tLayer?.apiSpans || []).filter((s: NerSpan) => !bannedKeys.has(`${s.start}:${s.end}:${s.entity}`));
       rawSpans = [...api, ...(tLayer?.userSpans || [])];
     }
@@ -161,8 +166,10 @@ export const SegmentBlock: React.FC<SegmentBlockProps> = ({
     onSelectionChange(sel, segment.id, localLang, virtualSegment.start);
   }, [onSelectionChange, segment.id, localLang, virtualSegment.start]);
 
+  // Disable drops on translation tabs — segment boundary shifts only work on original text
   const effectiveDropDisabled = dropDisabled || (isDragging && localLang !== "original");
 
+  // Handles drag-to-reorder: converts local drop offset to global position for boundary shift
   const handleDropTextPosition = useCallback((localOffset: number, dataTransfer: DataTransfer) => {
     const sourceSegmentId = dataTransfer.getData("application/segment-id");
     if (!sourceSegmentId) return;
@@ -286,7 +293,7 @@ export const SegmentBlock: React.FC<SegmentBlockProps> = ({
       <Box sx={{
         position: "relative",
         backgroundColor: isHeaderOpen ? "#f8fafc" : "transparent",
-        borderBottom: isHeaderOpen ? "1px solid #e2e8f0" : "none",
+        borderBottom: (t) => isHeaderOpen ? `1px solid ${t.palette.divider}` : "none",
         transition: "background-color 0.2s ease"
       }}>
         <Box sx={{ position: "absolute", top: isHeaderOpen ? "8px" : "4px", right: "8px", zIndex: 10, ...sxUtil.flexRow, gap: 0.5 }}>

@@ -1,12 +1,12 @@
-import type { WorkspaceRepository } from '../../interfaces/repositories/WorkspaceRepository';
-import { Workspace, WorkspaceTranslation } from '../../entities/Workspace';
-import { Tag } from '../../entities/Tag';
-import type { TagItem, Translation, NerSpan, Segment } from '../../../types';
-import { errorHandlingService } from '../../../infrastructure/services/ErrorHandlingService';
-import { requireWorkspaceId } from '../shared/validators';
+import type { WorkspaceRepository } from '../interfaces/WorkspaceRepository';
+import { Workspace } from '../entities/Workspace';
+import type { TagItem, TranslationDTO, NerSpan, Segment } from '../../types';
+import { errorHandlingService } from '../../infrastructure/services/ErrorHandlingService';
+import { requireWorkspaceId, requireExistingWorkspace } from './validators';
 
 const OPERATION = 'UpdateWorkspaceUseCase';
 
+/** Partial update — only defined fields are applied. Undefined fields are left unchanged. */
 export interface UpdateWorkspacePatch {
   name?: string;
   text?: string;
@@ -15,7 +15,7 @@ export interface UpdateWorkspacePatch {
   apiSpans?: NerSpan[];
   deletedApiKeys?: string[];
   tags?: TagItem[];
-  translations?: Translation[];
+  translations?: TranslationDTO[];
   segments?: Segment[];
   updatedAt?: number;
 }
@@ -25,6 +25,7 @@ export interface UpdateWorkspaceRequest {
   patch: UpdateWorkspacePatch;
 }
 
+/** Applies a partial patch to an existing workspace via immutable builder methods */
 export class UpdateWorkspaceUseCase {
   private readonly workspaceRepository: WorkspaceRepository;
 
@@ -34,20 +35,10 @@ export class UpdateWorkspaceUseCase {
 
   async execute(request: UpdateWorkspaceRequest): Promise<Workspace> {
     const workspaceId = requireWorkspaceId(request.workspaceId, OPERATION);
-    const existing = await this.workspaceRepository.findById(workspaceId);
+    const existing = await requireExistingWorkspace(this.workspaceRepository, workspaceId, OPERATION);
 
-    if (!existing) {
-      throw errorHandlingService.createAppError({
-        message: `Workspace ${workspaceId} was not found.`,
-        code: 'WORKSPACE_NOT_FOUND',
-        severity: 'warn',
-        context: {
-          operation: OPERATION,
-          workspaceId,
-        },
-      });
-    }
-
+    // Apply each defined patch field via the entity's immutable builder methods.
+    // Each with*() call returns a new Workspace instance, chained sequentially.
     const { patch } = request;
     let workspace = existing;
 
@@ -71,24 +62,10 @@ export class UpdateWorkspaceUseCase {
         workspace = workspace.withDeletedApiKeys(patch.deletedApiKeys);
       }
       if (patch.tags !== undefined) {
-        workspace = workspace.withTags(
-          patch.tags.map((item) =>
-            Tag.create({
-              name: item.name,
-              source: item.source,
-              label: item.label,
-              parentId: item.parentId,
-              segmentId: item.segmentId,
-            })
-          )
-        );
+        workspace = workspace.withTags(patch.tags);
       }
       if (patch.translations !== undefined) {
-        workspace = workspace.withTranslations(
-          patch.translations.map((translation) =>
-            WorkspaceTranslation.create(translation)
-          )
-        );
+        workspace = workspace.withTranslations(patch.translations);
       }
       if (patch.updatedAt !== undefined) {
         workspace = workspace.withUpdatedAt(patch.updatedAt);
@@ -108,6 +85,12 @@ export class UpdateWorkspaceUseCase {
     }
 
     await this.workspaceRepository.save(workspace);
+
+    // Segments are metadata not on the domain entity — persisted separately
+    if (patch.segments !== undefined && this.workspaceRepository.updateSegments) {
+      await this.workspaceRepository.updateSegments(workspace.id, patch.segments);
+    }
+
     return workspace;
   }
 }

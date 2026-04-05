@@ -1,77 +1,32 @@
+/**
+ * Current workspace editing state. Holds the full workspace DTO,
+ * draft text, active tab/segment, dirty tracking, and UI state.
+ * All workflow results flow here via updateSession() or updateTranslations().
+ *
+ * @category Stores
+ */
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import type { Workspace, Translation, NerSpan, Segment } from '../../types';
+import type { WorkspaceDTO, TranslationDTO } from '../../types';
 import { populateSegmentText } from '../../types';
 
-
-const areSpansEqual = (a: NerSpan[], b: NerSpan[]) => {
-  if (a === b) return true;
-  if (a.length !== b.length) return false;
-  return a.every((s, i) =>
-    s.start === b[i].start &&
-    s.end === b[i].end &&
-    s.entity === b[i].entity &&
-    s.id === b[i].id &&
-    s.origin === b[i].origin
-  );
-};
-
-const areSegmentsEqual = (a: Segment[], b: Segment[]) => {
-  if (a === b) return true;
-  if (a.length !== b.length) return false;
-  return a.every((s, i) =>
-    s.id === b[i].id &&
-    s.start === b[i].start &&
-    s.end === b[i].end &&
-    s.text === b[i].text &&
-    s.order === b[i].order &&
-    s.isEdited === b[i].isEdited
-  );
-};
-
-const areTranslationsEqual = (a: Translation[], b: Translation[]) => {
-  if (a === b) return true;
-  if (a.length !== b.length) return false;
-  return a.every((t, i) =>
-    t.language === b[i].language &&
-    t.text === b[i].text &&
-    t.updatedAt === b[i].updatedAt
-  );
-};
-
 interface SessionStore {
-  session: Workspace | null;      
-  draftText: string;              
+  session: WorkspaceDTO | null;
+  draftText: string;
   activeTab: string;
-  
   activeSegmentId: string | undefined;
-  
-  
   isDirty: boolean;
-  lastChangedAt: number;
-  
-  loadSession: (workspace: Workspace) => void;
-  resetSession: () => void;
-  setLoading: () => void;
-
-
- 
 
   isTagPanelOpen: boolean;
   setTagPanelOpen: (isOpen: boolean) => void;
 
+  loadSession: (workspace: WorkspaceDTO) => void;
+  setLoading: () => void;
   setDraftText: (text: string) => void;
-  updateUserSpans: (spans: NerSpan[]) => void;
-  updateApiSpans: (spans: NerSpan[]) => void;
-  updateDeletedApiKeys: (keys: string[]) => void;
-  updateSegments: (segments: Segment[]) => void;
-  updateTranslations: (translations: Translation[]) => void;
-  updateSession: (updates: Partial<Workspace>) => void;
-  
+  updateTranslations: (translations: TranslationDTO[]) => void;
+  updateSession: (updates: Partial<WorkspaceDTO>) => void;
   setActiveTab: (tab: string) => void;
-  
   setActiveSegmentId: (id: string | undefined) => void;
-  updateActiveLayer: (updates: Partial<Workspace> | Partial<Translation>) => void;
 }
 
 export const useSessionStore = create<SessionStore>()(
@@ -79,23 +34,20 @@ export const useSessionStore = create<SessionStore>()(
     (set, get) => ({
       session: null,
       draftText: "",
-      
       activeTab: "original",
-      translationViewMode: "document",      
       activeSegmentId: undefined,
 
       isTagPanelOpen: false,
       setTagPanelOpen: (isOpen) => set({ isTagPanelOpen: isOpen }),
-      
-      isDirty: false,
-      lastChangedAt: 0,
 
-      loadSession: (workspace) => {        
-        const populatedSegments = workspace.segments 
+      isDirty: false,
+
+      loadSession: (workspace) => {
+        const populatedSegments = workspace.segments
           ? populateSegmentText(workspace.segments, workspace.text || "")
           : [];
 
-        const normalized: Workspace = {
+        const normalized: WorkspaceDTO = {
           ...workspace,
           userSpans: workspace.userSpans ?? [],
           apiSpans: workspace.apiSpans ?? [],
@@ -107,27 +59,15 @@ export const useSessionStore = create<SessionStore>()(
 
         set({
           session: normalized,
-          draftText: normalized.text || "", 
+          draftText: normalized.text || "",
           isDirty: false,
-          lastChangedAt: 0,
-          activeTab: "original",
-          activeSegmentId: undefined,
-        });
-      },
-
-      resetSession: () => {
-        set({
-          session: null,
-          draftText: "",
-          isDirty: false,
-          lastChangedAt: 0,
           activeTab: "original",
           activeSegmentId: undefined,
         });
       },
 
       setLoading: () => {
-         set({
+        set({
           session: {
             id: "",
             name: "",
@@ -149,127 +89,39 @@ export const useSessionStore = create<SessionStore>()(
       setDraftText: (newText) => {
         const state = get();
         if (state.draftText === newText) return;
-
-        const isNowDirty = newText !== state.session?.text;
-
-        set({ 
+        set({
           draftText: newText,
-          isDirty: isNowDirty,
-          lastChangedAt: Date.now(),
-        });
-      },
-
-      updateUserSpans: (nextUserSpans) => {
-        const state = get();
-        if (!state.session) return;
-
-        const currentUserSpans = state.session.userSpans ?? [];
-
-        if (areSpansEqual(currentUserSpans, nextUserSpans)) return;
-
-        set({
-          session: { ...state.session, userSpans: nextUserSpans },
-          isDirty: true,
-          lastChangedAt: Date.now(),
-        });
-      },
-
-      updateApiSpans: (nextApiSpans) => {
-        const state = get();
-        if (!state.session) return;
-
-        const currentApiSpans = state.session.apiSpans ?? [];
-
-        if (areSpansEqual(currentApiSpans, nextApiSpans)) return;
-
-        set({
-          session: { ...state.session, apiSpans: nextApiSpans },
-          isDirty: true,
-          lastChangedAt: Date.now(),
-        });
-      },
-
-      updateDeletedApiKeys: (nextKeys) => {
-        const state = get();
-        if (!state.session) return;
-
-        const currentKeys = state.session.deletedApiKeys ?? [];
-
-        if (currentKeys.length === nextKeys.length && 
-            currentKeys.every((k, i) => k === nextKeys[i])) return;
-
-        set({
-          session: { ...state.session, deletedApiKeys: nextKeys },
-          isDirty: true,
-          lastChangedAt: Date.now(),
-        });
-      },
-
-      updateSegments: (nextSegments) => {
-        const state = get();
-        if (!state.session) return;
-        
-        const currentSegments = state.session.segments ?? [];
-        
-        if (areSegmentsEqual(currentSegments, nextSegments)) return;
-
-        set({
-          session: { ...state.session, segments: nextSegments },
-          isDirty: true,
-          lastChangedAt: Date.now(),
+          isDirty: newText !== state.session?.text,
         });
       },
 
       updateTranslations: (nextTranslations) => {
         const state = get();
         if (!state.session) return;
-        
-        const currentTranslations = state.session.translations ?? [];
-        
-        if (areTranslationsEqual(currentTranslations, nextTranslations)) return;
-
+        if (state.session.translations === nextTranslations) return;
         set({
           session: { ...state.session, translations: nextTranslations },
           isDirty: true,
-          lastChangedAt: Date.now(),
         });
       },
 
+      // Skip update if every field in the patch is reference-equal to the current value
       updateSession: (updates) => {
         const state = get();
         if (!state.session) return;
-
+        const current = state.session;
+        const hasChange = Object.entries(updates).some(
+          ([key, value]) => current[key as keyof WorkspaceDTO] !== value
+        );
+        if (!hasChange) return;
         set({
-          session: { ...state.session, ...updates },
+          session: { ...current, ...updates },
           isDirty: true,
-          lastChangedAt: Date.now(),
         });
       },
 
-      setActiveTab: (tab) => {
-        set({ activeTab: tab });
-      },
-
-      setActiveSegmentId: (id) => {
-        set({ activeSegmentId: id });
-      },
-
-      updateActiveLayer: (updates: Partial<Workspace> | Partial<Translation>) => set((state) => {
-        if (!state.session) return state; 
-      
-        if (state.activeTab === "original") {
-          return { 
-            session: { ...state.session, ...updates } 
-          };
-        } else {
-          const updatedTranslations = (state.session.translations || []).map((t) =>
-            t.language === state.activeTab ? { ...t, ...updates } : t
-          );
-          return { 
-            session: { ...state.session, translations: updatedTranslations } 
-          };
-        }
-      }),
+      setActiveTab: (tab) => set({ activeTab: tab }),
+      setActiveSegmentId: (id) => set({ activeSegmentId: id }),
     }),
     { name: 'session-store' }
   )

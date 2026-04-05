@@ -1,3 +1,9 @@
+/**
+ * Type-safe localStorage wrappers with SSR safety and error handling.
+ * All persistence in the app flows through these helpers.
+ *
+ * @category Infrastructure
+ */
 const isBrowser = typeof window !== "undefined" && typeof window.localStorage !== "undefined";
 
 export function readJSON<T>(key: string, fallback: T): T {

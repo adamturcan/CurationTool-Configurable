@@ -5,6 +5,7 @@ import EditorContainer from "../components/containers/EditorContainer";
 import { useSessionStore } from "../stores";
 import PanelContainer from "../components/containers/PanelContainer";
 
+/** Renders the workspace editor page with segment blocks and right tag panel */
 const WorkspacePage: React.FC = () => {
   const location = useLocation();
   const currentSessionId = useSessionStore((state) => state.session?.id);

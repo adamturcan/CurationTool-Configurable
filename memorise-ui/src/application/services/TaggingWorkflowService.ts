@@ -1,14 +1,21 @@
 import { getApiService } from "../../infrastructure/providers/apiProvider";
+import { errorHandlingService } from "../../infrastructure/services/ErrorHandlingService";
 import { loadThesaurusIndex } from "../../shared/utils/thesaurusHelpers";
-import type { ThesaurusIndexItem, TagItem, Segment, Translation, WorkflowResult } from "../../types";
+import type { ThesaurusIndexItem, TagItem, Segment, TranslationDTO, WorkflowResult } from "../../types";
 
 
-export type ClassificationResult = WorkflowResult & {
+type ClassificationResult = WorkflowResult & {
   tags?: TagItem[];
 }
 
 
 
+/**
+ * Semantic tagging operations: run API classification, add/delete user tags.
+ * Tags are scoped per segment (or whole document if no active segment).
+ *
+ * @category Application
+ */
 export class TaggingWorkflowService {
   private apiService = getApiService();
 
@@ -17,7 +24,7 @@ export class TaggingWorkflowService {
   }
 
 
-  async runClassify(forceGlobal: boolean = false, session: { activeSegmentId: string | undefined, segments: Segment[], draftText: string, translations: Translation[], text: string, activeTab: string, tags: TagItem[] }): Promise<ClassificationResult> {
+  async runClassify(forceGlobal: boolean = false, session: { activeSegmentId: string | undefined, segments: Segment[], draftText: string, translations: TranslationDTO[], text: string, activeTab: string, tags: TagItem[] }): Promise<ClassificationResult> {
 
     const { activeTab, activeSegmentId, segments, translations, text, draftText, tags } = session;
 
@@ -54,7 +61,7 @@ export class TaggingWorkflowService {
 
       let thesaurusIndex: ThesaurusIndexItem[] = [];
       try { thesaurusIndex = await loadThesaurusIndex(); }
-      catch (e) { console.warn("Could not load thesaurus index", e); }
+      catch (e) { errorHandlingService.logError(e, { operation: "load thesaurus index" }); }
 
       const allTags = tags ?? [];
       const contextUserTags = allTags.filter((t) => t.source === "user" && t.segmentId === targetSegmentId);
@@ -90,8 +97,10 @@ export class TaggingWorkflowService {
 
       return { ok: true, notice: { message: "Classification completed.", tone: "success" }, tags: [...filteredTags, ...newTags] };
 
-    } catch {
-      return { ok: false, notice: { message: "Failed to classify text.", tone: "error" } };
+    } catch (error) {
+      const appError = errorHandlingService.handleApiError(error, { operation: "classify text" });
+      errorHandlingService.logError(appError);
+      return { ok: false, notice: { message: appError.message, tone: "error" } };
     }
   }
 
@@ -123,8 +132,10 @@ export class TaggingWorkflowService {
       };
 
       return { ok: true, notice: { message: "Tag added successfully.", tone: "success" }, tags: [newTag, ...allTags] };
-    } catch {
-      return { ok: false, notice: { message: "Failed to add tag.", tone: "error" } };
+    } catch (error) {
+      const appError = errorHandlingService.handleApiError(error, { operation: "add custom tag" });
+      errorHandlingService.logError(appError);
+      return { ok: false, notice: { message: appError.message, tone: "error" } };
     }
   }
 

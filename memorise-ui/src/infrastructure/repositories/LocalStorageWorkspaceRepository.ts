@@ -1,12 +1,15 @@
 import { readJSON, writeJSON, removeItem } from "../storage/localStorageHelpers";
-import type { WorkspaceRepository } from "../../core/interfaces/repositories/WorkspaceRepository";
+import type { WorkspaceRepository } from "../../core/interfaces/WorkspaceRepository";
 import { Workspace } from "../../core/entities/Workspace";
-import {
-  workspaceFromDto,
-  workspaceToPersistence,
-  type WorkspacePersistence,
-} from "../../core/entities/mappers";
-import type { Workspace as WorkspaceDTO, Translation, Segment } from "../../types";
+import type { WorkspaceDTO, TranslationDTO, Segment } from "../../types";
+
+/** Workspace DTO with required fields guaranteed — the shape written to localStorage */
+type WorkspacePersistence = WorkspaceDTO & {
+  owner: string;
+  text: string;
+  isTemporary: boolean;
+  updatedAt: number;
+};
 import { errorHandlingService } from "../services/ErrorHandlingService";
 
 const STORAGE_KEY = "memorise.workspaces";
@@ -16,6 +19,13 @@ const LEGACY_USER_PREFIX = `${LEGACY_BASE_KEY}:`;
 const EMPTY_LIST: WorkspacePersistence[] = [];
 const REPOSITORY_NAME = "LocalStorageWorkspaceRepository";
 
+/**
+ * WorkspaceRepository implementation backed by browser localStorage.
+ * Handles CRUD, legacy data migration, and segment metadata persistence.
+ * All operations are wrapped in errorHandlingService for consistent error handling.
+ *
+ * @category Infrastructure
+ */
 export class LocalStorageWorkspaceRepository implements WorkspaceRepository {
   async findById(id: string): Promise<Workspace | null> {
     return errorHandlingService.withRepositoryError(
@@ -54,16 +64,6 @@ export class LocalStorageWorkspaceRepository implements WorkspaceRepository {
     );
   }
 
-  async findAll(): Promise<Workspace[]> {
-    return errorHandlingService.withRepositoryError(
-      {
-        operation: "load workspaces",
-        repository: REPOSITORY_NAME,
-      },
-      () => this.readAll().map((ws) => this.toDomain(ws))
-    );
-  }
-
   async save(workspace: Workspace): Promise<void> {
     return errorHandlingService.withRepositoryError(
       {
@@ -98,20 +98,6 @@ export class LocalStorageWorkspaceRepository implements WorkspaceRepository {
         const workspaces = this.readAll();
         const next = workspaces.filter((ws) => ws.id !== id);
         this.writeAll(next);
-      }
-    );
-  }
-
-  async exists(id: string): Promise<boolean> {
-    return errorHandlingService.withRepositoryError(
-      {
-        operation: "check workspace",
-        repository: REPOSITORY_NAME,
-        workspaceId: id,
-      },
-      () => {
-        const workspaces = this.readAll();
-        return workspaces.some((ws) => ws.id === id);
       }
     );
   }
@@ -189,7 +175,7 @@ export class LocalStorageWorkspaceRepository implements WorkspaceRepository {
     };
   }
 
-  private sanitizeTranslation(translation: Partial<Translation>): Translation {
+  private sanitizeTranslation(translation: Partial<TranslationDTO>): TranslationDTO {
     const now = Date.now();
     return {
       language: translation?.language ?? "unknown",
@@ -214,12 +200,12 @@ export class LocalStorageWorkspaceRepository implements WorkspaceRepository {
   private normalize(workspace: Workspace): WorkspacePersistence {
     // Read existing workspace to preserve segments and segmentTranslations
     const existing = this.readAll().find((ws) => ws.id === workspace.id);
-    return this.sanitize(workspaceToPersistence(workspace, existing));
+    return this.sanitize(workspace.toDto(existing));
   }
 
    
   private toDomain(workspace: WorkspacePersistence): Workspace {
-    return workspaceFromDto(workspace);
+    return Workspace.fromDto(workspace);
   }
 
   async getRawPersistenceForOwner(ownerId: string): Promise<Array<{ id: string; segments?: Segment[] }>> {

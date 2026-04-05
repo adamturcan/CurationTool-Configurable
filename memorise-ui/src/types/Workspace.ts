@@ -3,45 +3,51 @@ import type { TagItem } from "./Tag";
 import type { Segment } from "./Segment";
 
 /**
- * Translation page within a workspace
- * Each translation represents the workspace text in a different language
- * Each translation has its own independent NER annotations
+ * Core workspace DTO persisted to localStorage.
+ * Contains source text, NER spans (user vs API), segments, tags, and translations.
+ *
+ * @category Types
  */
-export type Workspace = {
+export type WorkspaceDTO = {
   id: string;
   name: string;
   isTemporary?: boolean;
-  text?: string;               
-  userSpans?: NerSpan[];       
+  text?: string;
+  /** Manually created spans — kept separate from apiSpans for conflict resolution */
+  userSpans?: NerSpan[];
   apiSpans?: NerSpan[];
-  deletedApiKeys?: string[]; 
+  /** API span IDs the user dismissed, so they don't reappear on re-run */
+  deletedApiKeys?: string[];
   updatedAt?: number;
   owner?: string;
-  
-  tags?: TagItem[];            
-  segments?: Segment[];        
-  translations?: Translation[]; 
+
+  tags?: TagItem[];
+  segments?: Segment[];
+  translations?: TranslationDTO[];
 };
 
 /**
- * Translation Page
- * Inherits structure from Workspace.segments. 
- * Only stores language-specific strings and language-specific NER spans.
+ * Per-language translation page. Mirrors workspace segment structure
+ * but with language-specific text and independent NER spans.
+ *
+ * @category Types
  */
-export type Translation = {
-  language: string;        
-  text: string;            
-  sourceLang: string;      
-  createdAt: number;       
-  updatedAt: number;       
-  
-  userSpans?: NerSpan[];   
-  apiSpans?: NerSpan[];    
+export type TranslationDTO = {
+  language: string;
+  text: string;
+  sourceLang: string;
+  createdAt: number;
+  updatedAt: number;
+
+  userSpans?: NerSpan[];
+  apiSpans?: NerSpan[];
   deletedApiKeys?: string[];
-  
+
+  /** Translated strings keyed by original segment ID */
   segmentTranslations?: {
-    [segmentId: string]: string;  
+    [segmentId: string]: string;
   };
+  /** Tracks which segment translations were manually edited */
   editedSegmentTranslations?: {
     [segmentId: string]: boolean;
   };

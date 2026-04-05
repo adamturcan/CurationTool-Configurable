@@ -1,10 +1,11 @@
 import { useState, useCallback } from "react";
 import type { ActionGuardDialogProps, ResolutionStep } from "../components/editor/dialogs";
-import type { Translation, Segment } from "../../types";
+import type { TranslationDTO, Segment } from "../../types";
 
 // Gap detection helpers
 
-export type TranslationGap = {
+/** Identifies a missing translation for a specific segment and language */
+type TranslationGap = {
   lang: string;
   segmentId: string;
   segmentOrder: number;
@@ -16,7 +17,7 @@ export type TranslationGap = {
 function detectIrregularTranslations(
   segmentIds: string[],
   segments: Segment[],
-  translations: Translation[]
+  translations: TranslationDTO[]
 ): TranslationGap[] {
   const gaps: TranslationGap[] = [];
   const orderMap = new Map(segments.map(s => [s.id, s.order]));
@@ -47,7 +48,7 @@ function detectIrregularTranslations(
  */
 function findSegmentTranslations(
   segmentId: string,
-  translations: Translation[]
+  translations: TranslationDTO[]
 ): string[] {
   return translations
     .filter(t => !!t.segmentTranslations?.[segmentId]?.trim())
@@ -63,7 +64,7 @@ function findSegmentTranslations(
 function detectUntranslated(
   segmentIds: string[],
   segments: Segment[],
-  translations: Translation[]
+  translations: TranslationDTO[]
 ): TranslationGap[] {
   const gaps: TranslationGap[] = [];
   const orderMap = new Map(segments.map(s => [s.id, s.order]));
@@ -92,6 +93,7 @@ function detectUntranslated(
 
 // Hook
 
+/** Callbacks injected by the consumer to keep the hook decoupled from services */
 export interface ActionGuardActions {
   /** Translate a single segment — injected by the consumer so the hook stays decoupled from services. */
   translateSegment: (segmentId: string, lang: string) => Promise<void>;
@@ -99,19 +101,20 @@ export interface ActionGuardActions {
   deleteSegmentTranslation: (lang: string, segmentId: string) => void;
 }
 
-export interface UseActionGuardReturn {
+/** Return type for the useActionGuard hook */
+interface UseActionGuardReturn {
   guardJoin: (
     seg1Id: string,
     seg2Id: string,
     segments: Segment[],
-    translations: Translation[],
+    translations: TranslationDTO[],
     onProceed: () => void
   ) => void;
 
   guardSplit: (
     segmentId: string,
     segments: Segment[],
-    translations: Translation[],
+    translations: TranslationDTO[],
     onProceed: () => void
   ) => void;
 
@@ -119,7 +122,7 @@ export interface UseActionGuardReturn {
     sourceSegId: string,
     targetPos: number,
     segments: Segment[],
-    translations: Translation[],
+    translations: TranslationDTO[],
     onProceed: () => void
   ) => void;
 
@@ -132,6 +135,7 @@ export interface UseActionGuardReturn {
   closeDialog: () => void;
 }
 
+/** Guards segment operations (join/split/shift) by detecting translation conflicts and prompting resolution */
 export function useActionGuard(actions: ActionGuardActions): UseActionGuardReturn {
   const [dialogProps, setDialogProps] = useState<ActionGuardDialogProps | null>(null);
 
@@ -144,7 +148,7 @@ export function useActionGuard(actions: ActionGuardActions): UseActionGuardRetur
       seg1Id: string,
       seg2Id: string,
       segments: Segment[],
-      translations: Translation[],
+      translations: TranslationDTO[],
       onProceed: () => void
     ) => {
       if (!translations.length) {
@@ -187,7 +191,7 @@ export function useActionGuard(actions: ActionGuardActions): UseActionGuardRetur
     (
       segmentId: string,
       segments: Segment[],
-      translations: Translation[],
+      translations: TranslationDTO[],
       onProceed: () => void
     ) => {
       const langs = findSegmentTranslations(segmentId, translations);
@@ -229,7 +233,7 @@ export function useActionGuard(actions: ActionGuardActions): UseActionGuardRetur
       sourceSegId: string,
       targetPos: number,
       segments: Segment[],
-      translations: Translation[],
+      translations: TranslationDTO[],
       onProceed: () => void
     ) => {
       if (!translations.length) {

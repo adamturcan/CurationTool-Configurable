@@ -1,19 +1,25 @@
-import type { NerSpan } from "../../../types";
-import { Annotation } from "../../entities/Annotation";
+/**
+ * Resolves conflicts when new API spans overlap existing user or API spans.
+ * Walks each incoming span, detects overlaps, and prompts the user to choose
+ * which to keep via an async callback. Non-conflicting spans are auto-accepted.
+ *
+ * @category Services
+ */
+import type { NerSpan } from "../../types";
 
 const keyOfSpan = (s: NerSpan) => `${s.start}:${s.end}:${s.entity}`;
-
-const spansOverlap = (a: NerSpan, b: NerSpan) =>
-  Annotation.fromSpan(a).overlapsWith(Annotation.fromSpan(b));
+const spansOverlap = (a: NerSpan, b: NerSpan) => a.start < b.end && b.start < a.end;
 
 export type ConflictSource = "user" | "api";
 
+/** A single span involved in a conflict, with a text snippet for display */
 export interface ConflictEntry {
   span: NerSpan;
   snippet: string;
   source: ConflictSource;
 }
 
+/** Data passed to the UI dialog for each conflict — user picks "api" or "existing" */
 export interface ConflictPrompt {
   candidate: ConflictEntry;
   conflicts: ConflictEntry[];
@@ -21,26 +27,19 @@ export interface ConflictPrompt {
   total: number;
 }
 
-export interface ResolveApiSpanConflictsParams {
+export const resolveApiSpanConflicts = async (params: {
   text: string;
   incomingSpans: NerSpan[];
   userSpans: NerSpan[];
   existingApiSpans: NerSpan[];
   onConflict: (prompt: ConflictPrompt) => Promise<"api" | "existing">;
-}
-
-export interface ResolveApiSpanConflictsResult {
-  nextUserSpans: NerSpan[];
-  nextApiSpans: NerSpan[];
-  conflictsHandled: number;
-}
-
-export const resolveApiSpanConflicts = async (
-  params: ResolveApiSpanConflictsParams
-): Promise<ResolveApiSpanConflictsResult> => {
+}): Promise<{ nextUserSpans: NerSpan[]; nextApiSpans: NerSpan[]; conflictsHandled: number }> => {
   const { text, incomingSpans, userSpans, existingApiSpans, onConflict } = params;
 
+  // Mutable copy of user spans — entries may be removed if user chooses "api"
   let nextUserSpans = [...userSpans];
+
+  // Track retained existing API spans by key — removals happen during conflict resolution
   const retainedApiMap = new Map<string, NerSpan>();
   existingApiSpans.forEach((span) => {
     retainedApiMap.set(keyOfSpan(span), span);
@@ -48,6 +47,7 @@ export const resolveApiSpanConflicts = async (
 
   const acceptedNewApiSpans: NerSpan[] = [];
 
+  // Pre-count user conflicts for progress indicator in the dialog
   const totalUserConflicts = incomingSpans.reduce((count, candidate) => {
     if (userSpans.some((existing) => spansOverlap(candidate, existing))) {
       return count + 1;
@@ -62,32 +62,32 @@ export const resolveApiSpanConflicts = async (
     const conflictingUserSpans = nextUserSpans.filter((existing) =>
       spansOverlap(candidate, existing)
     );
-
     const conflictingApiSpans = Array.from(retainedApiMap.values()).filter((existing) =>
       spansOverlap(candidate, existing)
     );
 
+    // No conflicts — auto-accept the incoming span
     if (conflictingUserSpans.length === 0 && conflictingApiSpans.length === 0) {
       acceptedNewApiSpans.push(candidate);
       continue;
     }
 
+    // Only API-vs-API conflict with same entity type — silently replace (no user prompt)
     if (conflictingUserSpans.length === 0) {
       const hasEntityChange = conflictingApiSpans.some(
         (existing) => existing.entity !== candidate.entity
       );
 
       if (!hasEntityChange) {
-
         conflictingApiSpans.forEach((span) => {
           retainedApiMap.delete(keyOfSpan(span));
         });
         acceptedNewApiSpans.push(candidate);
         continue;
       }
-
     }
 
+    // Real conflict — prompt the user to choose
     conflictIndex += 1;
     conflictsHandled += 1;
 
@@ -115,6 +115,7 @@ export const resolveApiSpanConflicts = async (
 
     const choice = await onConflict(conflictPrompt);
 
+    // User chose the new API span — remove all conflicting spans it replaces
     if (choice === "api") {
       if (conflictingUserSpans.length > 0) {
         const toRemove = new Set(conflictingUserSpans.map((span) => keyOfSpan(span)));
@@ -133,6 +134,7 @@ export const resolveApiSpanConflicts = async (
     }
   }
 
+  // Merge retained existing API spans with newly accepted ones, deduped by key
   const finalApiMap = new Map<string, NerSpan>();
   retainedApiMap.forEach((span, key) => finalApiMap.set(key, span));
   acceptedNewApiSpans.forEach((span) => finalApiMap.set(keyOfSpan(span), span));

@@ -1,16 +1,23 @@
-import type { Segment } from "./Segment";
-
-
+/**
+ * A single NER annotation defined by character offsets within the text.
+ * Entity types follow the categories in `notationEditor.ts` constants (PER, LOC, ORG, etc.).
+ *
+ * @category Types
+ */
 export type NerSpan = {
   id?: string;
   origin?: 'api' | 'user';
-
+  /** Character offset where the span starts (0-based) */
   start: number;
+  /** Character offset where the span ends (exclusive) */
   end: number;
+  /** NER entity type (PER, LOC, ORG, DATE, CAMP, GHETTO, MISC) */
   entity: string;
+  /** Confidence score from the NER API (0–1), undefined for user-created spans */
   score?: number;
 };
 
+/** Text selection position with screen coordinates for positioning context menus */
 export type SelectionBox = {
   start: number;
   end: number;
@@ -18,47 +25,10 @@ export type SelectionBox = {
   left: number;
 };
 
+/** Maps span IDs to their current character offsets — used for fast coordinate lookups */
 export type SpanCoordMap = Map<string, { start: number; end: number }>;
 
-export type SpanBox = {
-  top: number;
-  left: number;
-  span: NerSpan;
-};
-
-export type DeletionWarningBox = {
-  top: number;
-  left: number;
-  affectedSpans: NerSpan[];
-};
-
-export type LeafInfo = {
-  path: number[];
-  gStart: number;
-  gEnd: number;
-  len: number
-};
-
-export interface NotationEditorProps {
-  value: string;
-  onChange: (text: string) => void;
-  placeholder?: string;
-  spans?: NerSpan[];
-  onDeleteSpan?: (span: NerSpan) => void;
-  highlightedCategories?: string[];
-  onSelectionChange?: (sel: { start: number; end: number } | null) => void;
-  onSpansAdjusted?: (next: NerSpan[]) => void;
-  onSegmentsAdjusted?: (next: Segment[]) => void;
-  deletableKeys?: Set<string>;
-  onAddSpan?: (span: NerSpan) => void;
-  segments?: Segment[];
-  activeSegmentId?: string;
-
-  viewMode?: "document" | "segments";
-}
-
-
-
+/** Props for the entity category picker menu */
 export interface CategoryMenuProps {
   anchorEl: HTMLElement | null;
   open?: boolean;
@@ -67,9 +37,4 @@ export interface CategoryMenuProps {
   onMouseDown?: (event: React.MouseEvent) => void;
   showDelete?: boolean;
   onDelete?: () => void;
-}
-
-export interface EditorContainerProps {
-  children: React.ReactNode;
-  containerRef: React.RefObject<HTMLDivElement | null>;
 }

@@ -61,13 +61,14 @@ const MODE_ICON: Record<ActionGuardMode, React.ReactNode> = {
 };
 
 const MODE_TITLE_COLOR: Record<ActionGuardMode, string> = {
-  block: "#DC2626",  // error.main
-  confirm: "#ed6c02", // warning.main
+  block: "error.main",
+  confirm: "warning.main",
   resolution: ENTITY_COLORS.DATE,
 };
 
 // Component
 
+/** Renders a multi-mode guard dialog for blocking, confirming, or resolving destructive actions */
 const ActionGuardDialog: React.FC<ActionGuardDialogProps> = ({
   open,
   onClose,

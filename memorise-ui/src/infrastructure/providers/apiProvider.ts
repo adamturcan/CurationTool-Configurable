@@ -1,5 +1,11 @@
+/**
+ * Singleton provider for ApiService. Supports DI overrides for testing.
+ * Production code uses getApiService().
+ *
+ * @category Infrastructure
+ */
 import { BrowserApiService } from '../services/BrowserApiService';
-import type { ApiService } from '../../core/interfaces/services/ApiService';
+import type { ApiService } from '../../core/interfaces/ApiService';
 
 export interface ApiProviderOverrides {
   apiService?: ApiService;

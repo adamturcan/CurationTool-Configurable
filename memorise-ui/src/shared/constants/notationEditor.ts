@@ -1,3 +1,5 @@
+/** NER entity colors, category list, and hex-to-rgba helper for the notation editor. */
+
 /** visible entity colors */
 export const ENTITY_COLORS: Record<string, string> = {
   PER: "#C2185B",      // Person (magenta)
@@ -14,6 +16,7 @@ export const ENTITY_COLORS: Record<string, string> = {
 export const CATEGORY_LIST = ["PER", "LOC", "GHETTO", "DATE", "ORG", "CAMP"] as const;
 
 
+/** Convert a hex color string to an rgba() CSS value. */
 export const hexToRgba = (hex: string, alpha: number) => {
   const h = hex.replace("#", "");
   const bigint = parseInt(h, 16);

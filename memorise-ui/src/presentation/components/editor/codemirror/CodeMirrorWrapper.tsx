@@ -22,6 +22,7 @@ interface Props {
   onDropTextPosition?: (localOffset: number, dataTransfer: DataTransfer) => void;
 }
 
+/** Wraps CodeMirror with NER span decorations, selection handling, and drag-drop support */
 export const CodeMirrorWrapper: React.FC<Props> = ({
   value, spans, onChange, onSpanClick, onSelectionChange, placeholder, onDropTextPosition
 }) => {

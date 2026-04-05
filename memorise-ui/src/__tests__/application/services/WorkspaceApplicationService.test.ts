@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { WorkspaceApplicationService } from '@/application/services/WorkspaceApplicationService';
-import type { WorkspaceRepository } from '@/core/interfaces/repositories/WorkspaceRepository';
+import type { WorkspaceRepository } from '@/core/interfaces/WorkspaceRepository';
 import { Workspace } from '@/core/entities/Workspace';
 
 class InMemoryWorkspaceRepository implements WorkspaceRepository {
@@ -14,20 +14,12 @@ class InMemoryWorkspaceRepository implements WorkspaceRepository {
     return Array.from(this.store.values()).filter((ws) => ws.owner === ownerId);
   }
 
-  async findAll() {
-    return Array.from(this.store.values());
-  }
-
   async save(workspace: Workspace) {
     this.store.set(workspace.id, workspace);
   }
 
   async delete(id: string) {
     this.store.delete(id);
-  }
-
-  async exists(id: string) {
-    return this.store.has(id);
   }
 }
 

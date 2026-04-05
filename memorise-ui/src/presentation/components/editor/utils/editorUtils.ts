@@ -1,3 +1,4 @@
+/** Utility functions for span identification, text extraction, and delimiter detection */
 import type { NerSpan } from "../../../../types";
 
 export const SPLIT_DELIMITERS = ["!", "?", ".", "-", ",", ":"];

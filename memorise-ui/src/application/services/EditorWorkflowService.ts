@@ -1,19 +1,26 @@
-import { SpanLogic } from "../../core/domain/entities/SpanLogic";
-import { SegmentLogic } from "../../core/domain/entities/SegmentLogic";
-import type { NerSpan, AnnotationLayer, Segment, Workspace, SpanCoordMap, WorkflowResult } from "../../types";
+import { SpanLogic } from "../../core/entities/SpanLogic";
+import { SegmentLogic } from "../../core/entities/SegmentLogic";
+import type { NerSpan, AnnotationLayer, Segment, WorkspaceDTO, SpanCoordMap, WorkflowResult } from "../../types";
 import { getWorkspaceApplicationService } from "../../infrastructure/providers/workspaceProvider";
 
-export type TextChangeResult = {
+type TextChangeResult = {
   draftText: string;
   layerPatch: Partial<AnnotationLayer> & { segments?: Segment[]; segmentTranslations?: Record<string, string>; editedSegmentTranslations?: Record<string, boolean> };
   lang: string;
 }
 
-export type SaveResult = WorkflowResult & {
+type SaveResult = WorkflowResult & {
   sessionPatch?: { text: string; isDirty: false };
   workspaceMetadataPatch?: { updatedAt: number };
 }
 
+/**
+ * Text editing workflow: syncs live span coordinates from CodeMirror,
+ * updates segment boundaries after edits, and persists via save.
+ * Handles both original text and translation layer edits.
+ *
+ * @category Application
+ */
 export class EditorWorkflowService {
 
   handleTextChange(
@@ -136,7 +143,7 @@ export class EditorWorkflowService {
     };
   }
 
-  async saveWorkspace(session: Workspace, draftText: string): Promise<SaveResult> {
+  async saveWorkspace(session: WorkspaceDTO, draftText: string): Promise<SaveResult> {
     if (!session || !session.id) {
       return { ok: false, notice: { message: "No active workspace to save.", tone: "error" } };
     }

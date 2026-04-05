@@ -30,6 +30,7 @@ interface Props {
 
 const SEPARATORS = ['.', ',', ':', ';', '!', '?', '—', '–'];
 
+/** Renders a dialog for choosing a split point within a text segment */
 const SplitSegmentDialog: React.FC<Props> = ({
   open,
   segment,

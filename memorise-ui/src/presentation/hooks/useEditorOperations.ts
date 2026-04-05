@@ -9,14 +9,13 @@ import { segmentWorkflowService } from "../../application/services/SegmentWorkfl
 import { editorWorkflowService } from "../../application/services/EditorWorkflowService";
 import { taggingWorkflowService } from "../../application/services/TaggingWorkflowService";
 import { translationWorkflowService } from "../../application/services/TranslationWorkflowService";
-import { SegmentLogic } from "../../core/domain/entities/SegmentLogic";
-import { SpanLogic } from "../../core/domain/entities/SpanLogic";
 
 import type { AnnotationLayer, SpanCoordMap } from "../../types";
 import type { useLayerOperations } from "./useLayerOperations";
 
 type LayerOps = ReturnType<typeof useLayerOperations>;
 
+/** Coordinates API calls for NER, segmentation, translation, tagging, and save */
 export function useEditorOperations(layers: LayerOps) {
   const { resolveLayer, applyLayerPatch } = layers;
 
@@ -86,29 +85,16 @@ export function useEditorOperations(layers: LayerOps) {
   }, [session, updateTranslations, setActiveTab, notify, handleError]);
 
   const handleDeleteSegmentTranslation = useCallback((lang: string, segmentId: string) => {
-    const currentLayer = session?.translations?.find(t => t.language === lang);
-    if (currentLayer) {
-      const oldSegTrans = currentLayer.segmentTranslations || {};
-      const deletedText = oldSegTrans[segmentId] || "";
-      const deletedStart = SegmentLogic.calculateGlobalOffset(segmentId, session?.segments || [], oldSegTrans);
-      const deletedEnd = deletedStart + deletedText.length;
-
-      const newSegs = { ...oldSegTrans };
-      delete newSegs[segmentId];
-
-      const newFullText = (session?.segments || []).map(s => newSegs[s.id] || "").join("");
-
-      let nextUserSpans = SpanLogic.removeSpansInRange(currentLayer.userSpans || [], deletedStart, deletedEnd);
-      nextUserSpans = SpanLogic.shiftSpansFrom(nextUserSpans, deletedEnd, -deletedText.length);
-      let nextApiSpans = SpanLogic.removeSpansInRange(currentLayer.apiSpans || [], deletedStart, deletedEnd);
-      nextApiSpans = SpanLogic.shiftSpansFrom(nextApiSpans, deletedEnd, -deletedText.length);
-
-      const translations = (session?.translations || []).map(t =>
-        t.language === lang ? { ...t, segmentTranslations: newSegs, text: newFullText, userSpans: nextUserSpans, apiSpans: nextApiSpans } : t
-      );
-      sessionStore.updateSession({ translations });
+    if (!session) return;
+    const result = translationWorkflowService.deleteSegmentTranslation(lang, segmentId, {
+      segments: session.segments || [],
+      translations: session.translations || [],
+    });
+    if (result.ok && result.translationsPatch) {
+      updateTranslations(result.translationsPatch);
     }
-  }, [session, sessionStore]);
+    notify(result.notice);
+  }, [session, updateTranslations, notify]);
 
   const handleUpdateSegmentTranslation = useCallback(async (segmentId: string, lang: string) => {
     if (!session) return;

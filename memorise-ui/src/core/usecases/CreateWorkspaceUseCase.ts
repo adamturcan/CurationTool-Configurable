@@ -1,12 +1,12 @@
-import type { WorkspaceRepository } from '../../interfaces/repositories/WorkspaceRepository';
-import { Workspace, WorkspaceTranslation } from '../../entities/Workspace';
-import { Tag } from '../../entities/Tag';
-import type { TagItem, Translation, NerSpan } from '../../../types';
-import { errorHandlingService } from '../../../infrastructure/services/ErrorHandlingService';
-import { requireOwnerId, requireWorkspaceName } from '../shared/validators';
+import type { WorkspaceRepository } from '../interfaces/WorkspaceRepository';
+import { Workspace } from '../entities/Workspace';
+import type { TagItem, TranslationDTO, NerSpan } from '../../types';
+import { errorHandlingService } from '../../infrastructure/services/ErrorHandlingService';
+import { requireOwnerId, requireWorkspaceName } from './validators';
 
 const OPERATION = 'CreateWorkspaceUseCase';
 
+/** All fields except ownerId and name are optional — defaults to empty/temporary workspace */
 export interface CreateWorkspaceRequest {
   ownerId: string;
   name: string;
@@ -17,10 +17,11 @@ export interface CreateWorkspaceRequest {
   apiSpans?: NerSpan[];
   deletedApiKeys?: string[];
   tags?: TagItem[];
-  translations?: Translation[];
+  translations?: TranslationDTO[];
   updatedAt?: number;
 }
 
+/** Creates a new workspace with defaults, persists it, and returns the entity */
 export class CreateWorkspaceUseCase {
   private readonly workspaceRepository: WorkspaceRepository;
 
@@ -44,18 +45,8 @@ export class CreateWorkspaceUseCase {
         userSpans: request.userSpans ?? [],
         apiSpans: request.apiSpans ?? [],
         deletedApiKeys: request.deletedApiKeys ?? [],
-        tags: request.tags?.map((tag) =>
-          Tag.create({
-            name: tag.name,
-            source: tag.source,
-            label: tag.label,
-            parentId: tag.parentId,
-            segmentId: tag.segmentId,
-          })
-        ),
-        translations: request.translations?.map((translation) =>
-          WorkspaceTranslation.create(translation)
-        ),
+        tags: request.tags,
+        translations: request.translations,
       });
 
       await this.workspaceRepository.save(workspace);

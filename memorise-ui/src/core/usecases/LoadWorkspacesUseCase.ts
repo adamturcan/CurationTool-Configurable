@@ -1,5 +1,5 @@
-import type { WorkspaceRepository } from '../../interfaces/repositories/WorkspaceRepository';
-import { requireOwnerId } from '../shared/validators';
+import type { WorkspaceRepository } from '../interfaces/WorkspaceRepository';
+import { requireOwnerId } from './validators';
 
 const OPERATION = 'LoadWorkspacesUseCase';
 
@@ -7,6 +7,7 @@ export interface LoadWorkspacesRequest {
   ownerId: string;
 }
 
+/** Loads all workspaces for a given owner from the repository */
 export class LoadWorkspacesUseCase {
   private readonly workspaceRepository: WorkspaceRepository;
 

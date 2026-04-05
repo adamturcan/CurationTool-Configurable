@@ -1,17 +1,25 @@
-import { SegmentLogic } from "../../core/domain/entities/SegmentLogic";
-import { SpanLogic } from "../../core/domain/entities/SpanLogic";
+import { SegmentLogic } from "../../core/entities/SegmentLogic";
+import { SpanLogic } from "../../core/entities/SpanLogic";
 import { getApiService } from "../../infrastructure/providers/apiProvider";
-import type { SessionPatch, Translation, Segment, WorkflowResult } from "../../types";
+import { errorHandlingService } from "../../infrastructure/services/ErrorHandlingService";
+import type { SessionPatch, TranslationDTO, Segment, WorkflowResult } from "../../types";
 
-export type SegmentationResult = WorkflowResult & {
+type SegmentationResult = WorkflowResult & {
   patch?: SessionPatch;
 }
 
 
+/**
+ * Segment operations: auto-segmentation via API, split, join, and
+ * boundary drag. Each method updates both master segments and all
+ * translation layers (span coordinates, segment translations, full text).
+ *
+ * @category Application
+ */
 export class SegmentWorkflowService {
   private apiService = getApiService();
 
-  async runAutoSegmentation(session: { text?: string, translations?: Translation[], segments?: Segment[] }, activeTab: string): Promise<SegmentationResult> {
+  async runAutoSegmentation(session: { text?: string, translations?: TranslationDTO[], segments?: Segment[] }, activeTab: string): Promise<SegmentationResult> {
     const { text, translations, segments } = session;
 
     if ((segments?.length ?? 0) > 1) {
@@ -64,17 +72,19 @@ export class SegmentWorkflowService {
         notice: { message: `Auto-segmented into ${newSegments.length} segment(s).`, tone: "success" }
       };
 
-    } catch {
+    } catch (error) {
+      const appError = errorHandlingService.handleApiError(error, { operation: "segment text" });
+      errorHandlingService.logError(appError);
       return {
         ok: false,
-        notice: { message: "Segmentation analysis failed.", tone: "error" }
+        notice: { message: appError.message, tone: "error" }
       };
     }
   }
 
 
 
-  joinSegments(segment1Id: string, segment2Id: string, session: { translations: Translation[], segments: Segment[] }): SegmentationResult {
+  joinSegments(segment1Id: string, segment2Id: string, session: { translations: TranslationDTO[], segments: Segment[] }): SegmentationResult {
     const { segments, translations } = session;
 
     if (!segments) {
@@ -137,7 +147,7 @@ export class SegmentWorkflowService {
     };
   }
 
-  splitSegment(position: number, session: { text: string, translations: Translation[], segments: Segment[] }, activeSegmentId: string): SegmentationResult {
+  splitSegment(position: number, session: { text: string, translations: TranslationDTO[], segments: Segment[] }, activeSegmentId: string): SegmentationResult {
     const { segments, translations, text } = session;
 
     if (!segments || !activeSegmentId) {
@@ -165,10 +175,9 @@ export class SegmentWorkflowService {
       delete nextDict[activeSegmentId];
       const nextFullText = updatedSegments.map(s => nextDict[s.id] || "").join("");
 
-      let nextUserSpans = SpanLogic.removeSpansInRange(translation.userSpans || [], deletedStart, deletedEnd);
-      nextUserSpans = SpanLogic.shiftSpansFrom(nextUserSpans, deletedEnd, -deletedText.length);
-      let nextApiSpans = SpanLogic.removeSpansInRange(translation.apiSpans || [], deletedStart, deletedEnd);
-      nextApiSpans = SpanLogic.shiftSpansFrom(nextApiSpans, deletedEnd, -deletedText.length);
+      const { nextUserSpans, nextApiSpans } = SpanLogic.removeAndShiftBoth(
+        translation.userSpans || [], translation.apiSpans || [], deletedStart, deletedEnd, -deletedText.length
+      );
 
       return { ...translation, segmentTranslations: nextDict, text: nextFullText, userSpans: nextUserSpans, apiSpans: nextApiSpans };
     });
@@ -183,7 +192,7 @@ export class SegmentWorkflowService {
     };
   }
 
-  async shiftSegmentBoundary(sourceSegmentId: string, globalTargetPosition: number, session: { text: string, translations: Translation[], segments: Segment[] }): Promise<SegmentationResult> {
+  async shiftSegmentBoundary(sourceSegmentId: string, globalTargetPosition: number, session: { text: string, translations: TranslationDTO[], segments: Segment[] }): Promise<SegmentationResult> {
     const { segments, translations, text } = session;
 
     if (!segments) {
@@ -236,7 +245,7 @@ export class SegmentWorkflowService {
       })
       .map(s => s.id);
 
-    let updatedTranslations: Translation[];
+    let updatedTranslations: TranslationDTO[];
 
     if (isForwardShift && translations.length > 0 && updatedSource) {
       updatedTranslations = await Promise.all(
@@ -268,7 +277,8 @@ export class SegmentWorkflowService {
               });
               nextDict[sourceSegmentId] = res.translatedText;
               nextEdited[sourceSegmentId] = anyEdited;
-            } catch {
+            } catch (error) {
+              errorHandlingService.logError(error, { operation: "re-translate shifted segment" });
               delete nextDict[sourceSegmentId];
               delete nextEdited[sourceSegmentId];
             }
@@ -290,10 +300,9 @@ export class SegmentWorkflowService {
           const newSourceText = nextDict[sourceSegmentId] || "";
           const lengthDelta = newSourceText.length - oldAffectedLen;
 
-          let nextUserSpans = SpanLogic.removeSpansInRange(translation.userSpans || [], oldSourceStart, oldAffectedEnd);
-          nextUserSpans = SpanLogic.shiftSpansFrom(nextUserSpans, oldAffectedEnd, lengthDelta);
-          let nextApiSpans = SpanLogic.removeSpansInRange(translation.apiSpans || [], oldSourceStart, oldAffectedEnd);
-          nextApiSpans = SpanLogic.shiftSpansFrom(nextApiSpans, oldAffectedEnd, lengthDelta);
+          const { nextUserSpans, nextApiSpans } = SpanLogic.removeAndShiftBoth(
+            translation.userSpans || [], translation.apiSpans || [], oldSourceStart, oldAffectedEnd, lengthDelta
+          );
 
           return { ...translation, segmentTranslations: nextDict, editedSegmentTranslations: nextEdited, text: nextFullText, userSpans: nextUserSpans, apiSpans: nextApiSpans };
         })

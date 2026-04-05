@@ -1,8 +1,15 @@
-import type { NerSpan, SpanCoordMap } from "../../../types";
+import type { NerSpan, SpanCoordMap } from "../../types";
 
+/**
+ * Pure functions for NER span coordinate math. Handles offset translations
+ * between global (full text) and local (per-segment) coordinate spaces,
+ * and span shifting/removal when text is edited.
+ *
+ * @category Entities
+ */
 export const SpanLogic = {
 
-
+  /** Extracts spans within a segment's range and converts to local (0-based) offsets */
   getLocalSpansForSegment: (
     allSpans: NerSpan[],
     globalStart: number,
@@ -17,7 +24,7 @@ export const SpanLogic = {
       }));
   },
 
-
+  /** Updates span positions from CodeMirror's live coordinates, tracking which spans were shifted */
   syncLiveCoords: (
     spans: NerSpan[],
     liveCoords: SpanCoordMap,
@@ -39,10 +46,7 @@ export const SpanLogic = {
     });
   },
 
-
-  /**
-   * Shift all spans at or after `boundary` by `delta` positions.
-   */
+  /** Shifts all spans at or after `boundary` by `delta` character positions */
   shiftSpansFrom: (
     spans: NerSpan[],
     boundary: number,
@@ -59,9 +63,7 @@ export const SpanLogic = {
     });
   },
 
-  /**
-   * Remove spans that overlap the given range.
-   */
+  /** Removes spans that overlap the given character range */
   removeSpansInRange: (
     spans: NerSpan[],
     rangeStart: number,
@@ -70,6 +72,7 @@ export const SpanLogic = {
     return spans.filter(s => s.end <= rangeStart || s.start >= rangeEnd);
   },
 
+  /** Shifts spans after a text edit, skipping those already handled by syncLiveCoords */
   shiftSpansAfterEdit: (
     spans: NerSpan[],
     editGlobalEndIndex: number,
@@ -89,5 +92,20 @@ export const SpanLogic = {
       if (newStart !== s.start || newEnd !== s.end) return { ...s, start: newStart, end: newEnd };
       return s;
     });
+  },
+
+  /** Removes overlapping spans and shifts remaining spans for both user and API layers at once */
+  removeAndShiftBoth: (
+    userSpans: NerSpan[],
+    apiSpans: NerSpan[],
+    rangeStart: number,
+    rangeEnd: number,
+    delta: number
+  ): { nextUserSpans: NerSpan[]; nextApiSpans: NerSpan[] } => {
+    let nextUserSpans = SpanLogic.removeSpansInRange(userSpans, rangeStart, rangeEnd);
+    nextUserSpans = SpanLogic.shiftSpansFrom(nextUserSpans, rangeEnd, delta);
+    let nextApiSpans = SpanLogic.removeSpansInRange(apiSpans, rangeStart, rangeEnd);
+    nextApiSpans = SpanLogic.shiftSpansFrom(nextApiSpans, rangeEnd, delta);
+    return { nextUserSpans, nextApiSpans };
   }
 };
