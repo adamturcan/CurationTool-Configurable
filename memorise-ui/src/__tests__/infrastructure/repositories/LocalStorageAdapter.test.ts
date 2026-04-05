@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { LocalStorageWorkspaceRepository } from '@/infrastructure/repositories/LocalStorageWorkspaceRepository';
+import { LocalStorageAdapter } from '@/infrastructure/repositories/LocalStorageAdapter';
 import { Workspace, type WorkspaceInput } from '@/core/entities/Workspace';
 
 const baseWorkspace = (overrides: Partial<WorkspaceInput> = {}): Workspace =>
@@ -18,13 +18,13 @@ const baseWorkspace = (overrides: Partial<WorkspaceInput> = {}): Workspace =>
     ...overrides,
   });
 
-describe("LocalStorageWorkspaceRepository", () => {
+describe("LocalStorageAdapter", () => {
   beforeEach(() => {
     window.localStorage.clear();
   });
 
   it("saves and retrieves workspaces by owner", async () => {
-    const repository = new LocalStorageWorkspaceRepository();
+    const repository = new LocalStorageAdapter();
     await repository.save(baseWorkspace());
     await repository.save(
       baseWorkspace({
@@ -50,7 +50,7 @@ describe("LocalStorageWorkspaceRepository", () => {
   });
 
   it("updates existing workspace", async () => {
-    const repository = new LocalStorageWorkspaceRepository();
+    const repository = new LocalStorageAdapter();
     await repository.save(baseWorkspace());
 
     await repository.save(
@@ -66,7 +66,7 @@ describe("LocalStorageWorkspaceRepository", () => {
   });
 
   it("deletes workspace", async () => {
-    const repository = new LocalStorageWorkspaceRepository();
+    const repository = new LocalStorageAdapter();
     await repository.save(baseWorkspace());
     await repository.save(
       baseWorkspace({
@@ -94,7 +94,7 @@ describe("LocalStorageWorkspaceRepository", () => {
       ])
     );
 
-    const repository = new LocalStorageWorkspaceRepository();
+    const repository = new LocalStorageAdapter();
     const migrated = await repository.findByOwner("user-legacy");
 
     expect(migrated).toHaveLength(1);
@@ -105,7 +105,7 @@ describe("LocalStorageWorkspaceRepository", () => {
 
   describe("Segments persistence", () => {
     it("saves and retrieves workspace with segments", async () => {
-      const repository = new LocalStorageWorkspaceRepository();
+      const repository = new LocalStorageAdapter();
       const segments = [
         {
           id: "seg-0",
@@ -146,7 +146,7 @@ describe("LocalStorageWorkspaceRepository", () => {
     });
 
     it("preserves segments when updating workspace", async () => {
-      const repository = new LocalStorageWorkspaceRepository();
+      const repository = new LocalStorageAdapter();
       const segments = [
         {
           id: "seg-0",
@@ -183,7 +183,7 @@ describe("LocalStorageWorkspaceRepository", () => {
     });
 
     it("preserves segmentTranslations in translations", async () => {
-      const repository = new LocalStorageWorkspaceRepository();
+      const repository = new LocalStorageAdapter();
       const workspace = baseWorkspace();
 
       // Save workspace
@@ -232,7 +232,7 @@ describe("LocalStorageWorkspaceRepository", () => {
     });
 
     it("handles workspace without segments (backward compatibility)", async () => {
-      const repository = new LocalStorageWorkspaceRepository();
+      const repository = new LocalStorageAdapter();
       await repository.save(baseWorkspace());
 
       const reloaded = await repository.findById("ws-1");
@@ -246,7 +246,7 @@ describe("LocalStorageWorkspaceRepository", () => {
     });
 
     it("loads segments from stored workspace DTO", async () => {
-      const repository = new LocalStorageWorkspaceRepository();
+      const repository = new LocalStorageAdapter();
       const segments = [
         {
           id: "seg-0",

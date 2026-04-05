@@ -17,7 +17,7 @@ const LEGACY_BASE_KEY = "memorise.workspaces.v1";
 const LEGACY_USER_PREFIX = `${LEGACY_BASE_KEY}:`;
 
 const EMPTY_LIST: WorkspacePersistence[] = [];
-const REPOSITORY_NAME = "LocalStorageWorkspaceRepository";
+const REPOSITORY_NAME = "LocalStorageAdapter";
 
 /**
  * WorkspaceRepository implementation backed by browser localStorage.
@@ -26,7 +26,7 @@ const REPOSITORY_NAME = "LocalStorageWorkspaceRepository";
  *
  * @category Infrastructure
  */
-export class LocalStorageWorkspaceRepository implements WorkspaceRepository {
+export class LocalStorageAdapter implements WorkspaceRepository {
   async findById(id: string): Promise<Workspace | null> {
     return errorHandlingService.withRepositoryError(
       {

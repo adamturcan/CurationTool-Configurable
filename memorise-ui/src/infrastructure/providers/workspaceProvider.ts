@@ -2,9 +2,14 @@
  * Singleton provider for WorkspaceApplicationService and its repository.
  * Supports DI overrides for testing. Production code uses getWorkspaceApplicationService().
  *
+ * Uses StorageGateway to route between LocalStorageAdapter (default) and
+ * RemoteAdapter (when VITE_BACKEND_URL is set).
+ *
  * @category Infrastructure
  */
-import { LocalStorageWorkspaceRepository } from '../repositories/LocalStorageWorkspaceRepository';
+import { StorageGateway } from '../gateways/StorageGateway';
+import { LocalStorageAdapter } from '../repositories/LocalStorageAdapter';
+import { RemoteAdapter } from '../repositories/RemoteAdapter';
 import type { WorkspaceRepository } from '../../core/interfaces/WorkspaceRepository';
 import { WorkspaceApplicationService } from '../../application/services/WorkspaceApplicationService';
 
@@ -37,7 +42,11 @@ export function resetWorkspaceProvider(): void {
 }
 
 function createDefaultRepository(): WorkspaceRepository {
-  return new LocalStorageWorkspaceRepository();
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  const adapter = backendUrl
+    ? new RemoteAdapter(backendUrl)
+    : new LocalStorageAdapter();
+  return new StorageGateway(adapter);
 }
 
 function ensureRepository(): WorkspaceRepository {
