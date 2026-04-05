@@ -12,7 +12,7 @@ let isReady = false;
 (async () => {
   try {
     const pathsToTry = [
-      '/NPRG045/thesaurus-index.json',  // Production base
+      '/DataCurationTool/thesaurus-index.json',  // Production base (GitHub Pages)
       '/thesaurus-index.json',          // Dev/no base
       './thesaurus-index.json',         // Relative
     ];

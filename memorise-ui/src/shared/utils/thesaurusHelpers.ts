@@ -27,7 +27,7 @@ export async function loadThesaurusIndex(): Promise<ThesaurusIndexItem[]> {
   if (thesaurusCache) return thesaurusCache;
   
   // Try multiple paths
-  const paths = ['/NPRG045/thesaurus-index.json', '/thesaurus-index.json'];
+  const paths = ['/DataCurationTool/thesaurus-index.json', '/thesaurus-index.json'];
   
   for (const path of paths) {
     try {
