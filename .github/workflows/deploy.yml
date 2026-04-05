@@ -17,55 +17,91 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  ci:
+  typecheck:
     runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: memorise-ui
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
           cache-dependency-path: memorise-ui/package-lock.json
+      - run: npm ci
+      - run: npx tsc --noEmit
 
-      - name: Install deps
-        run: npm ci
+  lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: memorise-ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: memorise-ui/package-lock.json
+      - run: npm ci
+      - run: npm run lint
 
-      - name: Typecheck
-        run: npx tsc --noEmit
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: memorise-ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: memorise-ui/package-lock.json
+      - run: npm ci
+      - run: npm run test -- --run --reporter=verbose
 
-      - name: Lint
-        run: npm run lint
-
-      - name: Test
-        run: npm run test -- --run --reporter=verbose
-
+  build:
+    needs: [typecheck, lint, test]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: memorise-ui
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: memorise-ui/package-lock.json
+      - run: npm ci
       - name: Build thesaurus index (if available)
         run: |
           if [ -f "public/thesaurus-full.json" ]; then
             npm run build:thesaurus
           fi
-
       - name: Build
         run: |
           npm run build
           cp dist/index.html dist/404.html
-
-      - name: Build Docker image
-        working-directory: memorise-ui
-        run: docker build -t memorise-ui:ci .
-
       - name: Upload Pages artifact
         if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@v3
         with:
           path: memorise-ui/dist
 
+  docker:
+    needs: [typecheck, lint, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build Docker image
+        working-directory: memorise-ui
+        run: docker build -t memorise-ui:ci .
+
   deploy:
-    needs: ci
+    needs: build
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment:
