@@ -6,3 +6,4 @@ export { useLayerOperations } from './useLayerOperations';
 export { useEditorOperations } from './useEditorOperations';
 export { useSpanInteractions } from './useSpanInteractions';
 export { useSegmentSplitMerge } from './useSegmentSplitMerge';
+export { useExportOperations } from './useExportOperations';

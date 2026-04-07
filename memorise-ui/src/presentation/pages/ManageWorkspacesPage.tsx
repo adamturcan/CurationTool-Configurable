@@ -28,8 +28,8 @@ import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import CodeIcon from "@mui/icons-material/Code";
 import type { TransitionProps } from "@mui/material/transitions";
 import type { WorkspaceMetadata } from "../../core/entities/Workspace";
-import { PdfExportService } from "../../infrastructure/services/PdfExportService";
 import { useWorkspaceStore } from "../stores";
+import { useExportOperations } from "../hooks";
 import { getWorkspaceApplicationService } from "../../infrastructure/providers/workspaceProvider";
 import { shadows } from "../../shared/theme";
 import { sx as sxUtil } from "../../shared/styles";
@@ -47,6 +47,7 @@ const ManageWorkspacesPage: React.FC = () => {
   const navigate = useNavigate();
 
   const workspaces = useWorkspaceStore((state) => state.workspaces);
+  const { handleExport } = useExportOperations();
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [draftName, setDraftName] = useState("");
@@ -111,65 +112,6 @@ const ManageWorkspacesPage: React.FC = () => {
     setDraftName("");
   };
 
-  const handleExport = async (metadata: WorkspaceMetadata) => {
-    try {
-      const service = getWorkspaceApplicationService();
-      const fullWorkspace = await service.getWorkspaceById(metadata.id);
-
-      if (!fullWorkspace) {
-        console.error(`Full workspace data not found for ID: ${metadata.id}`);
-        return;
-      }
-
-      const exportData = {
-        id: fullWorkspace.id,
-        name: fullWorkspace.name,
-        owner: fullWorkspace.owner,
-        text: fullWorkspace.text,
-        isTemporary: fullWorkspace.isTemporary,
-        updatedAt: fullWorkspace.updatedAt,
-        userSpans: fullWorkspace.userSpans,
-        apiSpans: fullWorkspace.apiSpans,
-        deletedApiKeys: fullWorkspace.deletedApiKeys,
-        tags: fullWorkspace.tags,
-        translations: fullWorkspace.translations,
-        segments: fullWorkspace.segments,
-        exportedAt: Date.now(),
-        exportVersion: "1.0",
-      };
-
-      const jsonString = JSON.stringify(exportData, null, 2);
-
-      const blob = new Blob([jsonString], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = url;
-      const sanitizedName = fullWorkspace.name.replace(/[^a-z0-9]/gi, "_");
-      link.download = `${sanitizedName}_${fullWorkspace.id}.json`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } catch (error) {
-      console.error('Failed to export workspace:', error);
-    }
-  };
-
-  const handleExportPdf = async (metadata: WorkspaceMetadata) => {
-    try {
-      const service = getWorkspaceApplicationService();
-      const fullWorkspace = await service.getWorkspaceById(metadata.id);
-
-      if (!fullWorkspace) {
-        console.error(`Full workspace data not found for ID: ${metadata.id}`);
-        return;
-      }
-      await PdfExportService.exportWorkspace(fullWorkspace);
-    } catch (error) {
-      console.error("Failed to export PDF:", error);
-    }
-  };
-
   const openExportDialog = (workspace: WorkspaceMetadata) => {
     setWorkspaceToExport(workspace);
     setExportDialogOpen(true);
@@ -182,13 +124,7 @@ const ManageWorkspacesPage: React.FC = () => {
 
   const handleExportType = async (type: "json" | "pdf") => {
     if (!workspaceToExport) return;
-
-    if (type === "json") {
-      await handleExport(workspaceToExport);
-    } else {
-      await handleExportPdf(workspaceToExport);
-    }
-
+    await handleExport(workspaceToExport.id, type);
     closeExportDialog();
   };
 
