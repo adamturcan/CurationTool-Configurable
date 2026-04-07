@@ -12,6 +12,7 @@ import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import AddIcon from "@mui/icons-material/Add";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import { shadows } from "../../../shared/theme";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
@@ -203,6 +204,16 @@ const BubbleSidebar: React.FC<Props> = ({
 
       {showBubbles && (
         <Box display="flex" flexDirection="column" gap={2}>
+          {/* Admin panel */}
+          <Bubble
+            label="Admin"
+            icon={<AdminPanelSettingsIcon />}
+            onClick={() => navigate("/admin")}
+            selected={isSelected("/admin")}
+            color="#A0DDCF"
+            ariaLabel="Admin panel"
+          />
+
           {/* Account management */}
           <Bubble
             label="Manage Account"

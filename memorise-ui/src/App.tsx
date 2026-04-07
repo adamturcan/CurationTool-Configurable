@@ -28,6 +28,7 @@ const AccountPage = lazy(() => import("./presentation/pages/AccoutPage"));
 const WorkspacePage = lazy(() => import("./presentation/pages/WorkspacePage"));
 const ManageWorkspacesPage = lazy(() => import("./presentation/pages/ManageWorkspacesPage"));
 const LoginPage = lazy(() => import("./presentation/pages/LoginPage"));
+const AdminPage = lazy(() => import("./presentation/pages/AdminPage"));
 
 // Storage key for persisting the current user's username
 const USER_KEY = "memorise.user.v1";
@@ -264,6 +265,10 @@ const App: React.FC = () => {
                 element={
                   <ManageWorkspacesPage />
                 }
+              />
+              <Route
+                path="/admin"
+                element={<AdminPage />}
               />
               <Route
                 path="*"
