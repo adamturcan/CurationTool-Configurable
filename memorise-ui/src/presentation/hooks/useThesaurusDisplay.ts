@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { loadThesaurusIndex } from '../../shared/utils/thesaurusHelpers';
+import { loadThesaurusIndex } from '../../shared/utils/thesaurusLoader';
 import type { ThesaurusIndexItem } from '../../types';
 import type { useThesaurusWorker } from './useThesaurusWorker';
 

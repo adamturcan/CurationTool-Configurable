@@ -11,7 +11,7 @@ import { ENTITY_COLORS } from "../../../../shared/constants/notationEditor";
 
 import TagThesaurusInput, { type ThesaurusItem } from "../inputs/TagThesaurusInput";
 import type { ThesaurusIndexItem } from "../../../../types";
-import { buildTagHierarchy } from "../../../../shared/utils/thesaurusHelpers";
+import { buildTagHierarchy } from "../../../../shared/utils/thesaurusHierarchy";
 import TagItem, { type TagRow } from "./TagItem";
 import HierarchyGroup from "./HierarchyGroup";
 

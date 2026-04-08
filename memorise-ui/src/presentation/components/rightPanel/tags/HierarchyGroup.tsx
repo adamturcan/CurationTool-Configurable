@@ -4,8 +4,8 @@ import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import ExpandLessIcon from "@mui/icons-material/ExpandLess";
 import TagItem from "./TagItem";
 import { sx as sxUtil } from "../../../../shared/styles";
-import { countAllTags } from "../../../../shared/utils/thesaurusHelpers";
-import type { HierarchyNode } from "../../../../shared/utils/thesaurusHelpers";
+import { countAllTags } from "../../../../shared/utils/thesaurusHierarchy";
+import type { HierarchyNode } from "../../../../shared/utils/thesaurusHierarchy";
 
 interface HierarchyGroupProps {
   node: HierarchyNode; depth?: number; collapsed: Record<string, boolean>; toggle: (k: string) => void;
