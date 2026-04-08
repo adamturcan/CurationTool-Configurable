@@ -1,18 +1,17 @@
-// src/hooks/__tests__/useThesaurusDisplay.test.ts
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useThesaurusDisplay } from '@/presentation/hooks/useThesaurusDisplay';
 import type { ThesaurusIndexItem } from '@/types/Thesaurus';
-import * as thesaurusHelpers from '@/shared/utils/thesaurusHelpers';
+import * as thesaurusLoader from '@/shared/utils/thesaurusLoader';
 
-// Mock the thesaurus helpers
-vi.mock('../../../shared/utils/thesaurusHelpers', () => ({
+// Mock the thesaurus loader
+vi.mock('../../../shared/utils/thesaurusLoader', () => ({
   loadThesaurusIndex: vi.fn(),
 }));
 
 describe('useThesaurusDisplay', () => {
-  const mockLoadThesaurusIndex = vi.mocked(thesaurusHelpers.loadThesaurusIndex);
-  
+  const mockLoadThesaurusIndex = vi.mocked(thesaurusLoader.loadThesaurusIndex);
+
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -55,7 +54,7 @@ describe('useThesaurusDisplay', () => {
   it('should return undefined when worker is ready but index not loaded yet', async () => {
     const readyWorker = { ...mockThesaurusWorker, ready: true };
     mockLoadThesaurusIndex.mockImplementation(
-      () => new Promise(() => {}) // Never resolves
+      () => new Promise(() => { }) // Never resolves
     );
 
     const { result } = renderHook(() =>
@@ -105,7 +104,7 @@ describe('useThesaurusDisplay', () => {
 
   it('should handle loading errors gracefully', async () => {
     const readyWorker = { ...mockThesaurusWorker, ready: true };
-    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => { });
     mockLoadThesaurusIndex.mockRejectedValue(new Error('Failed to load'));
 
     const { result } = renderHook(() =>
@@ -149,7 +148,7 @@ describe('useThesaurusDisplay', () => {
 
     // Worker becomes ready again (should not reload)
     rerender({ worker: readyWorker });
-    
+
     await new Promise(resolve => setTimeout(resolve, 10));
 
     // Should still only be called once

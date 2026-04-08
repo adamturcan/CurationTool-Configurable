@@ -1,7 +1,6 @@
-/** Web Worker that loads the thesaurus index and runs Fuse.js fuzzy searches off the main thread. */
-
 import Fuse from 'fuse.js';
 import type { ThesaurusIndexItem } from '../types';
+import { THESAURUS_INDEX_PATHS } from '../shared/utils/thesaurusConfig';
 
 let fuse: Fuse<ThesaurusIndexItem> | null = null;
 let isReady = false;
@@ -11,14 +10,10 @@ let isReady = false;
  */
 (async () => {
   try {
-    const pathsToTry = [
-      '/DataCurationTool/thesaurus-index.json',  // Production base (GitHub Pages)
-      '/thesaurus-index.json',          // Dev/no base
-      './thesaurus-index.json',         // Relative
-    ];
-    
+    const pathsToTry = THESAURUS_INDEX_PATHS;
+
     let response: Response | null = null;
-    
+
     // Try each path until one works
     for (const path of pathsToTry) {
       try {
@@ -32,7 +27,7 @@ let isReady = false;
         continue;
       }
     }
-    
+
     if (!response) {
       throw new Error('Could not load thesaurus-index.json from any path');
     }
@@ -53,10 +48,10 @@ let isReady = false;
       shouldSort: true,                         // Sort by relevance
       includeScore: true,                       // For debugging
     });
-    
+
     isReady = true;
     self.postMessage({ type: 'READY' });
-    
+
   } catch (error) {
     console.error('[ThesaurusWorker] Failed to load:', error instanceof Error ? error.message : error);
     self.postMessage({
@@ -71,26 +66,26 @@ let isReady = false;
  */
 self.onmessage = (e: MessageEvent) => {
   const { type, query, limit = 20 } = e.data;
-  
+
   if (type === 'SEARCH') {
     // Not ready yet
     if (!isReady || !fuse) {
       self.postMessage({ type: 'RESULTS', results: [] });
       return;
     }
-    
+
     // Empty or too short query
     if (!query || query.trim().length < 2) {
       self.postMessage({ type: 'RESULTS', results: [] });
       return;
     }
-    
+
     // Perform fuzzy search
     const searchResults = fuse.search(query.toLowerCase(), { limit });
-    
+
     // Extract items from Fuse results
     const results = searchResults.map(r => r.item);
-    
+
     // Send results back to main thread
     self.postMessage({ type: 'RESULTS', results });
   }

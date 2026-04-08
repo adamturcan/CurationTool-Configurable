@@ -1,6 +1,6 @@
 import { getApiService } from "../../infrastructure/providers/apiProvider";
 import { errorHandlingService } from "../../infrastructure/services/ErrorHandlingService";
-import { loadThesaurusIndex } from "../../shared/utils/thesaurusHelpers";
+import { loadThesaurusIndex } from "../../shared/utils/thesaurusLoader";
 import type { ThesaurusIndexItem, TagItem, Segment, TranslationDTO, WorkflowResult } from "../../types";
 
 
