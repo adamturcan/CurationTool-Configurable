@@ -1,20 +1,21 @@
 import React, { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { useSessionStore, useWorkspaceStore, useNotificationStore } from '../../stores';
+import { useSessionStore, useWorkspaceStore, useNotificationStore, useAuthStore } from '../../stores';
 import { getWorkspaceApplicationService } from '../../../infrastructure/providers/workspaceProvider';
 
 interface StateSynchronizerProps {
-  username: string | null;
   children?: React.ReactNode;
 }
 
 /** Hydrates workspace metadata and session state from storage on route/user changes */
-export const StateSynchronizer: React.FC<StateSynchronizerProps> = ({ username, children }) => {
-  const location = useLocation(); 
+export const StateSynchronizer: React.FC<StateSynchronizerProps> = ({ children }) => {
+  const location = useLocation();
   const isDirty = useSessionStore((state) => state.isDirty);
+  const user = useAuthStore((s) => s.user);
+  const username = user?.id ?? null;
 
   let workspaceId: string | undefined = undefined;
-  
+
   const match = location.pathname.match(/^\/workspace\/([^/]+)/);
   if (match && match[1] !== 'new') {
     workspaceId = match[1];
@@ -27,27 +28,23 @@ export const StateSynchronizer: React.FC<StateSynchronizerProps> = ({ username, 
     }
 
     const hydrateMetadata = async () => {
-      // Get the pure state setters from the purified store
       const { setWorkspaces } = useWorkspaceStore.getState();
       const { enqueue: enqueueNotification } = useNotificationStore.getState();
-      
+
       try {
-        // Use the App Service directly
         const service = getWorkspaceApplicationService();
         const loaded = await service.loadForOwner(username);
 
         if (loaded && loaded.length > 0) {
-          // Map Domain DTOs to lightweight UI metadata
           const metadata = loaded.map(ws => ({
             id: ws.id!,
             name: ws.name,
             owner: ws.owner ?? username,
             updatedAt: ws.updatedAt ?? Date.now(),
           }));
-          
+
           setWorkspaces(metadata, username);
         } else {
-          // If no workspaces exist, handle the seed logic from the App Service
           const seeded = service.seedForOwner(username);
           const metadata = seeded.map(ws => ({
             id: ws.id!,
@@ -55,7 +52,7 @@ export const StateSynchronizer: React.FC<StateSynchronizerProps> = ({ username, 
             owner: ws.owner ?? username,
             updatedAt: ws.updatedAt ?? Date.now(),
           }));
-          
+
           setWorkspaces(metadata, username);
           await service.replaceAllForOwner(username, seeded);
         }
@@ -71,32 +68,29 @@ export const StateSynchronizer: React.FC<StateSynchronizerProps> = ({ username, 
 
     void hydrateMetadata();
   }, [username]);
-  
+
   // Hydrate the active session when the workspaceId changes
   useEffect(() => {
     if (!workspaceId) {
       return;
     }
 
-    const hydrateActiveSession = async () => {      
+    const hydrateActiveSession = async () => {
       const { setLoading, loadSession } = useSessionStore.getState();
       const { setCurrentWorkspace } = useWorkspaceStore.getState();
       const { enqueue: enqueueNotification } = useNotificationStore.getState();
-      
+
       setLoading();
 
       try {
-        // Use the App Service directly
         const service = getWorkspaceApplicationService();
         const workspace = await service.getWorkspaceById(workspaceId);
 
         if (!workspace) {
           throw new Error(`Workspace ${workspaceId} not found`);
         }
-              
-        // Load heavy data into Session Store
+
         loadSession(workspace);
-        // Track active ID in Metadata Store
         setCurrentWorkspace(workspaceId);
 
       } catch (error) {
@@ -116,10 +110,10 @@ export const StateSynchronizer: React.FC<StateSynchronizerProps> = ({ username, 
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty) {
         e.preventDefault();
-        e.returnValue = ''; 
+        e.returnValue = '';
       }
     };
-    
+
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);

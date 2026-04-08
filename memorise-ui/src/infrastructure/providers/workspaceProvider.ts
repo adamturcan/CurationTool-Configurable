@@ -12,6 +12,7 @@ import { LocalStorageAdapter } from '../repositories/LocalStorageAdapter';
 import { RemoteAdapter } from '../repositories/RemoteAdapter';
 import type { WorkspaceRepository } from '../../core/interfaces/WorkspaceRepository';
 import { WorkspaceApplicationService } from '../../application/services/WorkspaceApplicationService';
+import { getAuthService } from './authProvider';
 
 export interface WorkspaceProviderOverrides {
   repository?: WorkspaceRepository; 
@@ -44,7 +45,7 @@ export function resetWorkspaceProvider(): void {
 function createDefaultRepository(): WorkspaceRepository {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const adapter = backendUrl
-    ? new RemoteAdapter(backendUrl)
+    ? new RemoteAdapter(backendUrl, () => getAuthService().getToken())
     : new LocalStorageAdapter();
   return new StorageGateway(adapter);
 }

@@ -11,9 +11,10 @@ import type { Segment } from '../../types';
 export class RemoteAdapter implements WorkspaceRepository {
   private readonly notImplementedMsg: string;
 
-  constructor(backendUrl: string) {
+  constructor(backendUrl: string, getAuthToken?: () => string | null) {
+    const authStatus = getAuthToken ? 'auth configured' : 'no auth';
     this.notImplementedMsg =
-      `RemoteAdapter for ${backendUrl} is not yet implemented. ` +
+      `RemoteAdapter for ${backendUrl} is not yet implemented (${authStatus}). ` +
       'Set VITE_BACKEND_URL to empty to use local storage.';
   }
 

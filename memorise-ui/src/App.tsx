@@ -1,13 +1,10 @@
-// React hooks and components for state management, routing, and lazy loading
-import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
-// Material-UI components for theming and layout
+import { useEffect, useMemo, useCallback, lazy, Suspense } from "react";
 import {
   CssBaseline,
   ThemeProvider,
   Box,
 } from "@mui/material";
 import theme from "./shared/theme";
-// React Router components for navigation and routing
 import {
   Routes,
   Route,
@@ -15,13 +12,14 @@ import {
   useNavigate,
   Navigate,
 } from "react-router-dom";
-// Custom components, stores, services, and utilities
 import BubbleSidebar from "./presentation/components/sidebar/BubbleSidebar";
-import { useWorkspaceStore, useNotificationStore } from "./presentation/stores";
+import { useWorkspaceStore, useNotificationStore, useAuthStore } from "./presentation/stores";
 import { getWorkspaceApplicationService } from "./infrastructure/providers/workspaceProvider";
+import { getAuthService } from "./infrastructure/providers/authProvider";
 import type { WorkspaceDTO } from "./types";
 import { NotificationSnackbar } from "./presentation/components/shared/NotificationSnackbar";
 import { StateSynchronizer } from "./presentation/components/shared/StateSynchronizer";
+import { useState } from "react";
 
 // Lazy load pages for code splitting
 const AccountPage = lazy(() => import("./presentation/pages/AccoutPage"));
@@ -30,19 +28,15 @@ const ManageWorkspacesPage = lazy(() => import("./presentation/pages/ManageWorks
 const LoginPage = lazy(() => import("./presentation/pages/LoginPage"));
 const AdminPage = lazy(() => import("./presentation/pages/AdminPage"));
 
-// Storage key for persisting the current user's username
-const USER_KEY = "memorise.user.v1";
-
 // Component that creates a new workspace and redirects to it or manage page
 const NewWorkspaceRedirect: React.FC<{
-  onCreate: () => Promise<WorkspaceDTO | null>; // Updated to expect a Promise
+  onCreate: () => Promise<WorkspaceDTO | null>;
 }> = ({ onCreate }) => {
   const navigate = useNavigate();
-  
+
   useEffect(() => {
     let isMounted = true;
-    
-    // Execute creation asynchronously
+
     void onCreate().then((ws) => {
       if (!isMounted) return;
       if (ws?.id) {
@@ -51,85 +45,117 @@ const NewWorkspaceRedirect: React.FC<{
         navigate("/manage-workspaces", { replace: true });
       }
     });
-    
+
     return () => { isMounted = false; };
   }, [navigate, onCreate]);
-  
+
   return null;
 };
 
 /** Root application component handling auth, routing, sidebar, and workspace lifecycle */
 const App: React.FC = () => {
-  // Get current route location and navigation function
   const location = useLocation();
   const navigate = useNavigate();
 
-  // Initialize username from localStorage
-  const [username, setUsername] = useState<string | null>(() =>
-    localStorage.getItem(USER_KEY)
-  );
+  // Auth state from store
+  const user = useAuthStore((s) => s.user);
+  const isAuthLoading = useAuthStore((s) => s.isLoading);
 
   // Track sidebar open state
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
-  // Access Zustand store state (purified metadata only)
+
+  // Access Zustand store state
   const workspaces = useWorkspaceStore((state) => state.workspaces);
   const addWorkspaceMetadata = useWorkspaceStore((state) => state.addWorkspaceMetadata);
-  
+
   // Access notification store
   const current = useNotificationStore((state) => state.current);
   const dequeue = useNotificationStore.getState().dequeue;
   const notify = useNotificationStore.getState().enqueue;
-  
+
   // Memoize workspace application service
   const workspaceApplicationService = useMemo(
     () => getWorkspaceApplicationService(),
     []
   );
 
-  // Save username to localStorage and navigate to workspaces
-  const handleLogin = (name: string) => {
-    localStorage.setItem(USER_KEY, name);
-    setUsername(name);
-    navigate("/manage-workspaces");
-  };
+  // Hydrate auth state on mount
+  useEffect(() => {
+    void (async () => {
+      try {
+        const authService = getAuthService();
+        const existingUser = await authService.getCurrentUser();
+        useAuthStore.getState().setUser(existingUser);
+      } catch {
+        useAuthStore.getState().clearAuth();
+      }
+      useAuthStore.getState().setLoading(false);
+    })();
+  }, []);
 
-  // Clear user data from localStorage and navigate to login page
-  const handleLogout = () => {
-    localStorage.removeItem(USER_KEY);
-    setUsername(null);
+  // Handle login: update auth store and navigate
+  const handleLogin = useCallback(async (username: string, password?: string) => {
+    try {
+      const authService = getAuthService();
+      const result = await authService.login({ username, password: password ?? '' });
+      useAuthStore.getState().setUser(result.user);
+      navigate("/manage-workspaces");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Login failed';
+      useAuthStore.getState().setError(message);
+      throw err;
+    }
+  }, [navigate]);
+
+  // Handle registration (server mode only)
+  const handleRegister = useCallback(async (username: string, email: string, password: string) => {
+    try {
+      const authService = getAuthService();
+      const result = await authService.register({ username, email, password });
+      useAuthStore.getState().setUser(result.user);
+      navigate("/manage-workspaces");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Registration failed';
+      useAuthStore.getState().setError(message);
+      throw err;
+    }
+  }, [navigate]);
+
+  // Handle logout
+  const handleLogout = useCallback(async () => {
+    const authService = getAuthService();
+    await authService.logout();
+    useAuthStore.getState().clearAuth();
+    useWorkspaceStore.setState({ workspaces: [], owner: null });
     navigate("/login");
-  };
+  }, [navigate]);
 
   // Create a new workspace draft, persist it, and update UI metadata
   const handleAddWorkspace = useCallback(async (): Promise<WorkspaceDTO | null> => {
-    if (!username) return null;
+    if (!user) return null;
 
     const currentWorkspaces = useWorkspaceStore.getState().workspaces;
     const newCount = currentWorkspaces.filter((w) =>
       w.name.startsWith("New Workspace")
     ).length;
-    
-    // 1. Generate the Draft DTO
+
     const ws = workspaceApplicationService.createWorkspaceDraft(
-      username,
+      user.id,
       `New Workspace #${newCount + 1}`
     );
 
     try {
-      // 2. Persist to Infrastructure (LocalStorage)
       await workspaceApplicationService.createWorkspace({
-        ownerId: username,
+        ownerId: user.id,
         workspaceId: ws.id,
         name: ws.name,
         isTemporary: ws.isTemporary,
       });
 
-      // 3. Update the lightweight Zustand metadata store for the UI
       addWorkspaceMetadata({
         id: ws.id!,
         name: ws.name,
-        owner: username,
+        owner: user.id,
         updatedAt: ws.updatedAt ?? Date.now(),
       });
 
@@ -139,19 +165,18 @@ const App: React.FC = () => {
       notify({ message: "Failed to create new workspace", tone: "error" });
       return null;
     }
-  }, [username, workspaceApplicationService, addWorkspaceMetadata, notify]);
+  }, [user, workspaceApplicationService, addWorkspaceMetadata, notify]);
 
-  // Move the opened workspace to the front of the list to maintain recent workspaces order
+  // Move the opened workspace to the front of the list
   const bumpWorkspaceToFront = (id: string) => {
-    const currentWorkspaces = useWorkspaceStore.getState().workspaces;    
+    const currentWorkspaces = useWorkspaceStore.getState().workspaces;
     const idx = currentWorkspaces.findIndex((w) => w.id === id);
     if (idx <= 0) return;
-    
+
     const next = [...currentWorkspaces];
-    const [item] = next.splice(idx, 1);    
+    const [item] = next.splice(idx, 1);
     next.unshift(item);
-    
-    // Pure metadata array update
+
     useWorkspaceStore.setState({ workspaces: next });
   };
 
@@ -163,8 +188,32 @@ const App: React.FC = () => {
     if (id !== "new") bumpWorkspaceToFront(id);
   }, [location.pathname]);
 
-  // Render login page and routes when user is not authenticated
-  if (!username) {
+  // Show loading splash during auth hydration
+  if (isAuthLoading) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box
+          sx={{
+            position: "fixed",
+            inset: 0,
+            display: "grid",
+            placeItems: "center",
+            backgroundColor: "background.default",
+          }}
+        >
+          <img
+            src={import.meta.env.BASE_URL + "memorise.png"}
+            alt="Memorise"
+            style={{ height: 36, opacity: 0.7 }}
+          />
+        </Box>
+      </ThemeProvider>
+    );
+  }
+
+  // Render login page when user is not authenticated
+  if (!user) {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
@@ -186,7 +235,10 @@ const App: React.FC = () => {
           </Box>
         }>
           <Routes>
-            <Route path="/login" element={<LoginPage onLogin={handleLogin} />} />
+            <Route
+              path="/login"
+              element={<LoginPage onLogin={handleLogin} onRegister={handleRegister} />}
+            />
             <Route path="*" element={<Navigate to="/login" replace />} />
           </Routes>
         </Suspense>
@@ -198,7 +250,7 @@ const App: React.FC = () => {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <StateSynchronizer username={username}>
+      <StateSynchronizer>
         <Box
           sx={{
             position: "fixed",
@@ -208,14 +260,12 @@ const App: React.FC = () => {
             background: "linear-gradient(135deg, #2f3e34 0%, #8d7f57 100%)",
           }}
           >
-        {/* Render sidebar component with workspace list and navigation controls */}
         <BubbleSidebar
           onLogout={handleLogout}
           open={sidebarOpen}
           onToggle={() => setSidebarOpen(!sidebarOpen)}
           workspaces={workspaces}
         />
-        {/* Render the main content area */}
         <Box
           sx={{
             flexGrow: 1,
@@ -257,7 +307,7 @@ const App: React.FC = () => {
               <Route
                 path="/manage-account"
                 element={
-                  <AccountPage username={username} workspaces={workspaces} />
+                  <AccountPage username={user.username} workspaces={workspaces} />
                 }
               />
               <Route
@@ -277,7 +327,6 @@ const App: React.FC = () => {
             </Routes>
           </Suspense>
         </Box>
-        {/* Render the notification snackbar */}
         {current && (
           <NotificationSnackbar
             message={current.message}
