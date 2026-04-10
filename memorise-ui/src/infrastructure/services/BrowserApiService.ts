@@ -3,13 +3,7 @@ import type {
   ApiService as ApiServiceContract,
 } from '../../core/interfaces/ApiService';
 import { errorHandlingService } from './ErrorHandlingService';
-
-const NER_ENDPOINT = import.meta.env.VITE_NER_API_URL ?? "https://ner-api.dev.memorise.sdu.dk/recognize";
-const SEGMENT_ENDPOINT = import.meta.env.VITE_SEGMENT_API_URL ?? "https://textseg-api.dev.memorise.sdu.dk/segment";
-const CLASSIFY_ENDPOINT = import.meta.env.VITE_CLASSIFY_API_URL ?? "https://semtag-api.dev.memorise.sdu.dk/classify";
-
-const TRANSLATION_API_BASE =
-  (import.meta.env.VITE_TRANSLATION_API_URL ?? "https://mt-api.dev.memorise.sdu.dk").replace(/\/$/, "");
+import { getConfigService } from '../providers/configProvider';
 
 
 const FALLBACK_LANGUAGES: LanguageCode[] = [
@@ -31,7 +25,7 @@ const LANGUAGE_CODE_MAP: Record<string, LanguageCode> = {
  * Implements ApiService contract with HTTP calls to external NLP APIs.
  * Accessed via getApiService() provider — never instantiated directly.
  *
- * Endpoints are configured via VITE_* env vars with SDU defaults as fallback.
+ * Endpoints are resolved via ConfigService (env vars or server config) with SDU defaults as fallback.
  * Language list is cached after first fetch with a bundled fallback if API is down.
  *
  * @category Infrastructure
@@ -42,13 +36,26 @@ export class BrowserApiService implements ApiServiceContract {
   private supportedLanguagesSetCache: Set<LanguageCode> | null = null;
   private supportedLanguagesPromise: Promise<LanguageCode[]> | null = null;
 
+  private static readonly FALLBACK_URLS: Record<string, string> = {
+    ner: "https://ner-api.dev.memorise.sdu.dk/recognize",
+    segment: "https://textseg-api.dev.memorise.sdu.dk/segment",
+    classify: "https://semtag-api.dev.memorise.sdu.dk/classify",
+    translate: "https://mt-api.dev.memorise.sdu.dk",
+  };
+
+  private getEndpointUrl(key: string): string {
+    return getConfigService().getEndpoint(key)?.url
+      ?? BrowserApiService.FALLBACK_URLS[key]
+      ?? '';
+  }
+
   // Classify 
 
   async classify(text: string): Promise<{ label?: number; name?: string }[]> {
     const context = { operation: "classify text", payloadLength: text.length };
 
     try {
-      const response = await fetch(CLASSIFY_ENDPOINT, {
+      const response = await fetch(this.getEndpointUrl('classify'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
@@ -76,7 +83,7 @@ export class BrowserApiService implements ApiServiceContract {
     const context = { operation: "run NER", payloadLength: text.length };
 
     try {
-      const response = await fetch(NER_ENDPOINT, {
+      const response = await fetch(this.getEndpointUrl('ner'), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
@@ -110,7 +117,7 @@ export class BrowserApiService implements ApiServiceContract {
     const context = { operation: "segment text", payloadLength: text.length };
 
     try {
-      const response = await fetch(SEGMENT_ENDPOINT, {
+      const response = await fetch(this.getEndpointUrl('segment'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text }),
@@ -192,7 +199,8 @@ export class BrowserApiService implements ApiServiceContract {
       );
     }
 
-    const endpoint = `${TRANSLATION_API_BASE}/translate`;
+    const translationBase = this.getEndpointUrl('translate').replace(/\/$/, '');
+    const endpoint = `${translationBase}/translate`;
     const context = { operation: "translate text", endpoint, targetLang, payloadLength: request.text.length };
 
     let response: Response;
@@ -238,7 +246,8 @@ export class BrowserApiService implements ApiServiceContract {
 
     if (!this.supportedLanguagesPromise) {
       this.supportedLanguagesPromise = (async () => {
-        const endpoint = `${TRANSLATION_API_BASE}/supported_languages`;
+        const translationBase = this.getEndpointUrl('translate').replace(/\/$/, '');
+        const endpoint = `${translationBase}/supported_languages`;
         const context = { operation: "fetch supported languages", endpoint };
 
         try {

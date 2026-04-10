@@ -56,4 +56,19 @@ describe('BrowserConfigService', () => {
     const second = service.getEndpoints();
     expect(second).toHaveLength(4);
   });
+
+  it('fetchConfig returns AppConfig with all endpoints', async () => {
+    const service = new BrowserConfigService();
+    const config = await service.fetchConfig();
+
+    expect(config.endpoints).toHaveLength(4);
+    expect(config.endpoints.map((ep) => ep.key)).toEqual([
+      'ner', 'segment', 'classify', 'translate',
+    ]);
+  });
+
+  it('isReady returns true', () => {
+    const service = new BrowserConfigService();
+    expect(service.isReady()).toBe(true);
+  });
 });

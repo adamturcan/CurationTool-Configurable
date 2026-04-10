@@ -1,4 +1,4 @@
-import type { ConfigService, ApiEndpointConfig } from '../../core/interfaces/ConfigService';
+import type { ConfigService, ApiEndpointConfig, AppConfig } from '../../core/interfaces/ConfigService';
 
 /**
  * Reads API endpoint configuration from Vite env vars (import.meta.env).
@@ -45,5 +45,17 @@ export class BrowserConfigService implements ConfigService {
 
   getEndpoint(key: string): ApiEndpointConfig | null {
     return this.endpoints.find((ep) => ep.key === key) ?? null;
+  }
+
+  async fetchConfig(): Promise<AppConfig> {
+    return { endpoints: this.getEndpoints() };
+  }
+
+  async saveConfig(): Promise<void> {
+    // No-op in standalone mode — endpoints come from env vars
+  }
+
+  isReady(): boolean {
+    return true;
   }
 }

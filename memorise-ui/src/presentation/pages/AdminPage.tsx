@@ -1,17 +1,19 @@
 import React from "react";
 import { Box, Typography } from "@mui/material";
 import { shadows } from "../../shared/theme";
-import ApiHealthPanel from "../components/admin/ApiHealthPanel";
+import ConfigPanel from "../components/admin/ConfigPanel";
 
-/** Renders the admin dashboard with API health monitoring */
+/** Renders the admin dashboard with configuration and API health monitoring */
 const AdminPage: React.FC = () => {
   return (
     <Box
       sx={{
         px: { xs: 2, sm: 4 },
         py: 3,
+        pb: 6,
         width: "100%",
         height: "100%",
+        overflowY: "auto",
         color: "text.primary",
         fontFamily: "'DM Sans', sans-serif",
       }}
@@ -31,7 +33,7 @@ const AdminPage: React.FC = () => {
         Admin
       </Typography>
 
-      <ApiHealthPanel />
+      <ConfigPanel />
     </Box>
   );
 };

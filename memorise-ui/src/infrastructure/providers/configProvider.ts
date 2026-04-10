@@ -1,10 +1,13 @@
 /**
  * Singleton provider for ConfigService. Supports DI overrides for testing.
- * Production code uses getConfigService().
+ * Picks BrowserConfigService (standalone) or RemoteConfigService (server)
+ * based on VITE_BACKEND_URL.
  *
  * @category Infrastructure
  */
 import { BrowserConfigService } from '../services/BrowserConfigService';
+import { RemoteConfigService } from '../services/RemoteConfigService';
+import { getAuthService } from './authProvider';
 import type { ConfigService } from '../../core/interfaces/ConfigService';
 
 export interface ConfigProviderOverrides {
@@ -26,13 +29,20 @@ export function resetConfigProvider(): void {
   configServiceSingleton = null;
 }
 
+function createDefaultConfigService(): ConfigService {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  return backendUrl
+    ? new RemoteConfigService(backendUrl, () => getAuthService().getToken())
+    : new BrowserConfigService();
+}
+
 export function getConfigService(): ConfigService {
   if (overrides?.configService) {
     return overrides.configService;
   }
 
   if (!configServiceSingleton) {
-    configServiceSingleton = new BrowserConfigService();
+    configServiceSingleton = createDefaultConfigService();
   }
 
   return configServiceSingleton;

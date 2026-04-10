@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { RemoteAdapter } from '@/infrastructure/repositories/RemoteAdapter';
 import { Workspace } from '@/core/entities/Workspace';
 
-const ERROR_MSG = 'RemoteAdapter for http://localhost:8080 is not yet implemented. Set VITE_BACKEND_URL to empty to use local storage.';
+const ERROR_MSG = 'RemoteAdapter for http://localhost:8080 is not yet implemented (no auth). Set VITE_BACKEND_URL to empty to use local storage.';
 
 const mockWorkspace = Workspace.create({
   id: 'ws-1',
