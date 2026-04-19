@@ -37,13 +37,14 @@ const PanelContainer: React.FC = () => {
   const isTagPanelOpen = useSessionStore((state) => state.isTagPanelOpen);
   const setTagPanelOpen = useSessionStore((state) => state.setTagPanelOpen);
 
+  const isDragging = useSessionStore((state) => state.isDragging);
+
   useEffect(() => {
-    if (filteredTags.length > 0) {
-      setTagPanelOpen(true);
-    } else {
+    if (isDragging) return;
+    if (filteredTags.length === 0) {
       setTagPanelOpen(false);
     }
-  }, [filteredTags.length, setTagPanelOpen]);
+  }, [filteredTags.length, setTagPanelOpen, isDragging]);
 
 
 

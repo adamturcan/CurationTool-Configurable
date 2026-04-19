@@ -241,8 +241,6 @@ export function useActionGuard(actions: ActionGuardActions): UseActionGuardRetur
         return;
       }
 
-      // Determine affected segments: the source and any segments between
-      // source boundary and the target position
       const source = segments.find(s => s.id === sourceSegId);
       if (!source) {
         onProceed();

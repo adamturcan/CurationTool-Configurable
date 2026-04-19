@@ -1,5 +1,5 @@
 // React hooks and components for state management, routing, and lazy loading
-import { useState, useEffect, useMemo, useCallback, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback, lazy, Suspense } from "react";
 // Material-UI components for theming and layout
 import {
   CssBaseline,
@@ -22,6 +22,7 @@ import { getWorkspaceApplicationService } from "./infrastructure/providers/works
 import type { WorkspaceDTO } from "./types";
 import { NotificationSnackbar } from "./presentation/components/shared/NotificationSnackbar";
 import { StateSynchronizer } from "./presentation/components/shared/StateSynchronizer";
+import UnsavedChangesDialog from "./presentation/components/shared/UnsavedChangesDialog";
 
 // Lazy load pages for code splitting
 const AccountPage = lazy(() => import("./presentation/pages/AccoutPage"));
@@ -37,23 +38,21 @@ const NewWorkspaceRedirect: React.FC<{
   onCreate: () => Promise<WorkspaceDTO | null>; // Updated to expect a Promise
 }> = ({ onCreate }) => {
   const navigate = useNavigate();
-  
+  const createdRef = useRef(false);
+
   useEffect(() => {
-    let isMounted = true;
-    
-    // Execute creation asynchronously
+    if (createdRef.current) return;
+    createdRef.current = true;
+
     void onCreate().then((ws) => {
-      if (!isMounted) return;
       if (ws?.id) {
         navigate(`/workspace/${encodeURIComponent(ws.id)}`, { replace: true });
       } else {
         navigate("/manage-workspaces", { replace: true });
       }
     });
-    
-    return () => { isMounted = false; };
   }, [navigate, onCreate]);
-  
+
   return null;
 };
 
@@ -68,9 +67,6 @@ const App: React.FC = () => {
     localStorage.getItem(USER_KEY)
   );
 
-  // Track sidebar open state
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  
   // Access Zustand store state (purified metadata only)
   const workspaces = useWorkspaceStore((state) => state.workspaces);
   const addWorkspaceMetadata = useWorkspaceStore((state) => state.addWorkspaceMetadata);
@@ -210,8 +206,6 @@ const App: React.FC = () => {
         {/* Render sidebar component with workspace list and navigation controls */}
         <BubbleSidebar
           onLogout={handleLogout}
-          open={sidebarOpen}
-          onToggle={() => setSidebarOpen(!sidebarOpen)}
           workspaces={workspaces}
         />
         {/* Render the main content area */}
@@ -219,7 +213,7 @@ const App: React.FC = () => {
           sx={{
             flexGrow: 1,
             px: { xs: 0, sm: 4 },
-            ml: { xs: 10, sm: sidebarOpen ? 20 : 5 },
+            ml: { xs: 10, sm: 5 },
             pt: { xs: 0, sm: 5 },
             transition: "margin-left 0.3s ease",
           }}
@@ -279,8 +273,11 @@ const App: React.FC = () => {
             onClose={dequeue}
             tone={current.tone}
             persistent={current.persistent}
+            loading={current.loading}
+            retryAction={current.retryAction}
           />
         )}
+        <UnsavedChangesDialog />
         </Box>
       </StateSynchronizer>
     </ThemeProvider>

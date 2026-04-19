@@ -111,18 +111,33 @@ export const StateSynchronizer: React.FC<StateSynchronizerProps> = ({ username, 
     void hydrateActiveSession();
   }, [workspaceId]);
 
-  // guard to prevent navigation or close when unsaved
+  // Guard: browser refresh / tab close
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isDirty) {
         e.preventDefault();
-        e.returnValue = ''; 
+        e.returnValue = '';
       }
     };
-    
+
     window.addEventListener('beforeunload', handleBeforeUnload);
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [isDirty]);
+
+  // Guard: browser back/forward buttons
+  const showGuard = useNotificationStore((s) => s.showUnsavedGuard);
+  useEffect(() => {
+    if (!isDirty) return;
+
+    const handlePopState = () => {
+      window.history.pushState(null, '', window.location.href);
+      showGuard(() => window.history.back());
+    };
+
+    window.history.pushState(null, '', window.location.href);
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [isDirty, showGuard]);
 
   return <>{children}</>;
 };

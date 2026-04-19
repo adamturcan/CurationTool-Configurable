@@ -38,6 +38,20 @@ export const CodeMirrorWrapper: React.FC<Props> = ({
       createSpanProtectionFilter(),
       createSelectionObserver(spans, onSelectionChange, selectionTimeoutRef),
       EditorView.domEventHandlers({
+        mousedown(event) {
+          const target = event.target as HTMLElement;
+          if (!target.closest(".cm-line, .cm-placeholder")) {
+            event.preventDefault();
+            return true;
+          }
+        },
+        dblclick(event) {
+          const target = event.target as HTMLElement;
+          if (!target.closest(".cm-line, .cm-placeholder")) {
+            event.preventDefault();
+            return true;
+          }
+        },
         dragover(event) {
           if (event.dataTransfer?.types.includes("application/segment-id")) {
             event.preventDefault();

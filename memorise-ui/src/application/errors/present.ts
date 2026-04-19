@@ -11,7 +11,7 @@ import type { Notice, NoticeTone } from "../../types";
 const DEFAULT_FALLBACK_MESSAGE = "Something went wrong. Please try again.";
 
 const ERROR_CATALOG: Record<string, Notice> = {
-  NETWORK_ERROR: { message: "Network issue detected. Check your connection and try again.", tone: "error", persistent: true },
+  NETWORK_ERROR: { message: "The service appears to be down. Try again in a few minutes.", tone: "error", persistent: true },
   REQUEST_ABORTED: { message: "The request was cancelled before it finished.", tone: "warning" },
   REPOSITORY_ERROR: { message: "We could not access your saved data. Please retry.", tone: "error", persistent: true },
   WORKSPACE_NOT_FOUND: { message: "This workspace could not be found or was removed.", tone: "warning", persistent: true },
@@ -36,7 +36,6 @@ const SEVERITY_TO_TONE: Record<NonNullable<AppError["severity"]>, NoticeTone> = 
 function deriveFromCode(code: string): Notice | undefined {
   if (code.startsWith("HTTP_")) return { message: "The service is unavailable at the moment. Please try again shortly.", tone: "error", persistent: true };
   if (code.endsWith("_REQUIRED")) return { message: "Missing required information. Please review the form and try again.", tone: "warning" };
-  if (code.endsWith("_VALIDATION_FAILED")) return { message: "Some details look incorrect. Please review and try again.", tone: "warning" };
   if (code.endsWith("_FAILED")) return { message: "We could not complete that action. Please try again.", tone: "error", persistent: true };
   return undefined;
 }

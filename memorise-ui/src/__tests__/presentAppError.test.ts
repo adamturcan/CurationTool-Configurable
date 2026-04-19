@@ -14,7 +14,7 @@ describe('presentAppError', () => {
     // If users see "Failed to fetch" we've failed — the presenter must translate.
     const notice = presentAppError(appError({ code: 'NETWORK_ERROR', message: 'Failed to fetch' }));
 
-    expect(notice.message).toBe('Network issue detected. Check your connection and try again.');
+    expect(notice.message).toBe('The service appears to be down. Try again in a few minutes.');
     expect(notice.persistent).toBe(true);
   });
 

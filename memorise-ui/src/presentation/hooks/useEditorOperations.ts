@@ -25,27 +25,41 @@ export function useEditorOperations(layers: LayerOps) {
   const setActiveTab = useSessionStore((state) => state.setActiveTab);
   const updateTranslations = useSessionStore((state) => state.updateTranslations);
 
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [processingState, setProcessingState] = useState<{
+    message: string;
+    current?: number;
+    total?: number;
+  } | null>(null);
+  const isProcessing = processingState !== null;
+  const setProcessingMessage = (msg: string | null) =>
+    setProcessingState(msg ? { message: msg } : null);
+  const setProgress = (message: string, current: number, total: number) =>
+    setProcessingState({ message, current, total });
+
+  const cancelProcessing = useCallback(() => {
+    setProcessingMessage(null);
+    notify({ message: "Operation cancelled.", tone: "warning" });
+  }, [notify]);
 
   const { conflictPrompt, requestConflictResolution, resolveConflictPrompt } = useConflictResolution();
 
-  const handleError = useCallback((err: unknown) => {
+  const handleError = useCallback((err: unknown, retryAction?: () => void) => {
     const appError = isAppError(err) ? err : toAppError(err);
     const notice = presentAppError(appError);
-    notify(notice);
+    notify({ ...notice, retryAction });
   }, [notify]);
 
   // --- Translation operations ---
 
   const handleRunGlobalTranslate = useCallback(async (targetLang: string) => {
     if (!session) return;
-    setIsProcessing(true);
+    setProcessingMessage(`Translating document to ${targetLang}...`);
     try {
       const result = await translationWorkflowService.addTranslation(targetLang, {
         segments: session.segments || [],
         translations: session.translations || [],
         text: draftText,
-      });
+      }, (current, total) => setProgress(`Translating document to ${targetLang}...`, current, total));
 
       if (result.ok) {
         if (result.translationsPatch) updateTranslations(result.translationsPatch);
@@ -55,18 +69,18 @@ export function useEditorOperations(layers: LayerOps) {
           setDraftText(newText);
         }
       }
-      notify(result.notice);
+      if (!result.ok) notify({ ...result.notice, retryAction: () => handleRunGlobalTranslate(targetLang) });
+      else notify(result.notice);
     } catch (err) {
-      handleError(err);
+      handleError(err, () => handleRunGlobalTranslate(targetLang));
     } finally {
-      setIsProcessing(false);
+      setProcessingMessage(null);
     }
   }, [session, updateTranslations, setActiveTab, setDraftText, notify, handleError]);
 
   const handleTranslateSegment = useCallback(async (segmentId: string, lang: string) => {
     if (!session) return;
-    setIsProcessing(true);
-    notify({ message: `Translating segment to ${lang}...`, tone: "info" });
+    setProcessingMessage(`Translating segment to ${lang}...`);
     try {
       const result = await translationWorkflowService.addSegmentTranslation(lang, segmentId, {
         segments: session.segments || [],
@@ -82,11 +96,12 @@ export function useEditorOperations(layers: LayerOps) {
           if (newText) setDraftText(newText);
         }
       }
-      notify(result.notice);
+      if (!result.ok) notify({ ...result.notice, retryAction: () => handleTranslateSegment(segmentId, lang) });
+      else notify(result.notice);
     } catch (err) {
-      handleError(err);
+      handleError(err, () => handleTranslateSegment(segmentId, lang));
     } finally {
-      setIsProcessing(false);
+      setProcessingMessage(null);
     }
   }, [session, draftText, setDraftText, updateTranslations, setActiveTab, notify, handleError]);
 
@@ -104,8 +119,7 @@ export function useEditorOperations(layers: LayerOps) {
 
   const handleUpdateSegmentTranslation = useCallback(async (segmentId: string, lang: string) => {
     if (!session) return;
-    setIsProcessing(true);
-    notify({ message: `Updating translation (${lang})...`, tone: "info" });
+    setProcessingMessage(`Updating translation (${lang})...`);
     try {
       const result = await translationWorkflowService.updateSegmentTranslation(lang, segmentId, {
         segments: session.segments || [],
@@ -114,18 +128,19 @@ export function useEditorOperations(layers: LayerOps) {
       if (result.ok && result.translationsPatch) {
         updateTranslations(result.translationsPatch);
       }
-      notify(result.notice);
+      if (!result.ok) notify({ ...result.notice, retryAction: () => handleUpdateSegmentTranslation(segmentId, lang) });
+      else notify(result.notice);
     } catch (err) {
-      handleError(err);
+      handleError(err, () => handleUpdateSegmentTranslation(segmentId, lang));
     } finally {
-      setIsProcessing(false);
+      setProcessingMessage(null);
     }
   }, [session, updateTranslations, notify, handleError]);
 
   // --- Per-segment NER / SemTag ---
 
   const handleRunSegmentNer = useCallback(async (segmentId: string, lang: string) => {
-    notify({ message: `Running NER on segment (${lang})...`, tone: "info" });
+    setProcessingMessage(`Running NER on segment (${lang})...`);
     setActiveSegmentId(segmentId);
     const layer = resolveLayer(lang);
     if (layer && segmentId) {
@@ -134,18 +149,23 @@ export function useEditorOperations(layers: LayerOps) {
         applyLayerPatch(lang, result.layerPatch);
         sessionStore.updateSession({ deletedApiKeys: result.deletedApiKeys });
       }
-      notify(result.notice);
+      if (!result.ok) notify({ ...result.notice, retryAction: () => handleRunSegmentNer(segmentId, lang) });
+      else notify(result.notice);
     }
+    setProcessingMessage(null);
   }, [notify, setActiveSegmentId, session, draftText, requestConflictResolution, resolveLayer, applyLayerPatch, sessionStore]);
 
   const handleRunSegmentSemTag = useCallback(async (segmentId: string, lang: string) => {
-    notify({ message: `Running Sem-Tag on segment (${lang})...`, tone: "info" });
+    setProcessingMessage(`Running Sem-Tag on segment (${lang})...`);
     setActiveSegmentId(segmentId);
     const result = await taggingWorkflowService.runClassify(false, { activeSegmentId: segmentId, segments: session?.segments || [], draftText, translations: session?.translations || [], text: session?.text || "", activeTab: lang, tags: session?.tags || [] });
     if (result.ok && result.tags) {
       sessionStore.updateSession({ tags: result.tags });
+      useSessionStore.getState().setTagPanelOpen(true);
     }
-    notify(result.notice);
+    if (!result.ok) notify({ ...result.notice, retryAction: () => handleRunSegmentSemTag(segmentId, lang) });
+    else notify(result.notice);
+    setProcessingMessage(null);
   }, [notify, setActiveSegmentId, session, draftText, sessionStore]);
 
   // --- Text change ---
@@ -168,64 +188,110 @@ export function useEditorOperations(layers: LayerOps) {
   // --- Global operations ---
 
   const handleRunGlobalNer = useCallback(async () => {
-    setIsProcessing(true); setActiveSegmentId(undefined);
+    setProcessingMessage("Running NER analysis...");
+    setActiveSegmentId(undefined);
     try {
-      const originalLayer = resolveLayer("original");
-      if (originalLayer) {
-        const result = await annotationWorkflowService.runNer({ layer: originalLayer, segments: session?.segments || [], deletedApiKeys: session?.deletedApiKeys ?? [] }, requestConflictResolution);
-        if (result.ok) {
-          applyLayerPatch("original", result.layerPatch);
-          sessionStore.updateSession({ deletedApiKeys: result.deletedApiKeys });
+      const segments = session?.segments || [];
+
+      if (segments.length <= 1) {
+        // Unsegmented or single segment — run on full text per layer
+        const originalLayer = resolveLayer("original");
+        if (originalLayer) {
+          const result = await annotationWorkflowService.runNer({ layer: originalLayer, segments, deletedApiKeys: session?.deletedApiKeys ?? [] }, requestConflictResolution);
+          if (result.ok) {
+            applyLayerPatch("original", result.layerPatch);
+            sessionStore.updateSession({ deletedApiKeys: result.deletedApiKeys });
+          }
+          notify(result.notice);
         }
-        notify(result.notice);
-      }
 
-      const translations = useSessionStore.getState().session?.translations || [];
-      for (const t of translations) {
-        const freshSession = useSessionStore.getState().session;
-        const tLayer = freshSession?.translations?.find(tr => tr.language === t.language);
-        if (!tLayer?.text?.trim()) continue;
+        const translations = useSessionStore.getState().session?.translations || [];
+        for (const t of translations) {
+          const freshSession = useSessionStore.getState().session;
+          const tLayer = freshSession?.translations?.find(tr => tr.language === t.language);
+          if (!tLayer?.text?.trim()) continue;
 
-        const layer: AnnotationLayer = {
-          text: tLayer.text || "",
-          userSpans: tLayer.userSpans ?? [],
-          apiSpans: tLayer.apiSpans ?? [],
-          segmentTranslations: tLayer.segmentTranslations,
-          editedSegmentTranslations: tLayer.editedSegmentTranslations,
-        };
+          const layer: AnnotationLayer = {
+            text: tLayer.text || "",
+            userSpans: tLayer.userSpans ?? [],
+            apiSpans: tLayer.apiSpans ?? [],
+            segmentTranslations: tLayer.segmentTranslations,
+            editedSegmentTranslations: tLayer.editedSegmentTranslations,
+          };
 
-        const result = await annotationWorkflowService.runNer({ layer, segments: freshSession?.segments || [], deletedApiKeys: freshSession?.deletedApiKeys ?? [] }, requestConflictResolution);
-        if (result.ok) {
-          applyLayerPatch(t.language, result.layerPatch);
-          if (result.deletedApiKeys) sessionStore.updateSession({ deletedApiKeys: result.deletedApiKeys });
+          const result = await annotationWorkflowService.runNer({ layer, segments: freshSession?.segments || [], deletedApiKeys: freshSession?.deletedApiKeys ?? [] }, requestConflictResolution);
+          if (result.ok) {
+            applyLayerPatch(t.language, result.layerPatch);
+            if (result.deletedApiKeys) sessionStore.updateSession({ deletedApiKeys: result.deletedApiKeys });
+          }
         }
-      }
 
-      if (translations.length > 0) {
-        notify({ message: `NER completed for original + ${translations.length} translation(s).`, tone: "success" });
+        if (translations.length > 0) {
+          notify({ message: `NER completed for original + ${translations.length} translation(s).`, tone: "success" });
+        }
+      } else {
+        // Per-segment NER with progress
+        for (let i = 0; i < segments.length; i++) {
+          setProgress("Running NER analysis...", i, segments.length);
+          const seg = segments[i];
+
+          // Original layer for this segment
+          const originalLayer = resolveLayer("original");
+          if (originalLayer) {
+            const result = await annotationWorkflowService.runNer({ layer: originalLayer, activeSegmentId: seg.id, segments, deletedApiKeys: useSessionStore.getState().session?.deletedApiKeys ?? [] }, requestConflictResolution);
+            if (result.ok) {
+              applyLayerPatch("original", result.layerPatch);
+              sessionStore.updateSession({ deletedApiKeys: result.deletedApiKeys });
+            }
+          }
+
+          // Translation layers for this segment (counts as same step)
+          const freshSession = useSessionStore.getState().session;
+          const translations = freshSession?.translations || [];
+          for (const t of translations) {
+            const tLayer = freshSession?.translations?.find(tr => tr.language === t.language);
+            if (!tLayer?.segmentTranslations?.[seg.id]?.trim()) continue;
+
+            const layer: AnnotationLayer = {
+              text: tLayer.text || "",
+              userSpans: tLayer.userSpans ?? [],
+              apiSpans: tLayer.apiSpans ?? [],
+              segmentTranslations: tLayer.segmentTranslations,
+              editedSegmentTranslations: tLayer.editedSegmentTranslations,
+            };
+
+            const result = await annotationWorkflowService.runNer({ layer, activeSegmentId: seg.id, segments, deletedApiKeys: freshSession?.deletedApiKeys ?? [] }, requestConflictResolution);
+            if (result.ok) {
+              applyLayerPatch(t.language, result.layerPatch);
+              if (result.deletedApiKeys) sessionStore.updateSession({ deletedApiKeys: result.deletedApiKeys });
+            }
+          }
+        }
+
+        notify({ message: `NER completed for ${segments.length} segment(s).`, tone: "success" });
       }
-    } finally { setIsProcessing(false); }
+    } finally { setProcessingMessage(null); }
   }, [session, draftText, notify, requestConflictResolution, resolveLayer, applyLayerPatch, sessionStore]);
 
   const handleRunGlobalSemTag = useCallback(async () => {
-    setIsProcessing(true);
+    setProcessingMessage("Running semantic tagging...");
     setActiveSegmentId(undefined);
     try {
       const segments = session?.segments || [];
 
       if (segments.length === 0) {
-        // No segments — classify the whole document as original text
         const result = await taggingWorkflowService.runClassify(true, { activeSegmentId: undefined, segments: [], draftText, translations: session?.translations || [], text: session?.text || "", activeTab: "original", tags: session?.tags || [] });
         if (result.ok && result.tags) {
           sessionStore.updateSession({ tags: result.tags });
         }
         notify(result.notice);
       } else {
-        // Classify each segment using its original text
         let currentTags = session?.tags || [];
         let successCount = 0;
 
-        for (const seg of segments) {
+        for (let i = 0; i < segments.length; i++) {
+          setProgress("Running semantic tagging...", i, segments.length);
+          const seg = segments[i];
           const result = await taggingWorkflowService.runClassify(false, {
             activeSegmentId: seg.id,
             segments,
@@ -250,13 +316,13 @@ export function useEditorOperations(layers: LayerOps) {
         });
       }
     } finally {
-      setIsProcessing(false);
+      setProcessingMessage(null);
     }
   }, [session, draftText, notify, sessionStore]);
 
   const handleSave = useCallback(async () => {
     if (!session) return;
-    setIsProcessing(true);
+    setProcessingMessage("Saving workspace...");
     try {
       const result = await editorWorkflowService.saveWorkspace(session, draftText);
       if (result.ok) {
@@ -264,11 +330,11 @@ export function useEditorOperations(layers: LayerOps) {
         if (result.workspaceMetadataPatch) useWorkspaceStore.getState().updateWorkspaceMetadata(session.id, result.workspaceMetadataPatch);
       }
       notify(result.notice);
-    } finally { setIsProcessing(false); }
+    } finally { setProcessingMessage(null); }
   }, [session, draftText, notify, sessionStore]);
 
   const handleRunGlobalSegment = useCallback(async () => {
-    setIsProcessing(true);
+    setProcessingMessage("Segmenting text...");
     try {
       const result = await segmentWorkflowService.runAutoSegmentation({ text: draftText, translations: session?.translations, segments: session?.segments }, activeTab);
       if (result.ok && result.patch) {
@@ -278,12 +344,14 @@ export function useEditorOperations(layers: LayerOps) {
         notify(result.notice);
       }
     } finally {
-      setIsProcessing(false);
+      setProcessingMessage(null);
     }
   }, [session?.segments, session?.translations, activeTab, notify, sessionStore, draftText]);
 
   return {
     isProcessing,
+    processingState,
+    cancelProcessing,
     conflictPrompt,
     resolveConflictPrompt,
     handleRunGlobalNer,

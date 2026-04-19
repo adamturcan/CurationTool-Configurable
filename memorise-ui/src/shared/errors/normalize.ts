@@ -17,14 +17,21 @@ export function toAppError(error: unknown, context?: ErrorContext): AppError {
   if (isAppError(error)) return { ...error, context: { ...error.context, ...context } };
 
   if (error instanceof Response) {
+    const statusContext = error.status >= 500
+      ? {
+          ...context,
+          userMessage: context?.userMessage ??
+            `The service encountered an internal error (HTTP ${error.status}). This is a server-side issue — please try again later.`,
+        }
+      : context;
     return createAppError({
       message: resolveMessage(
-        context,
+        statusContext,
         `Server responded with ${error.status}${error.statusText ? ` (${error.statusText})` : ""}`
       ),
       code: `HTTP_${error.status}`,
       severity: "error",
-      context,
+      context: statusContext,
       cause: error,
     });
   }
@@ -41,6 +48,7 @@ export function toAppError(error: unknown, context?: ErrorContext): AppError {
   const errorMessage = error instanceof Error ? error.message : String(error);
   const isNetworkError =
     errorMessage.includes("Failed to fetch") ||
+    errorMessage.includes("Load failed") ||
     errorMessage.includes("NetworkError") ||
     (error instanceof TypeError && errorMessage.includes("fetch"));
 
