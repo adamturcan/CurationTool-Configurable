@@ -1,10 +1,13 @@
 /**
  * Singleton provider for ApiService. Supports DI overrides for testing.
- * Production code uses getApiService().
+ * Picks BrowserApiService (standalone) or BackendProxyApiService (server)
+ * based on VITE_BACKEND_URL.
  *
  * @category Infrastructure
  */
 import { BrowserApiService } from '../services/BrowserApiService';
+import { BackendProxyApiService } from '../services/BackendProxyApiService';
+import { getAuthService } from './authProvider';
 import type { ApiService } from '../../core/interfaces/ApiService';
 
 export interface ApiProviderOverrides {
@@ -26,13 +29,20 @@ export function resetApiProvider(): void {
   apiServiceSingleton = null;
 }
 
+function createDefaultApiService(): ApiService {
+  const backendUrl = import.meta.env.VITE_BACKEND_URL;
+  return backendUrl
+    ? new BackendProxyApiService(backendUrl, () => getAuthService().getToken())
+    : new BrowserApiService();
+}
+
 export function getApiService(): ApiService {
   if (overrides?.apiService) {
     return overrides.apiService;
   }
 
   if (!apiServiceSingleton) {
-    apiServiceSingleton = new BrowserApiService();
+    apiServiceSingleton = createDefaultApiService();
   }
 
   return apiServiceSingleton;

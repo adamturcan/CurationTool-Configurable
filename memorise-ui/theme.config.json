@@ -1,0 +1,27 @@
+{
+  "palette": {
+    "primary": { "main": "#1D4ED8", "dark": "#1E40AF" },
+    "secondary": { "main": "#21426C" },
+    "error": { "main": "#DC2626", "dark": "#B91C1C" },
+    "gold": { "main": "#DDD1A0", "dark": "#C8A24A", "contrastText": "#0F172A" },
+    "text": { "primary": "#0F172A", "secondary": "#334155" },
+    "divider": "#E2E8F0",
+    "background": { "default": "#545742", "paper": "#FFFFFF" },
+    "action": { "hover": "#F8FAFC" }
+  },
+  "gradient": "linear-gradient(135deg, #2f3e34 0%, #8d7f57 100%)",
+  "login": {
+    "cardBg": "#1F2C24",
+    "accent": "#F1E3B6",
+    "btnBg": "#DDD1A0",
+    "btnHover": "#EDE8D4",
+    "btnText": "#0B0B0B",
+    "gradient": "linear-gradient(135deg, #2f3e34 0%, #8d7f57 100%)"
+  },
+  "sidebar": {
+    "bg": "#1F2C24",
+    "accent": "#DDD1A0",
+    "admin": "#A0DDCF",
+    "account": "#DDA0AF"
+  }
+}

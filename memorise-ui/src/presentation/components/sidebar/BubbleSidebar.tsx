@@ -13,7 +13,7 @@ import AddIcon from "@mui/icons-material/Add";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import { shadows } from "../../../shared/theme";
+import { shadows, sidebarColors } from "../../../shared/theme";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -48,6 +48,8 @@ const BubbleSidebar: React.FC<Props> = ({
 
   const isOpen = isMobile ? mobileOpen : open;
 
+  const themeAccent = sidebarColors.accent;
+  const bgDark = sidebarColors.bg;
 
   const Bubble = ({
     label,
@@ -64,9 +66,9 @@ const BubbleSidebar: React.FC<Props> = ({
     color?: string;
     ariaLabel?: string;
   }) => {
-    const accent = color || "#DDD1A0";
-    const bg = selected ? accent : "#1F2C24";
-    const fg = selected ? "#1F2C24" : accent;
+    const accent = color || themeAccent;
+    const bg = selected ? accent : bgDark;
+    const fg = selected ? bgDark : accent;
 
     const truncatedLabel =
       label.length > 16 ? `${label.slice(0, 15)}…` : label;
@@ -79,7 +81,7 @@ const BubbleSidebar: React.FC<Props> = ({
         sx={{
           bgcolor: bg,
           color: fg,
-          "&:hover": { bgcolor: accent, color: "#1F2C24" },
+          "&:hover": { bgcolor: accent, color: bgDark },
           border: "1px solid rgba(255,255,255,0.08)",
           boxShadow: shadows.sm,
           display: "flex",
@@ -164,7 +166,7 @@ const BubbleSidebar: React.FC<Props> = ({
           label={isOpen ? "Collapse" : "Expand"}
           icon={isOpen ? <ChevronLeftIcon /> : <ChevronRightIcon />}
           onClick={() => (isMobile ? setMobileOpen(!mobileOpen) : onToggle())}
-          color="#DDD1A0"
+          color={themeAccent}
           ariaLabel="Toggle sidebar"
         />
 
@@ -180,7 +182,7 @@ const BubbleSidebar: React.FC<Props> = ({
                     icon={<FolderOpenIcon />}
                     onClick={() => navigate(`/workspace/${ws.id}`)}
                     selected={isSelected(`/workspace/${ws.id}`)}
-                    color="#DDD1A0"
+                    color={themeAccent}
                     ariaLabel={`Open workspace ${ws.name}`}
                   />
                 </Box>
@@ -195,7 +197,7 @@ const BubbleSidebar: React.FC<Props> = ({
                 navigate(`/workspace/new`);
               }}
               selected={isSelected("/workspace/new")}
-              color="#DDD1A0"
+              color={themeAccent}
               ariaLabel="Create new workspace"
             />
           </>
@@ -210,7 +212,7 @@ const BubbleSidebar: React.FC<Props> = ({
             icon={<AdminPanelSettingsIcon />}
             onClick={() => navigate("/admin")}
             selected={isSelected("/admin")}
-            color="#A0DDCF"
+            color={sidebarColors.admin}
             ariaLabel="Admin panel"
           />
 
@@ -220,7 +222,7 @@ const BubbleSidebar: React.FC<Props> = ({
             icon={<AccountCircleIcon />}
             onClick={() => navigate("/manage-account")}
             selected={isSelected("/manage-account")}
-            color="#DDA0AF"
+            color={sidebarColors.account}
             ariaLabel="Manage account"
           />
 
@@ -229,7 +231,7 @@ const BubbleSidebar: React.FC<Props> = ({
             label="Logout"
             icon={<LogoutIcon />}
             onClick={onLogout}
-            color="#DDA0AF"
+            color={sidebarColors.account}
             ariaLabel="Logout"
           />
         </Box>

@@ -4,8 +4,7 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
 import { ErrorBoundary } from "./presentation/components/shared/ErrorBoundary";
-import { errorHandlingService } from "./infrastructure/services/ErrorHandlingService";
-import { reportWebVitals } from "./shared/perf/webVitals";
+import { toAppError, logAppError } from "./shared/errors";
 import "@fontsource/dm-sans/400.css";
 import "@fontsource/dm-sans/500.css";
 import "@fontsource/dm-sans/700.css";
@@ -15,16 +14,24 @@ import "@fontsource/noto-sans/400.css";
 import "./index.css";
 
 const handleBoundaryError = (error: Error, errorInfo: React.ErrorInfo) => {
-  const appError = errorHandlingService.handleApiError(error, {
+  const appError = toAppError(error, {
     layer: "boundary",
     boundary: "App",
     componentStack: errorInfo.componentStack,
   });
-  errorHandlingService.logError(appError, {
+  logAppError(appError, {
     boundary: "App",
     componentStack: errorInfo.componentStack,
   });
 };
+
+document.title = import.meta.env.VITE_APP_TITLE ?? 'Memorise UI';
+
+const faviconUrl = import.meta.env.VITE_APP_LOGO;
+if (faviconUrl) {
+  const link = document.querySelector<HTMLLinkElement>('link[rel="icon"]');
+  if (link) link.href = faviconUrl;
+}
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -35,8 +42,3 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     </BrowserRouter>
   </React.StrictMode>
 );
-
-// Report Web Vitals in development mode
-if (import.meta.env.DEV) {
-  reportWebVitals();
-}

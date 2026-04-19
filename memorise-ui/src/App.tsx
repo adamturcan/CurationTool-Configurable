@@ -1,10 +1,10 @@
-import { useEffect, useMemo, useCallback, lazy, Suspense } from "react";
+import { useEffect, useMemo, useCallback, useRef, lazy, Suspense } from "react";
 import {
   CssBaseline,
   ThemeProvider,
   Box,
 } from "@mui/material";
-import theme from "./shared/theme";
+import theme, { appGradient } from "./shared/theme";
 import {
   Routes,
   Route,
@@ -33,20 +33,19 @@ const NewWorkspaceRedirect: React.FC<{
   onCreate: () => Promise<WorkspaceDTO | null>;
 }> = ({ onCreate }) => {
   const navigate = useNavigate();
+  const creating = useRef(false);
 
   useEffect(() => {
-    let isMounted = true;
+    if (creating.current) return;
+    creating.current = true;
 
     void onCreate().then((ws) => {
-      if (!isMounted) return;
       if (ws?.id) {
         navigate(`/workspace/${encodeURIComponent(ws.id)}`, { replace: true });
       } else {
         navigate("/manage-workspaces", { replace: true });
       }
     });
-
-    return () => { isMounted = false; };
   }, [navigate, onCreate]);
 
   return null;
@@ -203,7 +202,7 @@ const App: React.FC = () => {
           }}
         >
           <img
-            src={import.meta.env.BASE_URL + "memorise.png"}
+            src={import.meta.env.VITE_APP_LOGO ?? import.meta.env.BASE_URL + "memorise.png"}
             alt="Memorise"
             style={{ height: 36, opacity: 0.7 }}
           />
@@ -228,7 +227,7 @@ const App: React.FC = () => {
             }}
           >
             <img
-              src={import.meta.env.BASE_URL + "memorise.png"}
+              src={import.meta.env.VITE_APP_LOGO ?? import.meta.env.BASE_URL + "memorise.png"}
               alt="Memorise"
               style={{ height: 36, opacity: 0.7 }}
             />
@@ -257,7 +256,7 @@ const App: React.FC = () => {
             inset: 0,
             width: "100%",
             overflow: "clip",
-            background: "linear-gradient(135deg, #2f3e34 0%, #8d7f57 100%)",
+            background: appGradient,
           }}
           >
         <BubbleSidebar
@@ -285,7 +284,7 @@ const App: React.FC = () => {
               }}
             >
               <img
-                src={import.meta.env.BASE_URL + "memorise.png"}
+                src={import.meta.env.VITE_APP_LOGO ?? import.meta.env.BASE_URL + "memorise.png"}
                 alt="Loading"
                 style={{ height: 24, opacity: 0.5 }}
               />
