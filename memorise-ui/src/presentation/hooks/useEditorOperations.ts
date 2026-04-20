@@ -19,11 +19,15 @@ type LayerOps = ReturnType<typeof useLayerOperations>;
 export function useEditorOperations(layers: LayerOps) {
   const { resolveLayer, applyLayerPatch } = layers;
 
-  const sessionStore = useSessionStore();
-  const notify = useNotificationStore.getState().enqueue;
-  const { session, draftText, setDraftText, setActiveSegmentId, activeTab } = sessionStore;
+  const session = useSessionStore((s) => s.session);
+  const draftText = useSessionStore((s) => s.draftText);
+  const setDraftText = useSessionStore((s) => s.setDraftText);
+  const setActiveSegmentId = useSessionStore((s) => s.setActiveSegmentId);
+  const activeTab = useSessionStore((s) => s.activeTab);
+  const updateSession = useSessionStore((s) => s.updateSession);
   const setActiveTab = useSessionStore((state) => state.setActiveTab);
   const updateTranslations = useSessionStore((state) => state.updateTranslations);
+  const notify = useNotificationStore.getState().enqueue;
 
   const [processingState, setProcessingState] = useState<{
     message: string;
@@ -147,26 +151,26 @@ export function useEditorOperations(layers: LayerOps) {
       const result = await annotationWorkflowService.runNer({ layer, activeSegmentId: segmentId, segments: session?.segments || [], deletedApiKeys: session?.deletedApiKeys ?? [] }, requestConflictResolution);
       if (result.ok) {
         applyLayerPatch(lang, result.layerPatch);
-        sessionStore.updateSession({ deletedApiKeys: result.deletedApiKeys });
+        updateSession({ deletedApiKeys: result.deletedApiKeys });
       }
       if (!result.ok) notify({ ...result.notice, retryAction: () => handleRunSegmentNer(segmentId, lang) });
       else notify(result.notice);
     }
     setProcessingMessage(null);
-  }, [notify, setActiveSegmentId, session, draftText, requestConflictResolution, resolveLayer, applyLayerPatch, sessionStore]);
+  }, [notify, setActiveSegmentId, session, draftText, requestConflictResolution, resolveLayer, applyLayerPatch, updateSession]);
 
   const handleRunSegmentSemTag = useCallback(async (segmentId: string, lang: string) => {
     setProcessingMessage(`Running Sem-Tag on segment (${lang})...`);
     setActiveSegmentId(segmentId);
     const result = await taggingWorkflowService.runClassify(false, { activeSegmentId: segmentId, segments: session?.segments || [], draftText, translations: session?.translations || [], text: session?.text || "", activeTab: lang, tags: session?.tags || [] });
     if (result.ok && result.tags) {
-      sessionStore.updateSession({ tags: result.tags });
+      updateSession({ tags: result.tags });
       useSessionStore.getState().setTagPanelOpen(true);
     }
     if (!result.ok) notify({ ...result.notice, retryAction: () => handleRunSegmentSemTag(segmentId, lang) });
     else notify(result.notice);
     setProcessingMessage(null);
-  }, [notify, setActiveSegmentId, session, draftText, sessionStore]);
+  }, [notify, setActiveSegmentId, session, draftText, updateSession]);
 
   // --- Text change ---
 
@@ -200,7 +204,7 @@ export function useEditorOperations(layers: LayerOps) {
           const result = await annotationWorkflowService.runNer({ layer: originalLayer, segments, deletedApiKeys: session?.deletedApiKeys ?? [] }, requestConflictResolution);
           if (result.ok) {
             applyLayerPatch("original", result.layerPatch);
-            sessionStore.updateSession({ deletedApiKeys: result.deletedApiKeys });
+            updateSession({ deletedApiKeys: result.deletedApiKeys });
           }
           notify(result.notice);
         }
@@ -222,7 +226,7 @@ export function useEditorOperations(layers: LayerOps) {
           const result = await annotationWorkflowService.runNer({ layer, segments: freshSession?.segments || [], deletedApiKeys: freshSession?.deletedApiKeys ?? [] }, requestConflictResolution);
           if (result.ok) {
             applyLayerPatch(t.language, result.layerPatch);
-            if (result.deletedApiKeys) sessionStore.updateSession({ deletedApiKeys: result.deletedApiKeys });
+            if (result.deletedApiKeys) updateSession({ deletedApiKeys: result.deletedApiKeys });
           }
         }
 
@@ -249,7 +253,7 @@ export function useEditorOperations(layers: LayerOps) {
           const result = await annotationWorkflowService.runNer({ layer: originalLayer, activeSegmentId: seg.id, segments, deletedApiKeys: currentSession.deletedApiKeys ?? [] }, requestConflictResolution);
           if (result.ok) {
             applyLayerPatch("original", result.layerPatch);
-            sessionStore.updateSession({ deletedApiKeys: result.deletedApiKeys });
+            updateSession({ deletedApiKeys: result.deletedApiKeys });
           }
 
           // Translation layers for this segment (counts as same step)
@@ -270,7 +274,7 @@ export function useEditorOperations(layers: LayerOps) {
             const result = await annotationWorkflowService.runNer({ layer, activeSegmentId: seg.id, segments, deletedApiKeys: freshSession?.deletedApiKeys ?? [] }, requestConflictResolution);
             if (result.ok) {
               applyLayerPatch(t.language, result.layerPatch);
-              if (result.deletedApiKeys) sessionStore.updateSession({ deletedApiKeys: result.deletedApiKeys });
+              if (result.deletedApiKeys) updateSession({ deletedApiKeys: result.deletedApiKeys });
             }
           }
         }
@@ -278,7 +282,7 @@ export function useEditorOperations(layers: LayerOps) {
         notify({ message: `NER completed for ${segments.length} segment(s).`, tone: "success" });
       }
     } finally { setProcessingMessage(null); }
-  }, [session, draftText, notify, requestConflictResolution, resolveLayer, applyLayerPatch, sessionStore]);
+  }, [session, draftText, notify, requestConflictResolution, resolveLayer, applyLayerPatch, updateSession]);
 
   const handleRunGlobalSemTag = useCallback(async () => {
     setProcessingMessage("Running semantic tagging...");
@@ -289,7 +293,7 @@ export function useEditorOperations(layers: LayerOps) {
       if (segments.length === 0) {
         const result = await taggingWorkflowService.runClassify(true, { activeSegmentId: undefined, segments: [], draftText, translations: session?.translations || [], text: session?.text || "", activeTab: "original", tags: session?.tags || [] });
         if (result.ok && result.tags) {
-          sessionStore.updateSession({ tags: result.tags });
+          updateSession({ tags: result.tags });
         }
         notify(result.notice);
       } else {
@@ -314,7 +318,7 @@ export function useEditorOperations(layers: LayerOps) {
           }
         }
 
-        sessionStore.updateSession({ tags: currentTags });
+        updateSession({ tags: currentTags });
         notify({
           message: successCount > 0
             ? `Tagged ${successCount} of ${segments.length} segment(s).`
@@ -325,7 +329,7 @@ export function useEditorOperations(layers: LayerOps) {
     } finally {
       setProcessingMessage(null);
     }
-  }, [session, draftText, notify, sessionStore]);
+  }, [session, draftText, notify, updateSession]);
 
   const handleSave = useCallback(async () => {
     if (!session) return;
@@ -333,19 +337,19 @@ export function useEditorOperations(layers: LayerOps) {
     try {
       const result = await editorWorkflowService.saveWorkspace(session, draftText);
       if (result.ok) {
-        if (result.sessionPatch) sessionStore.updateSession(result.sessionPatch);
+        if (result.sessionPatch) updateSession(result.sessionPatch);
         if (result.workspaceMetadataPatch) useWorkspaceStore.getState().updateWorkspaceMetadata(session.id, result.workspaceMetadataPatch);
       }
       notify(result.notice);
     } finally { setProcessingMessage(null); }
-  }, [session, draftText, notify, sessionStore]);
+  }, [session, draftText, notify, updateSession]);
 
   const handleRunGlobalSegment = useCallback(async () => {
     setProcessingMessage("Segmenting text...");
     try {
       const result = await segmentWorkflowService.runAutoSegmentation({ text: draftText, translations: session?.translations, segments: session?.segments }, activeTab);
       if (result.ok && result.patch) {
-        sessionStore.updateSession(result.patch);
+        updateSession(result.patch);
       }
       if (result.notice) {
         notify(result.notice);
@@ -353,7 +357,7 @@ export function useEditorOperations(layers: LayerOps) {
     } finally {
       setProcessingMessage(null);
     }
-  }, [session?.segments, session?.translations, activeTab, notify, sessionStore, draftText]);
+  }, [session?.segments, session?.translations, activeTab, notify, updateSession, draftText]);
 
   return {
     isProcessing,

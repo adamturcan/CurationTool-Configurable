@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useCallback } from "react";
+import React, { useEffect, useRef, useCallback, useMemo } from "react";
 import { Box, Menu, MenuItem, Typography, CircularProgress } from "@mui/material";
 
 import CallSplitIcon from "@mui/icons-material/CallSplit";
@@ -17,7 +17,10 @@ import { sx as sxUtil } from "../../../shared/styles";
 /** Orchestrates the editor view with segment blocks, menus, and conflict dialogs */
 const EditorContainer: React.FC = () => {
   const notify = useNotificationStore.getState().enqueue;
-  const { session, draftText, activeSegmentId, setActiveSegmentId } = useSessionStore();
+  const session = useSessionStore((state) => state.session);
+  const draftText = useSessionStore((state) => state.draftText);
+  const activeSegmentId = useSessionStore((state) => state.activeSegmentId);
+  const setActiveSegmentId = useSessionStore((state) => state.setActiveSegmentId);
 
   const setTagPanelOpen = useSessionStore((state) => state.setTagPanelOpen);
   const isTagPanelOpen = useSessionStore((state) => state.isTagPanelOpen);
@@ -29,6 +32,34 @@ const EditorContainer: React.FC = () => {
   const ops = useEditorOperations(layers);
   const splits = useSegmentSplitMerge();
   const spans = useSpanInteractions(layers, splits.setSplitAnchor, () => splits.setSplitAnchor(null));
+
+  // Handlers from ops/splits/spans close over `session` and get new references
+  const opsRef = useRef(ops);
+  opsRef.current = ops;
+  const splitsRef = useRef(splits);
+  splitsRef.current = splits;
+  const spansRef = useRef(spans);
+  spansRef.current = spans;
+
+  const handlers = useMemo<SegmentHandlers>(() => ({
+    onActivate: (id) => setActiveSegmentId(id),
+    onJoinUp: (id) => splitsRef.current.handleJoinUp(id),
+    onRunNer: (id, lang) => opsRef.current.handleRunSegmentNer(id, lang),
+    onRunSemTag: (id, lang) => opsRef.current.handleRunSegmentSemTag(id, lang),
+    onSpanClick: (span, el, fn, lang, start) => spansRef.current.handleSpanClick(span, el, fn, lang, start),
+    onSelectionChange: (sel, id, lang, start) => spansRef.current.handleSelectionChange(sel, id, lang, start),
+    onTextChange: (id, text, coords, deadIds, lang) => opsRef.current.handleTextChange(id, text, coords, deadIds, lang),
+    onShiftBoundary: (srcId, pos) => splitsRef.current.handleShiftBoundary(srcId, pos),
+    onInvalidDrop: () => notify({ message: "Cannot drop boundary here — target is above the source or showing a translation view.", tone: "warning" }),
+  }), [setActiveSegmentId, notify]);
+
+  const translationHandlers = useMemo<SegmentTranslationHandlers>(() => ({
+    onAddTranslation: (id, lang) => opsRef.current.handleTranslateSegment(id, lang),
+    onDeleteTranslation: (lang, id) => opsRef.current.handleDeleteSegmentTranslation(lang, id),
+    onUpdateTranslation: (id, lang) => opsRef.current.handleUpdateSegmentTranslation(id, lang),
+    languageOptions,
+    isLanguageListLoading,
+  }), [languageOptions, isLanguageListLoading]);
 
   const segmentListRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -180,25 +211,9 @@ const EditorContainer: React.FC = () => {
               <SegmentBlock
                 segment={{ id: "root", start: 0, end: draftText.length, text: draftText, order: 0 }}
                 index={0}
-                session={session}
                 display={{ isActive: true, isDragging: false, dropDisabled: false }}
-                handlers={{
-                  onActivate: () => setActiveSegmentId("root"),
-                  onJoinUp: splits.handleJoinUp,
-                  onRunNer: ops.handleRunSegmentNer,
-                  onRunSemTag: ops.handleRunSegmentSemTag,
-                  onSpanClick: spans.handleSpanClick,
-                  onSelectionChange: spans.handleSelectionChange,
-                  onTextChange: ops.handleTextChange,
-                  onShiftBoundary: splits.handleShiftBoundary,
-                }}
-                translationHandlers={{
-                  onAddTranslation: ops.handleTranslateSegment,
-                  onDeleteTranslation: ops.handleDeleteSegmentTranslation,
-                  onUpdateTranslation: ops.handleUpdateSegmentTranslation,
-                  languageOptions: languageOptions,
-                  isLanguageListLoading: isLanguageListLoading,
-                }}
+                handlers={handlers}
+                translationHandlers={translationHandlers}
                 dragHandlers={{}}
               />
             </SegmentDragProvider>
@@ -207,35 +222,12 @@ const EditorContainer: React.FC = () => {
               {session.segments.map((segment, idx) => {
                 const isDragging = splits.draggingFromIndex !== null;
                 const dropDisabled = splits.draggingFromIndex !== null && idx <= splits.draggingFromIndex;
-
-                const handlers: SegmentHandlers = {
-                  onActivate: () => setActiveSegmentId(segment.id),
-                  onJoinUp: splits.handleJoinUp,
-                  onRunNer: ops.handleRunSegmentNer,
-                  onRunSemTag: ops.handleRunSegmentSemTag,
-                  onSpanClick: spans.handleSpanClick,
-                  onSelectionChange: spans.handleSelectionChange,
-                  onTextChange: ops.handleTextChange,
-                  onShiftBoundary: splits.handleShiftBoundary,
-                  onInvalidDrop: () => notify({ message: "Cannot drop boundary here — target is above the source or showing a translation view.", tone: "warning" }),
-                };
-
-                const translationHandlers: SegmentTranslationHandlers = {
-                  onAddTranslation: ops.handleTranslateSegment,
-                  onDeleteTranslation: ops.handleDeleteSegmentTranslation,
-                  onUpdateTranslation: ops.handleUpdateSegmentTranslation,
-                  languageOptions: languageOptions,
-                  isLanguageListLoading: isLanguageListLoading,
-                };
-                
-
                 return (
                   <SegmentBlock
                     key={segment.id}
                     segment={segment}
                     index={idx}
-                    session={session}
-                    display={{ isActive: activeSegmentId === segment.id , isDragging, dropDisabled }}
+                    display={{ isActive: activeSegmentId === segment.id, isDragging, dropDisabled }}
                     handlers={handlers}
                     translationHandlers={translationHandlers}
                     dragHandlers={{ prevSegmentId: idx > 0 ? session.segments?.[idx - 1].id : undefined }}

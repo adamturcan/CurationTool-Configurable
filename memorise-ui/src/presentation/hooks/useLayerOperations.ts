@@ -5,8 +5,9 @@ import type { AnnotationLayer } from "../../types";
 
 /** Resolves, patches, and tracks edit state for original and translation annotation layers */
 export function useLayerOperations() {
-  const sessionStore = useSessionStore();
-  const { session, draftText } = sessionStore;
+  const session = useSessionStore((s) => s.session);
+  const draftText = useSessionStore((s) => s.draftText);
+  const updateSession = useSessionStore((s) => s.updateSession);
 
   // Builds an AnnotationLayer snapshot for the given language tab —
   // either from the workspace root (original) or from a translation entry.
@@ -39,16 +40,16 @@ export function useLayerOperations() {
     (lang: string, patch: AnnotationResult["layerPatch"]) => {
       if (!patch) return;
       if (lang === "original") {
-        sessionStore.updateSession(patch);
+        updateSession(patch);
       } else {
         const currentSession = useSessionStore.getState().session;
         const translations = (currentSession?.translations || []).map((t) =>
           t.language === lang ? { ...t, ...patch } : t
         );
-        sessionStore.updateSession({ translations });
+        updateSession({ translations });
       }
     },
-    [sessionStore]
+    [updateSession]
   );
 
   const markSegmentEdited = useCallback(
@@ -59,7 +60,7 @@ export function useLayerOperations() {
         const updatedSegments = (currentSession.segments || []).map((s) =>
           s.id === segmentId ? { ...s, isEdited: true } : s
         );
-        sessionStore.updateSession({ segments: updatedSegments });
+        updateSession({ segments: updatedSegments });
       } else {
         const translations = (currentSession.translations || []).map((t) =>
           t.language === lang
@@ -72,10 +73,10 @@ export function useLayerOperations() {
               }
             : t
         );
-        sessionStore.updateSession({ translations });
+        updateSession({ translations });
       }
     },
-    [sessionStore]
+    [updateSession]
   );
 
   return { resolveLayer, applyLayerPatch, markSegmentEdited };

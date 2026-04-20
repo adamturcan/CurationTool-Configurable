@@ -28,9 +28,8 @@ function promoteTagsForSegments(segmentIds: string[]) {
 
 /** Manages segment split, join, and boundary-shift operations with translation guards */
 export function useSegmentSplitMerge() {
-  const sessionStore = useSessionStore();
+  const session = useSessionStore((s) => s.session);
   const notify = useNotificationStore.getState().enqueue;
-  const { session } = sessionStore;
 
   const [splitAnchor, setSplitAnchor] = useState<SplitAnchor | null>(null);
   const [draggingFromIndex, setDraggingFromIndex] = useState<number | null>(null);

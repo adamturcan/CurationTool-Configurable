@@ -19,12 +19,13 @@ import SyncIcon from '@mui/icons-material/Sync';
 
 import { CodeMirrorWrapper } from "./codemirror/CodeMirrorWrapper";
 import { SegmentLogic } from "../../../core/entities/SegmentLogic";
-import type { NerSpan, SelectionBox, SpanCoordMap, Segment, WorkspaceDTO, TranslationDTO } from "../../../types";
+import type { NerSpan, SelectionBox, SpanCoordMap, Segment, TranslationDTO } from "../../../types";
 import { getSpanId } from "./utils/editorUtils";
 import { ENTITY_COLORS } from "../../../shared/constants/notationEditor";
 import { shadows } from "../../../shared/theme";
 import { sx as sxUtil } from "../../../shared/styles";
 import { useSegmentDrag } from "./context/SegmentDragContext";
+import { useSessionStore } from "../../stores";
 import type { LanguageOption } from "../../hooks";
 
 // Prop groups
@@ -36,7 +37,7 @@ interface SegmentDisplayProps {
 }
 
 export interface SegmentHandlers {
-  onActivate: () => void;
+  onActivate: (segmentId: string) => void;
   onJoinUp: (segmentId: string) => void;
   onRunNer: (segmentId: string, lang: string) => void;
   onRunSemTag: (segmentId: string, lang: string) => void;
@@ -64,7 +65,6 @@ interface SegmentDragHandlers {
 interface SegmentBlockProps {
   segment: Segment;
   index: number;
-  session: WorkspaceDTO | null;
   display: SegmentDisplayProps;
   handlers: SegmentHandlers;
   translationHandlers: SegmentTranslationHandlers;
@@ -74,14 +74,20 @@ interface SegmentBlockProps {
 // Component
 
 /** Renders a single text segment with CodeMirror editor, translation controls, and drag handles */
-export const SegmentBlock: React.FC<SegmentBlockProps> = ({
-  segment, index, session,
+const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
+  segment, index,
   display: { isActive, isDragging, dropDisabled },
   handlers: { onActivate, onJoinUp, onRunNer, onRunSemTag, onSpanClick, onSelectionChange, onTextChange, onShiftBoundary, onInvalidDrop },
   translationHandlers: { onAddTranslation, onDeleteTranslation, onUpdateTranslation, languageOptions, isLanguageListLoading },
   dragHandlers: { prevSegmentId },
 }) => {
   const [localLang, setLocalLang] = useState("original");
+  const translations = useSessionStore((s) => s.session?.translations);
+  const allSegments = useSessionStore((s) => s.session?.segments);
+  const deletedApiKeys = useSessionStore((s) => s.session?.deletedApiKeys);
+  const apiSpans = useSessionStore((s) => s.session?.apiSpans);
+  const userSpans = useSessionStore((s) => s.session?.userSpans);
+
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [languageSearch, setLanguageSearch] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -96,13 +102,13 @@ export const SegmentBlock: React.FC<SegmentBlockProps> = ({
     return () => registerNode(index, null);
   }, [index, registerNode]);
 
-  const availableLangs = useMemo(() => (session?.translations || []).filter((t: TranslationDTO) => t.segmentTranslations?.[segment.id] !== undefined).map((t: TranslationDTO) => t.language), [session?.translations, segment.id]);
+  const availableLangs = useMemo(() => (translations || []).filter((t: TranslationDTO) => t.segmentTranslations?.[segment.id] !== undefined).map((t: TranslationDTO) => t.language), [translations, segment.id]);
 
   const isSegmentEdited = useMemo(() => {
     if (localLang === "original") return !!segment.isEdited;
-    const tLayer = session?.translations?.find((t: TranslationDTO) => t.language === localLang);
+    const tLayer = translations?.find((t: TranslationDTO) => t.language === localLang);
     return !!tLayer?.editedSegmentTranslations?.[segment.id];
-  }, [localLang, segment.isEdited, segment.id, session?.translations]);
+  }, [localLang, segment.isEdited, segment.id, translations]);
 
   useEffect(() => { if (localLang !== "original" && !availableLangs.includes(localLang)) setLocalLang("original"); }, [localLang, availableLangs]);
 
@@ -116,9 +122,9 @@ export const SegmentBlock: React.FC<SegmentBlockProps> = ({
   // text has different lengths. Recompute start/end from translated text lengths.
   const virtualSegment = useMemo(() => {
     if (localLang === "original") return segment;
-    const tLayer = session?.translations?.find((t: TranslationDTO) => t.language === localLang);
-    return SegmentLogic.calculateVirtualBoundaries(session?.segments || [], tLayer?.segmentTranslations || {}).find((b: Segment) => b.id === segment.id) || segment;
-  }, [localLang, segment, session]);
+    const tLayer = translations?.find((t: TranslationDTO) => t.language === localLang);
+    return SegmentLogic.calculateVirtualBoundaries(allSegments || [], tLayer?.segmentTranslations || {}).find((b: Segment) => b.id === segment.id) || segment;
+  }, [localLang, segment, translations, allSegments]);
 
   // Extract spans that overlap this segment's range, convert from global to local
   // (0-based) coordinates, and filter out dismissed API spans.
@@ -126,12 +132,12 @@ export const SegmentBlock: React.FC<SegmentBlockProps> = ({
     if (!isActive) return [];
 
     let rawSpans: NerSpan[] = [];
-    const bannedKeys = new Set(session?.deletedApiKeys || []);
+    const bannedKeys = new Set(deletedApiKeys || []);
     if (localLang === "original") {
-      const api = (session?.apiSpans || []).filter((s: NerSpan) => !bannedKeys.has(`${s.start}:${s.end}:${s.entity}`));
-      rawSpans = [...api, ...(session?.userSpans || [])];
+      const api = (apiSpans || []).filter((s: NerSpan) => !bannedKeys.has(`${s.start}:${s.end}:${s.entity}`));
+      rawSpans = [...api, ...(userSpans || [])];
     } else {
-      const tLayer = session?.translations?.find((t: TranslationDTO) => t.language === localLang);
+      const tLayer = translations?.find((t: TranslationDTO) => t.language === localLang);
       const api = (tLayer?.apiSpans || []).filter((s: NerSpan) => !bannedKeys.has(`${s.start}:${s.end}:${s.entity}`));
       rawSpans = [...api, ...(tLayer?.userSpans || [])];
     }
@@ -144,7 +150,7 @@ export const SegmentBlock: React.FC<SegmentBlockProps> = ({
         start: Math.max(0, s.start - virtualSegment.start),
         end: Math.min(virtualSegment.end - virtualSegment.start, s.end - virtualSegment.start)
       }));
-  }, [localLang, session, virtualSegment, isActive]);
+  }, [localLang, translations, deletedApiKeys, apiSpans, userSpans, virtualSegment, isActive]);
 
   const filteredLanguageOptions = useMemo(() => {
     const query = languageSearch.trim().toLowerCase();
@@ -185,7 +191,7 @@ export const SegmentBlock: React.FC<SegmentBlockProps> = ({
   return (
     <Box
       ref={boxRef}
-      onClick={onActivate}
+      onClick={() => onActivate(segment.id)}
       onMouseEnter={() => setHoveredIdx(index)}
       onMouseLeave={() => setHoveredIdx(null)}
       onDragEnter={(e) => {
@@ -400,3 +406,5 @@ export const SegmentBlock: React.FC<SegmentBlockProps> = ({
     </Box>
   );
 };
+
+export const SegmentBlock = React.memo(SegmentBlockImpl);
