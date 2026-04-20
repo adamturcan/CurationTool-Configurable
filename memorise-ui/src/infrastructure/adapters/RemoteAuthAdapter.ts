@@ -146,7 +146,7 @@ export class RemoteAuthAdapter implements AuthService {
 
   private async handleAuthResponse(response: Response): Promise<AuthResult> {
     const data = await response.json() as {
-      user?: { id?: string; username?: string; email?: string };
+      user?: { id?: string; username?: string; email?: string; role?: 'admin' | 'user' };
       accessToken?: string;
       refreshToken?: string;
     };
@@ -159,11 +159,12 @@ export class RemoteAuthAdapter implements AuthService {
       id: data.user.id,
       username: data.user.username,
       email: data.user.email,
+      role: data.user.role,
     });
 
     if (data.accessToken) localStorage.setItem(ACCESS_KEY, data.accessToken);
     if (data.refreshToken) localStorage.setItem(REFRESH_KEY, data.refreshToken);
-    localStorage.setItem(USER_CACHE_KEY, JSON.stringify({ id: user.id, username: user.username, email: user.email }));
+    localStorage.setItem(USER_CACHE_KEY, JSON.stringify({ id: user.id, username: user.username, email: user.email, role: user.role }));
 
     return { user, token: data.accessToken };
   }

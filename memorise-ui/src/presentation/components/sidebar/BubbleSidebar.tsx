@@ -9,7 +9,7 @@ import FolderOpenIcon from "@mui/icons-material/FolderOpen";
 import AddIcon from "@mui/icons-material/Add";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import LogoutIcon from "@mui/icons-material/Logout";
-import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import TuneIcon from "@mui/icons-material/Tune";
 import { shadows, sidebarColors } from "../../../shared/theme";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useSessionStore, useNotificationStore } from "../../stores";
@@ -146,12 +146,12 @@ const BubbleSidebar: React.FC<Props> = ({
 
       <Box display="flex" flexDirection="column" gap={2}>
         <Bubble
-          label="Admin"
-          icon={<AdminPanelSettingsIcon />}
-          onClick={() => guardedNavigate("/admin")}
-          selected={isSelected("/admin")}
+          label="Services"
+          icon={<TuneIcon />}
+          onClick={() => guardedNavigate("/services")}
+          selected={isSelected("/services")}
           color={sidebarColors.admin}
-          ariaLabel="Admin panel"
+          ariaLabel="Services panel"
         />
 
         <Bubble

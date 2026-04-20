@@ -27,7 +27,7 @@ const AccountPage = lazy(() => import("./presentation/pages/AccoutPage"));
 const WorkspacePage = lazy(() => import("./presentation/pages/WorkspacePage"));
 const ManageWorkspacesPage = lazy(() => import("./presentation/pages/ManageWorkspacesPage"));
 const LoginPage = lazy(() => import("./presentation/pages/LoginPage"));
-const AdminPage = lazy(() => import("./presentation/pages/AdminPage"));
+const ServicesPage = lazy(() => import("./presentation/pages/ServicesPage"));
 
 // Redirects users who land directly on /workspace/new back to manage,
 // where the New Workspace dialog is the expected entry point.
@@ -303,8 +303,8 @@ const App: React.FC = () => {
                 }
               />
               <Route
-                path="/admin"
-                element={<AdminPage />}
+                path="/services"
+                element={<ServicesPage />}
               />
               <Route
                 path="*"

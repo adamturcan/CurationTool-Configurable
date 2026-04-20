@@ -5,10 +5,13 @@
  *
  * @category Entities
  */
+export type UserRole = 'admin' | 'user';
+
 export interface UserProps {
   id: string;
   username: string;
   email?: string;
+  role?: UserRole;
 }
 
 export class User {
@@ -25,10 +28,12 @@ export class User {
       id: props.id.trim(),
       username: props.username.trim(),
       email: props.email?.trim(),
+      role: props.role,
     });
   }
 
   get id(): string { return this.props.id; }
   get username(): string { return this.props.username; }
   get email(): string | undefined { return this.props.email; }
+  get role(): UserRole | undefined { return this.props.role; }
 }

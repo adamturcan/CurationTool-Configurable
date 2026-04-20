@@ -29,6 +29,7 @@ import { shadows } from "../../../shared/theme";
 import { getConfigService } from "../../../infrastructure/providers/configProvider";
 import { getAuthService } from "../../../infrastructure/providers/authProvider";
 import { getApiHealthService } from "../../../infrastructure/providers/apiHealthProvider";
+import { useAuthStore } from "../../stores";
 import type { HealthCheckResult } from "../../../infrastructure/services/ApiHealthService";
 import type { ApiEndpointConfig } from "../../../core/interfaces/ConfigService";
 
@@ -66,6 +67,8 @@ const ConfigPanel: React.FC = () => {
 
   const isServerMode = !!import.meta.env.VITE_BACKEND_URL;
   const backendUrl = (import.meta.env.VITE_BACKEND_URL ?? '').replace(/\/$/, '');
+  const isAdmin = useAuthStore((s) => s.user?.role === 'admin');
+  const canEdit = isServerMode && isAdmin;
 
   const getAuthHeaders = (): Record<string, string> => {
     const headers: Record<string, string> = {};
@@ -255,7 +258,7 @@ const ConfigPanel: React.FC = () => {
           />
         </Box>
         <Box display="flex" gap={1}>
-          {isServerMode && !editing && (
+          {canEdit && !editing && (
             <Button
               variant="outlined"
               size="small"

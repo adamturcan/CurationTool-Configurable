@@ -3,8 +3,8 @@ import { Box, Typography } from "@mui/material";
 import { shadows } from "../../shared/theme";
 import ConfigPanel from "../components/admin/ConfigPanel";
 
-/** Renders the admin dashboard with configuration and API health monitoring */
-const AdminPage: React.FC = () => {
+/** Renders the services dashboard with API endpoint health monitoring and (for admins) configuration */
+const ServicesPage: React.FC = () => {
   return (
     <Box
       sx={{
@@ -30,7 +30,7 @@ const AdminPage: React.FC = () => {
           textShadow: shadows.text,
         }}
       >
-        Admin
+        Services
       </Typography>
 
       <ConfigPanel />
@@ -38,4 +38,4 @@ const AdminPage: React.FC = () => {
   );
 };
 
-export default AdminPage;
+export default ServicesPage;

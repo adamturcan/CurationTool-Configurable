@@ -16,7 +16,7 @@ export class LocalAuthAdapter implements AuthService {
     if (!username) throw new Error('Username is required');
 
     localStorage.setItem(USER_KEY, username);
-    const user = User.create({ id: username, username });
+    const user = User.create({ id: username, username, role: 'admin' });
     return { user };
   }
 
@@ -32,7 +32,7 @@ export class LocalAuthAdapter implements AuthService {
   async getCurrentUser(): Promise<User | null> {
     const username = localStorage.getItem(USER_KEY);
     if (!username) return null;
-    return User.create({ id: username, username });
+    return User.create({ id: username, username, role: 'admin' });
   }
 
   isAuthenticated(): boolean {

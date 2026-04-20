@@ -10,7 +10,7 @@ import { editorWorkflowService } from "../../application/workflows/EditorWorkflo
 import { taggingWorkflowService } from "../../application/workflows/TaggingWorkflowService";
 import { translationWorkflowService } from "../../application/workflows/TranslationWorkflowService";
 
-import type { AnnotationLayer, SpanCoordMap } from "../../types";
+import type { AnnotationLayer, Notice, SpanCoordMap } from "../../types";
 import type { useLayerOperations } from "./useLayerOperations";
 
 type LayerOps = ReturnType<typeof useLayerOperations>;
@@ -197,23 +197,31 @@ export function useEditorOperations(layers: LayerOps) {
     try {
       const segments = session?.segments || [];
 
+      let lastFailureNotice: Notice | null = null;
+
       if (segments.length <= 1) {
         // Unsegmented or single segment — run on full text per layer
+        let originalOk = false;
         const originalLayer = resolveLayer("original");
         if (originalLayer) {
           const result = await annotationWorkflowService.runNer({ layer: originalLayer, segments, deletedApiKeys: session?.deletedApiKeys ?? [] }, requestConflictResolution);
           if (result.ok) {
             applyLayerPatch("original", result.layerPatch);
             updateSession({ deletedApiKeys: result.deletedApiKeys });
+            originalOk = true;
+          } else {
+            lastFailureNotice = result.notice;
           }
-          notify(result.notice);
         }
 
         const translations = useSessionStore.getState().session?.translations || [];
+        let translationOkCount = 0;
+        let translationAttempted = 0;
         for (const t of translations) {
           const freshSession = useSessionStore.getState().session;
           const tLayer = freshSession?.translations?.find(tr => tr.language === t.language);
           if (!tLayer?.text?.trim()) continue;
+          translationAttempted++;
 
           const layer: AnnotationLayer = {
             text: tLayer.text || "",
@@ -227,14 +235,27 @@ export function useEditorOperations(layers: LayerOps) {
           if (result.ok) {
             applyLayerPatch(t.language, result.layerPatch);
             if (result.deletedApiKeys) updateSession({ deletedApiKeys: result.deletedApiKeys });
+            translationOkCount++;
+          } else {
+            lastFailureNotice = result.notice;
           }
         }
 
-        if (translations.length > 0) {
-          notify({ message: `NER completed for original + ${translations.length} translation(s).`, tone: "success" });
+        const anySuccess = originalOk || translationOkCount > 0;
+        if (!anySuccess && lastFailureNotice) {
+          notify(lastFailureNotice);
+        } else if (translationAttempted > 0) {
+          const partial = !originalOk || translationOkCount < translationAttempted;
+          notify({
+            message: `NER completed for ${originalOk ? "original" : "0 original"} + ${translationOkCount} of ${translationAttempted} translation(s).`,
+            tone: partial ? "warning" : "success",
+          });
+        } else if (originalOk) {
+          notify({ message: "NER completed.", tone: "success" });
         }
       } else {
         // Per-segment NER with progress
+        let successCount = 0;
         for (let i = 0; i < segments.length; i++) {
           setProgress("Running NER analysis...", i, segments.length);
           const seg = segments[i];
@@ -242,6 +263,8 @@ export function useEditorOperations(layers: LayerOps) {
           // Read fresh session each iteration so previous patches are visible
           const currentSession = useSessionStore.getState().session;
           if (!currentSession) break;
+
+          let segmentHadSuccess = false;
 
           // Original layer for this segment (built from fresh state)
           const originalLayer: AnnotationLayer = {
@@ -254,6 +277,9 @@ export function useEditorOperations(layers: LayerOps) {
           if (result.ok) {
             applyLayerPatch("original", result.layerPatch);
             updateSession({ deletedApiKeys: result.deletedApiKeys });
+            segmentHadSuccess = true;
+          } else {
+            lastFailureNotice = result.notice;
           }
 
           // Translation layers for this segment (counts as same step)
@@ -275,11 +301,22 @@ export function useEditorOperations(layers: LayerOps) {
             if (result.ok) {
               applyLayerPatch(t.language, result.layerPatch);
               if (result.deletedApiKeys) updateSession({ deletedApiKeys: result.deletedApiKeys });
+              segmentHadSuccess = true;
+            } else {
+              lastFailureNotice = result.notice;
             }
           }
+
+          if (segmentHadSuccess) successCount++;
         }
 
-        notify({ message: `NER completed for ${segments.length} segment(s).`, tone: "success" });
+        if (successCount === 0 && lastFailureNotice) {
+          notify(lastFailureNotice);
+        } else if (successCount < segments.length) {
+          notify({ message: `NER completed for ${successCount} of ${segments.length} segment(s).`, tone: "warning" });
+        } else {
+          notify({ message: `NER completed for ${segments.length} segment(s).`, tone: "success" });
+        }
       }
     } finally { setProcessingMessage(null); }
   }, [session, draftText, notify, requestConflictResolution, resolveLayer, applyLayerPatch, updateSession]);
@@ -299,6 +336,7 @@ export function useEditorOperations(layers: LayerOps) {
       } else {
         let currentTags = session?.tags || [];
         let successCount = 0;
+        let lastFailureNotice: Notice | null = null;
 
         for (let i = 0; i < segments.length; i++) {
           setProgress("Running semantic tagging...", i, segments.length);
@@ -315,16 +353,19 @@ export function useEditorOperations(layers: LayerOps) {
           if (result.ok && result.tags) {
             currentTags = result.tags;
             successCount++;
+          } else if (!result.ok) {
+            lastFailureNotice = result.notice;
           }
         }
 
         updateSession({ tags: currentTags });
-        notify({
-          message: successCount > 0
-            ? `Tagged ${successCount} of ${segments.length} segment(s).`
-            : "No segments could be classified.",
-          tone: successCount > 0 ? "success" : "error",
-        });
+        if (successCount === 0 && lastFailureNotice) {
+          notify(lastFailureNotice);
+        } else if (successCount < segments.length) {
+          notify({ message: `Tagged ${successCount} of ${segments.length} segment(s).`, tone: "warning" });
+        } else {
+          notify({ message: `Tagged ${segments.length} segment(s).`, tone: "success" });
+        }
       }
     } finally {
       setProcessingMessage(null);
