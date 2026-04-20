@@ -92,6 +92,7 @@ export function useSegmentSplitMerge() {
       });
       if (result.ok && result.patch) {
         useSessionStore.getState().updateSession(result.patch);
+        useSessionStore.getState().incrementCounter({ group: 'segment', action: 'join' });
       }
       notify(result.notice);
     });
@@ -116,6 +117,7 @@ export function useSegmentSplitMerge() {
       }, segmentId);
       if (result.ok && result.patch) {
         useSessionStore.getState().updateSession(result.patch);
+        useSessionStore.getState().incrementCounter({ group: 'segment', action: 'split' });
       }
       notify(result.notice);
     });
@@ -152,6 +154,7 @@ export function useSegmentSplitMerge() {
         if (result.patch.text) {
           useSessionStore.getState().setDraftText(result.patch.text);
         }
+        useSessionStore.getState().incrementCounter({ group: 'segment', action: 'shift' });
       }
       notify(result.notice);
     });

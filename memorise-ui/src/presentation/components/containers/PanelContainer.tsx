@@ -68,6 +68,7 @@ const PanelContainer: React.FC = () => {
 
       if (result.ok) {
         useSessionStore.getState().updateSession({ tags: result.tags ?? [] });
+        useSessionStore.getState().incrementCounter({ group: 'tag', action: 'add' });
       }
       notify(result.notice);
 
@@ -82,6 +83,7 @@ const PanelContainer: React.FC = () => {
       const result = taggingWorkflowService.deleteTag(name, keywordId, parentId, tags, activeSegmentId);
       if (result.ok) {
         useSessionStore.getState().updateSession({ tags: result.tags ?? [] });
+        useSessionStore.getState().incrementCounter({ group: 'tag', action: 'remove' });
       }
       notify(result.notice);
     },

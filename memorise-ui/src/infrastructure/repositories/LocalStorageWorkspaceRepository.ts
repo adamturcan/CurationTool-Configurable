@@ -154,6 +154,7 @@ export class LocalStorageWorkspaceRepository implements WorkspaceRepository {
     const id = workspace.id ?? crypto.randomUUID();
     const name = workspace.name ?? "Untitled Workspace";
     const updatedAt = typeof workspace.updatedAt === "number" ? workspace.updatedAt : Date.now();
+    const createdAt = typeof workspace.createdAt === "number" ? workspace.createdAt : updatedAt;
     const isTemporary = Boolean(workspace.isTemporary);
 
     return {
@@ -162,6 +163,7 @@ export class LocalStorageWorkspaceRepository implements WorkspaceRepository {
       name,
       text: typeof workspace.text === "string" ? workspace.text : "",
       isTemporary,
+      createdAt,
       updatedAt,
       userSpans: Array.isArray(workspace.userSpans) ? workspace.userSpans : [],
       apiSpans: Array.isArray(workspace.apiSpans) ? workspace.apiSpans : [],
@@ -172,6 +174,8 @@ export class LocalStorageWorkspaceRepository implements WorkspaceRepository {
         : [],
       // Preserve segments (optional metadata)
       segments: Array.isArray(workspace.segments) ? workspace.segments : undefined,
+      // Preserve UI action counters (optional, normalized by Workspace entity)
+      counters: workspace.counters,
     };
   }
 

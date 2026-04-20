@@ -1,5 +1,5 @@
 import type { WorkspaceRepository } from '../core/interfaces/WorkspaceRepository';
-import type { WorkspaceDTO, TagItem, TranslationDTO, NerSpan, Segment } from '../types';
+import type { WorkspaceDTO, TagItem, TranslationDTO, NerSpan, Segment, WorkspaceCounters } from '../types';
 import { CreateWorkspaceUseCase } from '../core/usecases/CreateWorkspaceUseCase';
 import { DeleteWorkspaceUseCase } from '../core/usecases/DeleteWorkspaceUseCase';
 import {
@@ -109,6 +109,7 @@ export class WorkspaceApplicationService {
     deletedApiKeys?: string[];
     tags?: TagItem[];
     translations?: TranslationDTO[];
+    counters?: WorkspaceCounters;
     updatedAt?: number;
   }): Promise<WorkspaceDTO> {
     const workspace = await this.createUseCase.execute(params);
@@ -165,6 +166,7 @@ export class WorkspaceApplicationService {
           deletedApiKeys: dto.deletedApiKeys,
           tags: dto.tags,
           translations: dto.translations,
+          counters: dto.counters,
           updatedAt: dto.updatedAt,
         });
       }
@@ -226,6 +228,7 @@ export class WorkspaceApplicationService {
       tags: dto.tags,
       translations: dto.translations,
       segments: dto.segments,
+      counters: dto.counters,
       updatedAt: dto.updatedAt,
     };
   }

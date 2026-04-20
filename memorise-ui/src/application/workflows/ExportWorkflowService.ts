@@ -47,22 +47,33 @@ export class ExportWorkflowService {
     return name.replace(/[^a-z0-9]/gi, "_");
   }
 
+  private formatTimestamp(ts: number | undefined): string | undefined {
+    if (typeof ts !== "number" || !Number.isFinite(ts)) return undefined;
+    return new Date(ts).toISOString();
+  }
+
   private generateJson(workspace: WorkspaceDTO): ExportOutput {
+    const exportedAt = Date.now();
     const exportData = {
       id: workspace.id,
       name: workspace.name,
       owner: workspace.owner,
       text: workspace.text,
       isTemporary: workspace.isTemporary,
+      createdAt: workspace.createdAt,
+      createdAtFormatted: this.formatTimestamp(workspace.createdAt),
       updatedAt: workspace.updatedAt,
+      updatedAtFormatted: this.formatTimestamp(workspace.updatedAt),
       userSpans: workspace.userSpans,
       apiSpans: workspace.apiSpans,
       deletedApiKeys: workspace.deletedApiKeys,
       tags: workspace.tags,
       translations: workspace.translations,
       segments: workspace.segments,
-      exportedAt: Date.now(),
-      exportVersion: "1.0",
+      counters: workspace.counters,
+      exportedAt,
+      exportedAtFormatted: this.formatTimestamp(exportedAt),
+      exportVersion: "1.1",
     };
 
     const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
@@ -143,6 +154,7 @@ export class ExportWorkflowService {
     doc.setTextColor(100);
     doc.text(`ID: ${workspace.id}`, margin, y); y += 5;
     if (workspace.owner) { doc.text(`Owner: ${workspace.owner}`, margin, y); y += 5; }
+    if (workspace.createdAt) { doc.text(`Created: ${new Date(workspace.createdAt).toLocaleString()}`, margin, y); y += 5; }
     if (workspace.updatedAt) { doc.text(`Updated: ${new Date(workspace.updatedAt).toLocaleString()}`, margin, y); y += 5; }
     doc.text(`Exported: ${new Date().toLocaleString()}`, margin, y); y += 5;
     doc.setTextColor(0);
@@ -186,6 +198,16 @@ export class ExportWorkflowService {
       addSection(`Tags (${workspace.tags.length})`);
       const tagNames = workspace.tags.map(t => t.name).join(", ");
       addWrappedText(tagNames);
+      y += 6;
+    }
+
+    // Action counters
+    if (workspace.counters) {
+      const c = workspace.counters;
+      addSection("Action Counters");
+      addWrappedText(`NER edits: ${c.nerEdits} (created ${c.nerBreakdown.created}, deleted user ${c.nerBreakdown.deletedUser}, deleted API ${c.nerBreakdown.deletedApi}, category changed ${c.nerBreakdown.categoryChanged}, text edited ${c.nerBreakdown.textEdited})`);
+      addWrappedText(`Segment edits: ${c.segmentEdits} (split ${c.segmentBreakdown.split}, join ${c.segmentBreakdown.join}, shift ${c.segmentBreakdown.shift})`);
+      addWrappedText(`Tag adds: ${c.tagAdds}  |  Tag removals: ${c.tagRemovals}`);
       y += 6;
     }
 

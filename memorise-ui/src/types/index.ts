@@ -7,4 +7,5 @@ export type { SessionPatch } from "./SessionPatch";
 export type { TagItem, TagSource } from "./Tag";
 export type { ThesaurusIndexItem, ThesaurusItem } from "./Thesaurus";
 export type { LanguageCode, TranslationRequest, TranslationResponse } from "./Translation";
-export type { WorkspaceDTO, TranslationDTO } from "./Workspace";
+export type { WorkspaceDTO, TranslationDTO, WorkspaceCounters, NerBreakdown, SegmentBreakdown } from "./Workspace";
+export { emptyCounters } from "./Workspace";

@@ -1,6 +1,6 @@
 import type { WorkspaceRepository } from '../interfaces/WorkspaceRepository';
 import { Workspace } from '../entities/Workspace';
-import type { TagItem, TranslationDTO, NerSpan, Segment } from '../../types';
+import type { TagItem, TranslationDTO, NerSpan, Segment, WorkspaceCounters } from '../../types';
 import { createAppError } from '../../shared/errors';
 import { requireWorkspaceId, requireExistingWorkspace } from './validators';
 
@@ -17,6 +17,7 @@ export interface UpdateWorkspacePatch {
   tags?: TagItem[];
   translations?: TranslationDTO[];
   segments?: Segment[];
+  counters?: WorkspaceCounters;
   updatedAt?: number;
 }
 
@@ -66,6 +67,9 @@ export class UpdateWorkspaceUseCase {
       }
       if (patch.translations !== undefined) {
         workspace = workspace.withTranslations(patch.translations);
+      }
+      if (patch.counters !== undefined) {
+        workspace = workspace.withCounters(patch.counters);
       }
       if (patch.updatedAt !== undefined) {
         workspace = workspace.withUpdatedAt(patch.updatedAt);

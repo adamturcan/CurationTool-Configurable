@@ -56,6 +56,7 @@ export function useSpanInteractions(
       if (result.ok) {
         applyLayerPatch(newSelection.localLang, result.layerPatch);
         markSegmentEdited(newSelection.segmentId, newSelection.localLang);
+        useSessionStore.getState().incrementCounter({ group: 'ner', action: 'created' });
       }
     }
 
@@ -99,6 +100,8 @@ export function useSpanInteractions(
           applyLayerPatch(actionLangContext, result.layerPatch);
           if (result.deletedApiKeys) sessionStore.updateSession({ deletedApiKeys: result.deletedApiKeys });
           markSegmentEdited(activeSegmentId, actionLangContext);
+          const isApi = activeSpan.origin === 'api' || result.layerPatch?.apiSpans !== undefined;
+          useSessionStore.getState().incrementCounter({ group: 'ner', action: isApi ? 'deletedApi' : 'deletedUser' });
         }
         notify(result.notice);
       }
@@ -107,6 +110,7 @@ export function useSpanInteractions(
     }
     cmReplaceFn?.(normalized);
     markSegmentEdited(activeSegmentId, actionLangContext);
+    useSessionStore.getState().incrementCounter({ group: 'ner', action: 'textEdited' });
     closeEditMenu();
   }, [activeSpan, cmReplaceFn, closeEditMenu, actionLangContext, session, draftText, activeSegmentId, resolveLayer, applyLayerPatch, markSegmentEdited, sessionStore, notify]);
 
@@ -118,6 +122,7 @@ export function useSpanInteractions(
         if (result.ok) {
           applyLayerPatch(actionLangContext, result.layerPatch);
           markSegmentEdited(activeSegmentId, actionLangContext);
+          useSessionStore.getState().incrementCounter({ group: 'ner', action: 'categoryChanged' });
         }
         notify(result.notice);
       }
@@ -134,6 +139,8 @@ export function useSpanInteractions(
           applyLayerPatch(actionLangContext, result.layerPatch);
           if (result.deletedApiKeys) sessionStore.updateSession({ deletedApiKeys: result.deletedApiKeys });
           markSegmentEdited(activeSegmentId, actionLangContext);
+          const isApi = activeSpan.origin === 'api' || result.layerPatch?.apiSpans !== undefined;
+          useSessionStore.getState().incrementCounter({ group: 'ner', action: isApi ? 'deletedApi' : 'deletedUser' });
         }
         notify(result.notice);
       }

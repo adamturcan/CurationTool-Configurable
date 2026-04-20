@@ -7,8 +7,24 @@
  */
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
-import type { WorkspaceDTO, TranslationDTO } from '../../types';
-import { populateSegmentText } from '../../types';
+import type {
+  WorkspaceDTO,
+  TranslationDTO,
+  WorkspaceCounters,
+  NerBreakdown,
+  SegmentBreakdown,
+} from '../../types';
+import { populateSegmentText, emptyCounters } from '../../types';
+
+/**
+ * Discriminated kind for {@link SessionStore.incrementCounter}. Each increment
+ * bumps both the matching headline aggregate and the matching breakdown field
+ * atomically so the invariant `sum(breakdown) === headline` always holds.
+ */
+export type CounterKind =
+  | { group: 'ner'; action: keyof NerBreakdown }
+  | { group: 'segment'; action: keyof SegmentBreakdown }
+  | { group: 'tag'; action: 'add' | 'remove' };
 
 interface SessionStore {
   session: WorkspaceDTO | null;
@@ -27,8 +43,18 @@ interface SessionStore {
   setDraftText: (text: string) => void;
   updateTranslations: (translations: TranslationDTO[]) => void;
   updateSession: (updates: Partial<WorkspaceDTO>) => void;
+  incrementCounter: (kind: CounterKind) => void;
   setActiveTab: (tab: string) => void;
   setActiveSegmentId: (id: string | undefined) => void;
+}
+
+function ensureCounters(counters: WorkspaceCounters | undefined): WorkspaceCounters {
+  if (!counters) return emptyCounters();
+  return {
+    ...counters,
+    nerBreakdown: { ...counters.nerBreakdown },
+    segmentBreakdown: { ...counters.segmentBreakdown },
+  };
 }
 
 export const useSessionStore = create<SessionStore>()(
@@ -59,6 +85,7 @@ export const useSessionStore = create<SessionStore>()(
           tags: workspace.tags ?? [],
           translations: workspace.translations ?? [],
           segments: populatedSegments,
+          counters: ensureCounters(workspace.counters),
         };
 
         set({
@@ -84,6 +111,7 @@ export const useSessionStore = create<SessionStore>()(
             tags: [],
             translations: [],
             segments: [],
+            counters: emptyCounters(),
           },
           draftText: "",
           isDirty: false,
@@ -121,6 +149,31 @@ export const useSessionStore = create<SessionStore>()(
         set({
           session: { ...current, ...updates },
           isDirty: 'isDirty' in updates ? !!updates.isDirty : true,
+        });
+      },
+
+      // Atomically bumps the matching headline aggregate AND the matching
+      // breakdown field, so the invariant `sum(breakdown) === headline` holds.
+      incrementCounter: (kind) => {
+        const state = get();
+        if (!state.session) return;
+        const current = ensureCounters(state.session.counters);
+
+        if (kind.group === 'ner') {
+          current.nerBreakdown[kind.action] += 1;
+          current.nerEdits += 1;
+        } else if (kind.group === 'segment') {
+          current.segmentBreakdown[kind.action] += 1;
+          current.segmentEdits += 1;
+        } else if (kind.action === 'add') {
+          current.tagAdds += 1;
+        } else {
+          current.tagRemovals += 1;
+        }
+
+        set({
+          session: { ...state.session, counters: current },
+          isDirty: true,
         });
       },
 

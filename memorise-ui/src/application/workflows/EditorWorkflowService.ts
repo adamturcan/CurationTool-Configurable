@@ -159,6 +159,7 @@ export class EditorWorkflowService {
         tags: session.tags,
         translations: session.translations,
         segments: session.segments,
+        counters: session.counters,
       };
 
       await appService.updateWorkspace({

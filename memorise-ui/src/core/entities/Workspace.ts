@@ -1,4 +1,13 @@
-import type { NerSpan, TagItem, WorkspaceDTO, TranslationDTO } from '../../types';
+import type {
+  NerSpan,
+  TagItem,
+  WorkspaceDTO,
+  TranslationDTO,
+  WorkspaceCounters,
+  NerBreakdown,
+  SegmentBreakdown,
+} from '../../types';
+import { emptyCounters } from '../../types';
 
 /**
  * Lightweight metadata for workspace listing and quick operations.
@@ -18,12 +27,14 @@ export interface WorkspaceInput {
   owner: string;
   text?: string;
   isTemporary?: boolean;
+  createdAt?: number;
   updatedAt?: number;
   userSpans?: NerSpan[];
   apiSpans?: NerSpan[];
   deletedApiKeys?: string[];
   tags?: TagItem[];
   translations?: TranslationDTO[];
+  counters?: WorkspaceCounters;
 }
 
 /** Validated, frozen internal state of a Workspace */
@@ -33,12 +44,64 @@ interface WorkspaceProps {
   owner: string;
   text: string;
   isTemporary: boolean;
+  createdAt: number;
   updatedAt: number;
   userSpans: readonly NerSpan[];
   apiSpans: readonly NerSpan[];
   deletedApiKeys: readonly string[];
   tags: readonly TagItem[];
   translations: readonly TranslationDTO[];
+  counters: WorkspaceCounters;
+}
+
+function toNonNegInt(value: unknown): number {
+  const n = typeof value === 'number' && Number.isFinite(value) ? Math.floor(value) : 0;
+  return n < 0 ? 0 : n;
+}
+
+/** Fills missing fields with zero, clamps to non-negative integers at every level. */
+function normalizeCounters(input?: Partial<WorkspaceCounters>): WorkspaceCounters {
+  const base = emptyCounters();
+  if (!input || typeof input !== 'object') return base;
+
+  const ner: Partial<NerBreakdown> = (input.nerBreakdown as Partial<NerBreakdown>) ?? {};
+  const seg: Partial<SegmentBreakdown> = (input.segmentBreakdown as Partial<SegmentBreakdown>) ?? {};
+
+  return {
+    nerEdits: toNonNegInt(input.nerEdits),
+    tagAdds: toNonNegInt(input.tagAdds),
+    segmentEdits: toNonNegInt(input.segmentEdits),
+    tagRemovals: toNonNegInt(input.tagRemovals),
+    nerBreakdown: {
+      created: toNonNegInt(ner.created),
+      deletedUser: toNonNegInt(ner.deletedUser),
+      deletedApi: toNonNegInt(ner.deletedApi),
+      categoryChanged: toNonNegInt(ner.categoryChanged),
+      textEdited: toNonNegInt(ner.textEdited),
+    },
+    segmentBreakdown: {
+      split: toNonNegInt(seg.split),
+      join: toNonNegInt(seg.join),
+      shift: toNonNegInt(seg.shift),
+    },
+  };
+}
+
+function cloneCounters(counters: WorkspaceCounters): WorkspaceCounters {
+  return {
+    nerEdits: counters.nerEdits,
+    tagAdds: counters.tagAdds,
+    segmentEdits: counters.segmentEdits,
+    tagRemovals: counters.tagRemovals,
+    nerBreakdown: { ...counters.nerBreakdown },
+    segmentBreakdown: { ...counters.segmentBreakdown },
+  };
+}
+
+function freezeCounters(counters: WorkspaceCounters): WorkspaceCounters {
+  Object.freeze(counters.nerBreakdown);
+  Object.freeze(counters.segmentBreakdown);
+  return Object.freeze(counters);
 }
 
 /**
@@ -62,6 +125,7 @@ export class Workspace {
       deletedApiKeys: Object.freeze([...props.deletedApiKeys]),
       tags: Object.freeze([...props.tags]),
       translations: Object.freeze([...props.translations]),
+      counters: freezeCounters(cloneCounters(props.counters)),
     };
 
     Object.freeze(this.props);
@@ -80,12 +144,14 @@ export class Workspace {
       owner,
       text: dto.text,
       isTemporary: dto.isTemporary,
+      createdAt: dto.createdAt,
       updatedAt: dto.updatedAt,
       userSpans: dto.userSpans,
       apiSpans: dto.apiSpans,
       deletedApiKeys: dto.deletedApiKeys,
       tags: dto.tags,
       translations: dto.translations,
+      counters: dto.counters,
     });
   }
 
@@ -113,6 +179,10 @@ export class Workspace {
       typeof input.updatedAt === 'number' && Number.isFinite(input.updatedAt)
         ? input.updatedAt
         : now;
+    const createdAt =
+      typeof input.createdAt === 'number' && Number.isFinite(input.createdAt)
+        ? input.createdAt
+        : updatedAt;
 
     return new Workspace({
       id,
@@ -120,12 +190,14 @@ export class Workspace {
       owner,
       text: typeof input.text === 'string' ? input.text : '',
       isTemporary: Boolean(input.isTemporary),
+      createdAt,
       updatedAt,
       userSpans: Array.isArray(input.userSpans) ? [...input.userSpans] : [],
       apiSpans: Array.isArray(input.apiSpans) ? [...input.apiSpans] : [],
       deletedApiKeys: Array.isArray(input.deletedApiKeys) ? [...input.deletedApiKeys] : [],
       tags,
       translations,
+      counters: normalizeCounters(input.counters),
     });
   }
 
@@ -147,6 +219,10 @@ export class Workspace {
 
   get isTemporary(): boolean {
     return this.props.isTemporary;
+  }
+
+  get createdAt(): number {
+    return this.props.createdAt;
   }
 
   get updatedAt(): number {
@@ -171,6 +247,10 @@ export class Workspace {
 
   get translations(): readonly TranslationDTO[] {
     return this.props.translations;
+  }
+
+  get counters(): WorkspaceCounters {
+    return this.props.counters;
   }
 
   withName(name: string): Workspace {
@@ -239,6 +319,13 @@ export class Workspace {
     return this.clone({ updatedAt: nextUpdatedAt });
   }
 
+  withCounters(counters: WorkspaceCounters): Workspace {
+    return this.clone({
+      counters: normalizeCounters(counters),
+      updatedAt: Date.now(),
+    });
+  }
+
   /** Serializes to plain Workspace DTO for persistence, preserving segments from existingDto */
   toDto(existingDto?: Partial<WorkspaceDTO>): WorkspaceDTO {
     return {
@@ -247,6 +334,7 @@ export class Workspace {
       owner: this.owner,
       text: this.text,
       isTemporary: this.isTemporary,
+      createdAt: this.createdAt,
       updatedAt: this.updatedAt,
       userSpans: [...this.userSpans],
       apiSpans: [...this.apiSpans],
@@ -254,6 +342,7 @@ export class Workspace {
       tags: [...this.tags],
       translations: [...this.translations],
       segments: existingDto?.segments,
+      counters: cloneCounters(this.counters),
     };
   }
 
@@ -264,12 +353,14 @@ export class Workspace {
       owner: overrides.owner ?? this.owner,
       text: overrides.text ?? this.text,
       isTemporary: overrides.isTemporary ?? this.isTemporary,
+      createdAt: overrides.createdAt ?? this.createdAt,
       updatedAt: overrides.updatedAt ?? this.updatedAt,
       userSpans: overrides.userSpans ?? [...this.userSpans],
       apiSpans: overrides.apiSpans ?? [...this.apiSpans],
       deletedApiKeys: overrides.deletedApiKeys ?? [...this.deletedApiKeys],
       tags: overrides.tags ?? [...this.tags],
       translations: overrides.translations ?? [...this.translations],
+      counters: overrides.counters ?? cloneCounters(this.counters),
     });
   }
 }

@@ -1,6 +1,6 @@
 import type { WorkspaceRepository } from '../interfaces/WorkspaceRepository';
 import { Workspace } from '../entities/Workspace';
-import type { TagItem, TranslationDTO, NerSpan } from '../../types';
+import type { TagItem, TranslationDTO, NerSpan, WorkspaceCounters } from '../../types';
 import { createAppError } from '../../shared/errors';
 import { requireOwnerId, requireWorkspaceName } from './validators';
 
@@ -18,6 +18,7 @@ export interface CreateWorkspaceRequest {
   deletedApiKeys?: string[];
   tags?: TagItem[];
   translations?: TranslationDTO[];
+  counters?: WorkspaceCounters;
   updatedAt?: number;
 }
 
@@ -47,6 +48,7 @@ export class CreateWorkspaceUseCase {
         deletedApiKeys: request.deletedApiKeys ?? [],
         tags: request.tags,
         translations: request.translations,
+        counters: request.counters,
       });
 
       await this.workspaceRepository.save(workspace);
