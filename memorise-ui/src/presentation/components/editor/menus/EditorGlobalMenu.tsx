@@ -5,16 +5,24 @@ import {
 import { alpha } from "@mui/material/styles";
 
 import SaveOutlinedIcon from "@mui/icons-material/SaveOutlined";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import UndoIcon from "@mui/icons-material/Undo";
+import RedoIcon from "@mui/icons-material/Redo";
 import LabelOutlinedIcon from "@mui/icons-material/LabelOutlined";
 import CallSplitIcon from "@mui/icons-material/CallSplit";
 import ManageSearchIcon from "@mui/icons-material/ManageSearch";
 import TranslateIcon from "@mui/icons-material/Translate";
 import AutoFixHighIcon from "@mui/icons-material/AutoFixHigh";
+import FileDownloadIcon from "@mui/icons-material/FileDownload";
+import CodeIcon from "@mui/icons-material/Code";
+import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 
 import type { LanguageOption } from "../../../hooks";
 import { ENTITY_COLORS } from "../../../../shared/constants/notationEditor";
 import { shadows } from "../../../../shared/theme";
 import { sx as sxUtil } from "../../../../shared/styles";
+import { useStore } from "zustand";
+import { useSessionStore } from "../../../stores";
 
 interface EditorGlobalMenuProps {
   onNer: () => void;
@@ -22,6 +30,7 @@ interface EditorGlobalMenuProps {
   onSemTag: () => void;
   onSave: () => void;
   onTranslateAll: (langCode: string) => void;
+  onExport: (format: "json" | "pdf") => void;
   isTagPanelOpen: boolean;
   onToggleTagPanel: (isOpen: boolean) => void;
   hasSegments?: boolean;
@@ -54,6 +63,7 @@ const EditorGlobalMenu: React.FC<EditorGlobalMenuProps> = ({
   onSemTag,
   onSave,
   onTranslateAll,
+  onExport,
   isTagPanelOpen,
   onToggleTagPanel,
   isAlreadySegmented = false,
@@ -63,6 +73,10 @@ const EditorGlobalMenu: React.FC<EditorGlobalMenuProps> = ({
 }) => {
   const [showTranslate, setShowTranslate] = useState(false);
   const [showTagOptions, setShowTagOptions] = useState(false);
+  const [showExport, setShowExport] = useState(false);
+  const isDirty = useSessionStore((s) => s.isDirty);
+  const canUndo = useStore(useSessionStore.temporal, (s) => s.pastStates.length > 0);
+  const canRedo = useStore(useSessionStore.temporal, (s) => s.futureStates.length > 0);
 
   useEffect(() => {
     if (!isTagPanelOpen) {
@@ -77,10 +91,27 @@ const EditorGlobalMenu: React.FC<EditorGlobalMenuProps> = ({
   }, [hasActiveSegment]);
 
   const actions = [
-    { key: "save", icon: <SaveOutlinedIcon fontSize="small" />, name: "Save Workspace", onClick: () => onSave(), accent: ENTITY_COLORS.LOC },
+    isDirty
+      ? { key: "save", icon: <SaveOutlinedIcon fontSize="small" />, name: "Save Workspace", onClick: () => onSave(), accent: ENTITY_COLORS.LOC }
+      : { key: "save", icon: <CheckCircleOutlineIcon fontSize="small" />, name: "All changes saved", onClick: () => { /* no-op when clean */ }, accent: ENTITY_COLORS.LOC },
+    {
+      key: "undo", icon: <UndoIcon fontSize="small" />, name: "Undo", accent: ENTITY_COLORS.MISC, disabled: !canUndo,
+      // Mark dirty first so autosave picks up the restored state.
+      onClick: () => {
+        useSessionStore.setState({ isDirty: true });
+        useSessionStore.temporal.getState().undo();
+      },
+    },
+    {
+      key: "redo", icon: <RedoIcon fontSize="small" />, name: "Redo", accent: ENTITY_COLORS.MISC, disabled: !canRedo,
+      onClick: () => {
+        useSessionStore.setState({ isDirty: true });
+        useSessionStore.temporal.getState().redo();
+      },
+    },
     { key: "segment", icon: <CallSplitIcon fontSize="small" />, name: isAlreadySegmented ? "Document already segmented" : "Auto-Segment", onClick: () => onSegment(), accent: ENTITY_COLORS.DATE, disabled: isAlreadySegmented },
     { key: "ner", icon: <ManageSearchIcon fontSize="small" />, name: "Run NER", onClick: () => onNer(), accent: ENTITY_COLORS.PER },
-    { key: "translate", icon: <TranslateIcon fontSize="small" />, name: "Translate Document", onClick: () => { setShowTranslate(!showTranslate); onToggleTagPanel(false); }, accent: ENTITY_COLORS.ORG },
+    { key: "translate", icon: <TranslateIcon fontSize="small" />, name: "Translate Document", onClick: () => { setShowTranslate(!showTranslate); setShowExport(false); onToggleTagPanel(false); }, accent: ENTITY_COLORS.ORG },
     {
       key: "semtag",
       icon: <LabelOutlinedIcon fontSize="small" />,
@@ -92,13 +123,26 @@ const EditorGlobalMenu: React.FC<EditorGlobalMenuProps> = ({
         onToggleTagPanel(willOpen);
         setShowTagOptions(willOpen);
         setShowTranslate(false);
+        setShowExport(false);
       },
       accent: ENTITY_COLORS.PER
+    },
+    {
+      key: "export",
+      icon: <FileDownloadIcon fontSize="small" />,
+      name: "Export Workspace",
+      onClick: () => {
+        setShowExport(!showExport);
+        setShowTranslate(false);
+        setShowTagOptions(false);
+        onToggleTagPanel(false);
+      },
+      accent: ENTITY_COLORS.CAMP,
     },
   ];
 
   return (
-    <ClickAwayListener onClickAway={() => setShowTranslate(false)}>
+    <ClickAwayListener onClickAway={() => { setShowTranslate(false); setShowExport(false); }}>
       <Box sx={{
         display: "flex",
         alignItems: "center",
@@ -123,7 +167,7 @@ const EditorGlobalMenu: React.FC<EditorGlobalMenuProps> = ({
                       width: 42,
                       height: 42,
                       color: action.accent,
-                      bgcolor: (action.key === "translate" && showTranslate) || (action.key === "semtag" && showTagOptions) ? alpha(action.accent, 0.1) : "transparent",
+                      bgcolor: (action.key === "translate" && showTranslate) || (action.key === "semtag" && showTagOptions) || (action.key === "export" && showExport) ? alpha(action.accent, 0.1) : "transparent",
                       transition: "all 0.2s ease",
                       "&:hover": {
                         bgcolor: alpha(action.accent, 0.1),
@@ -169,6 +213,49 @@ const EditorGlobalMenu: React.FC<EditorGlobalMenuProps> = ({
                       />
                     </Box>
                     <Box sx={{ width: "1px", height: "24px", bgcolor: "divider", mx: 1 }} />
+                  </Box>
+                </Collapse>
+              )}
+
+              {/* Export Slide-Out */}
+              {action.key === "export" && (
+                <Collapse in={showExport} orientation="horizontal" unmountOnExit>
+                  <Box sx={{ display: "flex", alignItems: "center", width: "max-content" }}>
+                    <Box sx={{ width: "1px", height: "24px", bgcolor: "divider", mx: 1 }} />
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, pr: 0.5 }}>
+                      <Tooltip title="Export as JSON" placement="bottom" componentsProps={tooltipProps}>
+                        <span>
+                          <IconButton
+                            onClick={() => { onExport("json"); setShowExport(false); }}
+                            sx={{
+                              width: 42, height: 42,
+                              color: ENTITY_COLORS.CAMP,
+                              bgcolor: alpha(ENTITY_COLORS.CAMP, 0.08),
+                              transition: "all 0.2s ease",
+                              "&:hover": { bgcolor: alpha(ENTITY_COLORS.CAMP, 0.15), transform: "scale(1.1)" }
+                            }}
+                          >
+                            <CodeIcon fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                      <Tooltip title="Export as PDF" placement="bottom" componentsProps={tooltipProps}>
+                        <span>
+                          <IconButton
+                            onClick={() => { onExport("pdf"); setShowExport(false); }}
+                            sx={{
+                              width: 42, height: 42,
+                              color: ENTITY_COLORS.CAMP,
+                              bgcolor: alpha(ENTITY_COLORS.CAMP, 0.08),
+                              transition: "all 0.2s ease",
+                              "&:hover": { bgcolor: alpha(ENTITY_COLORS.CAMP, 0.15), transform: "scale(1.1)" }
+                            }}
+                          >
+                            <PictureAsPdfIcon fontSize="small" />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    </Box>
                   </Box>
                 </Collapse>
               )}

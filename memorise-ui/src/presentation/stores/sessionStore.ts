@@ -7,6 +7,7 @@
  */
 import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
+import { temporal } from 'zundo';
 import type {
   WorkspaceDTO,
   TranslationDTO,
@@ -57,9 +58,14 @@ function ensureCounters(counters: WorkspaceCounters | undefined): WorkspaceCount
   };
 }
 
+/** Module-scoped undo-burst timer state so {@link resetUndoHistory} can cancel pending snapshots. */
+let handleSetTimer: ReturnType<typeof setTimeout> | null = null;
+let handleSetFirstPastState: unknown = undefined;
+
 export const useSessionStore = create<SessionStore>()(
   devtools(
-    (set, get) => ({
+    temporal(
+      (set, get) => ({
       session: null,
       draftText: "",
       activeTab: "original",
@@ -137,23 +143,26 @@ export const useSessionStore = create<SessionStore>()(
         });
       },
 
-      // Skip update if every field in the patch is reference-equal to the current value
+      /** Merge a partial patch; no-op when nothing changes. Dirty unless explicitly cleared. */
       updateSession: (updates) => {
         const state = get();
         if (!state.session) return;
         const current = state.session;
-        const hasChange = Object.entries(updates).some(
-          ([key, value]) => current[key as keyof WorkspaceDTO] !== value
+        const hasSessionChange = Object.entries(updates).some(
+          ([key, value]) => key !== 'isDirty' && current[key as keyof WorkspaceDTO] !== value
         );
-        if (!hasChange) return;
+        const hasDirtyChange =
+          'isDirty' in updates && state.isDirty !== !!(updates as { isDirty?: unknown }).isDirty;
+        if (!hasSessionChange && !hasDirtyChange) return;
+        const { isDirty: _omit, ...sessionOnly } = updates as { isDirty?: unknown } & Partial<WorkspaceDTO>;
+        void _omit;
         set({
-          session: { ...current, ...updates },
-          isDirty: 'isDirty' in updates ? !!updates.isDirty : true,
+          session: hasSessionChange ? { ...current, ...sessionOnly } : current,
+          isDirty: 'isDirty' in updates ? !!(updates as { isDirty?: unknown }).isDirty : true,
         });
       },
 
-      // Atomically bumps the matching headline aggregate AND the matching
-      // breakdown field, so the invariant `sum(breakdown) === headline` holds.
+      /** Bump headline and breakdown counter together so `sum(breakdown) === headline`. */
       incrementCounter: (kind) => {
         const state = get();
         if (!state.session) return;
@@ -180,6 +189,53 @@ export const useSessionStore = create<SessionStore>()(
       setActiveTab: (tab) => set({ activeTab: tab }),
       setActiveSegmentId: (id) => set({ activeSegmentId: id }),
     }),
+      {
+        partialize: (state) => ({ session: state.session, draftText: state.draftText }),
+        limit: 50,
+        /** Skip snapshots that don't change user-visible content. */
+        equality: (past, current) => {
+          if (past.draftText !== current.draftText) return false;
+          if (past.session === current.session) return true;
+          const ps = past.session;
+          const cs = current.session;
+          if (!ps || !cs) return ps === cs;
+          return (
+            ps.segments === cs.segments &&
+            ps.userSpans === cs.userSpans &&
+            ps.apiSpans === cs.apiSpans &&
+            ps.deletedApiKeys === cs.deletedApiKeys &&
+            ps.tags === cs.tags &&
+            ps.translations === cs.translations &&
+            ps.counters === cs.counters
+          );
+        },
+        /** Debounce bursts so one undo reverts the whole burst, keeping the first pastState. */
+        handleSet: (handleSet) => (pastState) => {
+          if (handleSetTimer === null) {
+            handleSetFirstPastState = pastState;
+          } else {
+            clearTimeout(handleSetTimer);
+          }
+          handleSetTimer = setTimeout(() => {
+            if (handleSetFirstPastState !== undefined) {
+              handleSet(handleSetFirstPastState as Parameters<typeof handleSet>[0]);
+            }
+            handleSetTimer = null;
+            handleSetFirstPastState = undefined;
+          }, 500);
+        },
+      }
+    ),
     { name: 'session-store' }
   )
 );
+
+/** Cancel any pending undo snapshot and wipe recorded history. */
+export function resetUndoHistory(): void {
+  if (handleSetTimer !== null) {
+    clearTimeout(handleSetTimer);
+    handleSetTimer = null;
+  }
+  handleSetFirstPastState = undefined;
+  useSessionStore.temporal.getState().clear();
+}

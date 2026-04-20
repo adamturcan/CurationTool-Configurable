@@ -142,8 +142,8 @@ export class TaggingWorkflowService {
     const allTags = tags ?? [];
 
     const filteredTags = allTags.filter((t) => {
-      const belongsToCurrentContext = t.segmentId === targetSegId;
-      if (!belongsToCurrentContext) return true;
+      // Document view deletes across all segments; segment view scopes to one.
+      if (targetSegId !== undefined && t.segmentId !== targetSegId) return true;
 
       const nameMatch = t.name.toLowerCase() === name.toLowerCase();
       if (!t.label && !keywordId) return !nameMatch;
@@ -152,7 +152,12 @@ export class TaggingWorkflowService {
       return true;
     });
 
-    return { ok: true, notice: { message: "Tag deleted successfully.", tone: "success" }, tags: filteredTags };
+    const removedCount = allTags.length - filteredTags.length;
+    const message = removedCount > 1
+      ? `Tag deleted from ${removedCount} segment(s).`
+      : "Tag deleted successfully.";
+
+    return { ok: true, notice: { message, tone: "success" }, tags: filteredTags };
   }
 }
 

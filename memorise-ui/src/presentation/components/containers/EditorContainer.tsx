@@ -4,7 +4,7 @@ import { Box, Menu, MenuItem, Typography, CircularProgress } from "@mui/material
 import CallSplitIcon from "@mui/icons-material/CallSplit";
 
 import { useSessionStore, useNotificationStore } from "../../stores";
-import { useLanguageOptions, useLayerOperations, useEditorOperations, useSpanInteractions, useSegmentSplitMerge } from "../../hooks";
+import { useLanguageOptions, useLayerOperations, useEditorOperations, useSpanInteractions, useSegmentSplitMerge, useExportOperations } from "../../hooks";
 import { ConflictResolutionDialog, ActionGuardDialog } from "../editor/dialogs";
 import { EditorGlobalMenu, CategoryMenu } from "../editor/menus";
 import { SegmentBlock } from "../editor/SegmentBlock";
@@ -32,6 +32,7 @@ const EditorContainer: React.FC = () => {
   const ops = useEditorOperations(layers);
   const splits = useSegmentSplitMerge();
   const spans = useSpanInteractions(layers, splits.setSplitAnchor, () => splits.setSplitAnchor(null));
+  const { handleExport } = useExportOperations();
 
   // Handlers from ops/splits/spans close over `session` and get new references
   const opsRef = useRef(ops);
@@ -189,6 +190,7 @@ const EditorContainer: React.FC = () => {
           onSemTag={ops.handleRunGlobalSemTag}
           onSave={ops.handleSave}
           onTranslateAll={ops.handleRunGlobalTranslate}
+          onExport={(format) => { if (session?.id) void handleExport(session.id, format); }}
           isTagPanelOpen={isTagPanelOpen}
           onToggleTagPanel={(isOpen) => {
             setTagPanelOpen(isOpen);

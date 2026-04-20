@@ -16,6 +16,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import SyncIcon from '@mui/icons-material/Sync';
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 
 import { CodeMirrorWrapper } from "./codemirror/CodeMirrorWrapper";
 import { SegmentLogic } from "../../../core/entities/SegmentLogic";
@@ -87,11 +88,13 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
   const deletedApiKeys = useSessionStore((s) => s.session?.deletedApiKeys);
   const apiSpans = useSessionStore((s) => s.session?.apiSpans);
   const userSpans = useSessionStore((s) => s.session?.userSpans);
+  const isTagPanelOpen = useSessionStore((s) => s.isTagPanelOpen);
 
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [languageSearch, setLanguageSearch] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [isHeaderOpen, setIsHeaderOpen] = useState(false);
+  const [showSemTagOptions, setShowSemTagOptions] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
 
   const { notifyDragStart, notifyDragEnd, setHoveredIdx, registerNode } = useSegmentDrag();
@@ -115,11 +118,16 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
   useEffect(() => {
     if (!isActive) {
       setIsHeaderOpen(false);
+      setShowSemTagOptions(false);
     }
   }, [isActive]);
 
-  // For translations, segment boundaries differ from the original because translated
-  // text has different lengths. Recompute start/end from translated text lengths.
+  /** Keep the sem-tag slide-out in sync with the global tag panel. */
+  useEffect(() => {
+    if (!isTagPanelOpen) setShowSemTagOptions(false);
+  }, [isTagPanelOpen]);
+
+  /** Recompute segment boundaries from translated text lengths. */
   const virtualSegment = useMemo(() => {
     if (localLang === "original") return segment;
     const tLayer = translations?.find((t: TranslationDTO) => t.language === localLang);
@@ -359,7 +367,55 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
                 </Tooltip>
               )}
               <Tooltip title="Run NER on segment"><IconButton size="small" onClick={(e) => { e.stopPropagation(); onRunNer(segment.id, localLang); }} sx={{ bgcolor: alpha(ENTITY_COLORS.PER, 0.1), color: ENTITY_COLORS.PER, borderRadius: "6px", width: "28px", height: "28px" }}><ManageSearchIcon fontSize="small" /></IconButton></Tooltip>
-              <Tooltip title="Run Sem-Tag on segment"><IconButton size="small" onClick={(e) => { e.stopPropagation(); onRunSemTag(segment.id, localLang); }} sx={{ bgcolor: alpha(ENTITY_COLORS.PER, 0.1), color: ENTITY_COLORS.PER, borderRadius: "6px", width: "28px", height: "28px" }}><LabelOutlinedIcon fontSize="small" /></IconButton></Tooltip>
+              <Tooltip title={showSemTagOptions ? "Close Sem-Tag options" : "Semantic Tags"}>
+                <IconButton
+                  size="small"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const willOpen = !showSemTagOptions;
+                    setShowSemTagOptions(willOpen);
+                    if (willOpen) {
+                      onActivate(segment.id);
+                      useSessionStore.getState().setTagPanelOpen(true);
+                    } else {
+                      useSessionStore.getState().setTagPanelOpen(false);
+                    }
+                  }}
+                  sx={{
+                    bgcolor: showSemTagOptions ? alpha(ENTITY_COLORS.PER, 0.2) : alpha(ENTITY_COLORS.PER, 0.1),
+                    color: ENTITY_COLORS.PER,
+                    borderRadius: "6px",
+                    width: "28px",
+                    height: "28px",
+                  }}
+                >
+                  <LabelOutlinedIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <Collapse in={showSemTagOptions} orientation="horizontal" unmountOnExit>
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <Box sx={{ width: "1px", height: "20px", bgcolor: "divider", mx: 0.75 }} />
+                  <Tooltip title="Run Sem-Tag on segment">
+                    <IconButton
+                      size="small"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onRunSemTag(segment.id, localLang);
+                        setShowSemTagOptions(false);
+                      }}
+                      sx={{
+                        bgcolor: alpha(ENTITY_COLORS.PER, 0.1),
+                        color: ENTITY_COLORS.PER,
+                        borderRadius: "6px",
+                        width: "28px",
+                        height: "28px",
+                      }}
+                    >
+                      <AutoFixHighIcon fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                </Box>
+              </Collapse>
             </Box>
           </Box>
         </Collapse>

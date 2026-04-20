@@ -1,9 +1,10 @@
 import React from "react";
-import { Box } from "@mui/material";
+import { Box, CircularProgress, Typography } from "@mui/material";
 import { useLocation } from "react-router-dom";
 import EditorContainer from "../components/containers/EditorContainer";
 import { useSessionStore } from "../stores";
 import PanelContainer from "../components/containers/PanelContainer";
+import { shadows } from "../../shared/theme";
 
 /** Renders the workspace editor page with segment blocks and right tag panel */
 const WorkspacePage: React.FC = () => {
@@ -35,7 +36,29 @@ const WorkspacePage: React.FC = () => {
         minHeight: 0,
         transition: "all 0.95s ease-in-out" 
       }}>        
-        {isDataReady ? <EditorContainer key={currentSessionId} /> : <Box>Loading...</Box>}
+        {isDataReady ? (
+          <EditorContainer key={currentSessionId} />
+        ) : (
+          <Box
+            sx={{
+              flex: 1,
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 1.5,
+            }}
+          >
+            <CircularProgress size={28} sx={{ color: "gold.main" }} />
+            <Typography
+              variant="body2"
+              fontWeight={600}
+              sx={{ color: "gold.main", textShadow: shadows.text, letterSpacing: 0.5 }}
+            >
+              Loading workspace…
+            </Typography>
+          </Box>
+        )}
       </Box>
 
       {/* PANEL WRAPPER */}

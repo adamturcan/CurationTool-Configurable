@@ -8,7 +8,7 @@ export const ENTITY_COLORS: Record<string, string> = {
   LOC: "#388E3C",      // Location (green)
   ORG: "#F57C00",      // Organization (orange)
   CAMP: "#6A1B9A",    // Camp (purple)
-  GHETTO: "#9C27B0",   // Ghetto (purple)
+  GHETTO: "#5D4037",   // Ghetto (brown)
   MISC: "#607D8B",     // Miscellaneous (blue-grey)
 } as const;
 
