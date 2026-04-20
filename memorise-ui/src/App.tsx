@@ -1,4 +1,4 @@
-import { useEffect, useRef, useMemo, useCallback, lazy, Suspense } from "react";
+import { useEffect, useMemo, useCallback, useState, lazy, Suspense } from "react";
 import {
   CssBaseline,
   ThemeProvider,
@@ -20,6 +20,7 @@ import type { WorkspaceDTO } from "./types";
 import { NotificationSnackbar } from "./presentation/components/shared/NotificationSnackbar";
 import { StateSynchronizer } from "./presentation/components/shared/StateSynchronizer";
 import UnsavedChangesDialog from "./presentation/components/shared/UnsavedChangesDialog";
+import NewWorkspaceDialog from "./presentation/components/shared/NewWorkspaceDialog";
 
 // Lazy load pages for code splitting
 const AccountPage = lazy(() => import("./presentation/pages/AccoutPage"));
@@ -28,28 +29,11 @@ const ManageWorkspacesPage = lazy(() => import("./presentation/pages/ManageWorks
 const LoginPage = lazy(() => import("./presentation/pages/LoginPage"));
 const AdminPage = lazy(() => import("./presentation/pages/AdminPage"));
 
-// Component that creates a new workspace and redirects to it or manage page
-const NewWorkspaceRedirect: React.FC<{
-  onCreate: () => Promise<WorkspaceDTO | null>;
-}> = ({ onCreate }) => {
-  const navigate = useNavigate();
-  const createdRef = useRef(false);
-
-  useEffect(() => {
-    if (createdRef.current) return;
-    createdRef.current = true;
-
-    void onCreate().then((ws) => {
-      if (ws?.id) {
-        navigate(`/workspace/${encodeURIComponent(ws.id)}`, { replace: true });
-      } else {
-        navigate("/manage-workspaces", { replace: true });
-      }
-    });
-  }, [navigate, onCreate]);
-
-  return null;
-};
+// Redirects users who land directly on /workspace/new back to manage,
+// where the New Workspace dialog is the expected entry point.
+const NewWorkspaceRedirect: React.FC = () => (
+  <Navigate to="/manage-workspaces" replace />
+);
 
 /** Root application component handling auth, routing, sidebar, and workspace lifecycle */
 const App: React.FC = () => {
@@ -126,19 +110,13 @@ const App: React.FC = () => {
     navigate("/login");
   }, [navigate]);
 
-  // Create a new workspace draft, persist it, and update UI metadata
-  const handleAddWorkspace = useCallback(async (): Promise<WorkspaceDTO | null> => {
+  const [isNewWorkspaceDialogOpen, setIsNewWorkspaceDialogOpen] = useState(false);
+
+  // Create a new workspace with the given name, persist it, and update UI metadata
+  const handleAddWorkspace = useCallback(async (name: string): Promise<WorkspaceDTO | null> => {
     if (!user) return null;
 
-    const currentWorkspaces = useWorkspaceStore.getState().workspaces;
-    const newCount = currentWorkspaces.filter((w) =>
-      w.name.startsWith("New Workspace")
-    ).length;
-
-    const ws = workspaceApplicationService.createWorkspaceDraft(
-      user.id,
-      `New Workspace #${newCount + 1}`
-    );
+    const ws = workspaceApplicationService.createWorkspaceDraft(user.id, name);
 
     try {
       await workspaceApplicationService.createWorkspace({
@@ -162,6 +140,19 @@ const App: React.FC = () => {
       return null;
     }
   }, [user, workspaceApplicationService, addWorkspaceMetadata, notify]);
+
+  const defaultNewWorkspaceName = useMemo(() => {
+    const newCount = workspaces.filter((w) => w.name.startsWith("New Workspace")).length;
+    return `New Workspace #${newCount + 1}`;
+  }, [workspaces]);
+
+  const handleNewWorkspaceSubmit = useCallback(async (name: string) => {
+    const ws = await handleAddWorkspace(name);
+    setIsNewWorkspaceDialogOpen(false);
+    if (ws?.id) {
+      navigate(`/workspace/${encodeURIComponent(ws.id)}`);
+    }
+  }, [handleAddWorkspace, navigate]);
 
   // Move the opened workspace to the front of the list
   const bumpWorkspaceToFront = (id: string) => {
@@ -259,6 +250,7 @@ const App: React.FC = () => {
         <BubbleSidebar
           onLogout={handleLogout}
           workspaces={workspaces}
+          onNewWorkspace={() => setIsNewWorkspaceDialogOpen(true)}
         />
         <Box
           sx={{
@@ -292,7 +284,7 @@ const App: React.FC = () => {
               />
               <Route
                 path="/workspace/new"
-                element={<NewWorkspaceRedirect onCreate={handleAddWorkspace} />}
+                element={<NewWorkspaceRedirect />}
               />
               <Route
                 path="/workspace/:id"
@@ -332,6 +324,12 @@ const App: React.FC = () => {
           />
         )}
         <UnsavedChangesDialog />
+        <NewWorkspaceDialog
+          open={isNewWorkspaceDialogOpen}
+          onClose={() => setIsNewWorkspaceDialogOpen(false)}
+          onCreate={handleNewWorkspaceSubmit}
+          defaultName={defaultNewWorkspaceName}
+        />
         </Box>
       </StateSynchronizer>
     </ThemeProvider>

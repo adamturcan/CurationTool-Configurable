@@ -18,12 +18,14 @@ import type { WorkspaceMetadata } from "../../../core/entities/Workspace";
 interface Props {
   onLogout: () => void;
   workspaces: WorkspaceMetadata[];
+  onNewWorkspace: () => void;
 }
 
 /** Renders the fixed sidebar with workspace bubbles, navigation, and account actions */
 const BubbleSidebar: React.FC<Props> = ({
   workspaces,
   onLogout,
+  onNewWorkspace,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -134,8 +136,10 @@ const BubbleSidebar: React.FC<Props> = ({
         <Bubble
           label="New Workspace"
           icon={<AddIcon />}
-          onClick={() => guardedNavigate("/workspace/new")}
-          selected={isSelected("/workspace/new")}
+          onClick={() => {
+            if (isDirty) { showGuard(() => onNewWorkspace()); return; }
+            onNewWorkspace();
+          }}
           ariaLabel="Create new workspace"
         />
       </Box>

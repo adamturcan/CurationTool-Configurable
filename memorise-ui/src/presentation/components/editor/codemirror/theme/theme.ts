@@ -15,9 +15,19 @@ const baseThemeStyles: Record<string, Record<string, string>> = {
   "& .cm-ner-span": {
     borderRadius: "3px",
     padding: "2px 0px",
+    position: "relative",
     transition: "background-color 0.2s ease, filter 0.2s ease",
   },
   "& .cm-ner-span:hover": { cursor: "pointer", filter: "brightness(0.85)" },
+
+  // Instant entity tooltip (native `title` has a ~1-3s browser delay)
+  "& .cm-ner-span[data-entity]:not([data-entity='']):hover::after": {
+    content: "attr(data-entity)",
+    position: "absolute", bottom: "calc(100% + 4px)", left: "50%", transform: "translateX(-50%)",
+    padding: "2px 6px", fontSize: "11px", color: "#fff",
+    background: "rgba(17,24,39,0.92)", borderRadius: "3px",
+    whiteSpace: "nowrap", pointerEvents: "none", zIndex: "1000", filter: "none",
+  },
   
   // Segment Highlight
   "& .cm-active-segment-highlight": {

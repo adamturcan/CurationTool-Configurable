@@ -20,10 +20,11 @@ const buildDecorations = (spans: NerSpan[], docLength: number) => {
     if (!isNaN(start) && !isNaN(end) && start < end && start < docLength) {
       const safeEnd = Math.min(end, docLength);
       if (start < safeEnd) {
+        const entityLabel = span.entity || "";
         marks.push(
           Decoration.mark({
-            class: `cm-ner-span entity-${(span.entity || "").toLowerCase()}`,
-            attributes: { "data-span-id": id },
+            class: `cm-ner-span entity-${entityLabel.toLowerCase()}`,
+            attributes: { "data-span-id": id, "data-entity": entityLabel },
           }).range(start, safeEnd)
         );
       }
