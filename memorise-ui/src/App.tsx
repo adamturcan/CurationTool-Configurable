@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useCallback, useRef, lazy, Suspense } from "react";
+import { useEffect, useRef, useMemo, useCallback, lazy, Suspense } from "react";
 import {
   CssBaseline,
   ThemeProvider,
@@ -19,7 +19,7 @@ import { getAuthService } from "./infrastructure/providers/authProvider";
 import type { WorkspaceDTO } from "./types";
 import { NotificationSnackbar } from "./presentation/components/shared/NotificationSnackbar";
 import { StateSynchronizer } from "./presentation/components/shared/StateSynchronizer";
-import { useState } from "react";
+import UnsavedChangesDialog from "./presentation/components/shared/UnsavedChangesDialog";
 
 // Lazy load pages for code splitting
 const AccountPage = lazy(() => import("./presentation/pages/AccoutPage"));
@@ -33,11 +33,11 @@ const NewWorkspaceRedirect: React.FC<{
   onCreate: () => Promise<WorkspaceDTO | null>;
 }> = ({ onCreate }) => {
   const navigate = useNavigate();
-  const creating = useRef(false);
+  const createdRef = useRef(false);
 
   useEffect(() => {
-    if (creating.current) return;
-    creating.current = true;
+    if (createdRef.current) return;
+    createdRef.current = true;
 
     void onCreate().then((ws) => {
       if (ws?.id) {
@@ -59,9 +59,6 @@ const App: React.FC = () => {
   // Auth state from store
   const user = useAuthStore((s) => s.user);
   const isAuthLoading = useAuthStore((s) => s.isLoading);
-
-  // Track sidebar open state
-  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Access Zustand store state
   const workspaces = useWorkspaceStore((state) => state.workspaces);
@@ -202,7 +199,7 @@ const App: React.FC = () => {
           }}
         >
           <img
-            src={import.meta.env.VITE_APP_LOGO ?? import.meta.env.BASE_URL + "memorise.png"}
+            src={import.meta.env.VITE_APP_LOGO || import.meta.env.BASE_URL + "memorise.png"}
             alt="Memorise"
             style={{ height: 36, opacity: 0.7 }}
           />
@@ -227,7 +224,7 @@ const App: React.FC = () => {
             }}
           >
             <img
-              src={import.meta.env.VITE_APP_LOGO ?? import.meta.env.BASE_URL + "memorise.png"}
+              src={import.meta.env.VITE_APP_LOGO || import.meta.env.BASE_URL + "memorise.png"}
               alt="Memorise"
               style={{ height: 36, opacity: 0.7 }}
             />
@@ -261,15 +258,13 @@ const App: React.FC = () => {
           >
         <BubbleSidebar
           onLogout={handleLogout}
-          open={sidebarOpen}
-          onToggle={() => setSidebarOpen(!sidebarOpen)}
           workspaces={workspaces}
         />
         <Box
           sx={{
             flexGrow: 1,
             px: { xs: 0, sm: 4 },
-            ml: { xs: 10, sm: sidebarOpen ? 20 : 5 },
+            ml: { xs: 10, sm: 5 },
             pt: { xs: 0, sm: 5 },
             transition: "margin-left 0.3s ease",
           }}
@@ -284,7 +279,7 @@ const App: React.FC = () => {
               }}
             >
               <img
-                src={import.meta.env.VITE_APP_LOGO ?? import.meta.env.BASE_URL + "memorise.png"}
+                src={import.meta.env.VITE_APP_LOGO || import.meta.env.BASE_URL + "memorise.png"}
                 alt="Loading"
                 style={{ height: 24, opacity: 0.5 }}
               />
@@ -332,8 +327,11 @@ const App: React.FC = () => {
             onClose={dequeue}
             tone={current.tone}
             persistent={current.persistent}
+            loading={current.loading}
+            retryAction={current.retryAction}
           />
         )}
+        <UnsavedChangesDialog />
         </Box>
       </StateSynchronizer>
     </ThemeProvider>

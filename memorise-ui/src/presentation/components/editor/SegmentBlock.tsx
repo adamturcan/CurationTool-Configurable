@@ -186,12 +186,11 @@ export const SegmentBlock: React.FC<SegmentBlockProps> = ({
     <Box
       ref={boxRef}
       onClick={onActivate}
-      onFocus={onActivate}
       onMouseEnter={() => setHoveredIdx(index)}
       onMouseLeave={() => setHoveredIdx(null)}
       onDragEnter={(e) => {
-        if (e.dataTransfer.types.includes("application/segment-id") && !isActive && !effectiveDropDisabled) {
-          onActivate();
+        if (e.dataTransfer.types.includes("application/segment-id") && !effectiveDropDisabled) {
+          e.preventDefault();
         }
       }}
       onDragOver={(e) => {

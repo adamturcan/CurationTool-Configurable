@@ -137,7 +137,8 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
         sx={{
           width: "100%",
           maxWidth: 560,
-          p: { xs: 3, sm: 5 },
+          px: { xs: 3, sm: 4 },
+          py: { xs: 2, sm: 3 },
           borderRadius: 3,
           backgroundColor: COLORS.cardBg,
           border: "1px solid rgba(255,255,255,0.05)",
@@ -148,8 +149,8 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
         {/* Logo */}
         <Box sx={{ display: "flex", justifyContent: "center", m: 0 }}>
           <img
-            src={import.meta.env.VITE_APP_LOGO_FULL ?? import.meta.env.BASE_URL + "memorise-dct.png"}
-            alt={import.meta.env.VITE_APP_TITLE ?? "Memorise data curation tool"}
+            src={import.meta.env.VITE_APP_LOGO_FULL || import.meta.env.BASE_URL + "memorise-dct.png"}
+            alt={import.meta.env.VITE_APP_TITLE || "Memorise data curation tool"}
             style={{
               maxHeight: "20%",
               maxWidth: "50%",
@@ -165,6 +166,7 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
             value={tab}
             onChange={(_, v) => clearOnTabChange(v)}
             centered
+            textColor="inherit"
             sx={{
               mb: 2,
               "& .MuiTab-root": {
@@ -203,7 +205,7 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
               onChange={(e) => setUsername(e.target.value)}
               onBlur={() => setTouched(true)}
               error={hasUsernameError}
-              helperText={hasUsernameError ? "Please enter your username." : " "}
+              helperText={hasUsernameError ? "Please enter your username." : undefined}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -233,7 +235,7 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
                 }}
                 InputLabelProps={{ sx: labelSx }}
                 FormHelperTextProps={{ sx: helperSx }}
-                sx={{ ...inputSx, mt: 1 }}
+                sx={{ ...inputSx, mt: 2 }}
               />
             )}
 
@@ -275,7 +277,7 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
               onChange={(e) => setUsername(e.target.value)}
               onBlur={() => setTouched(true)}
               error={hasUsernameError}
-              helperText={hasUsernameError ? "Please enter a username." : " "}
+              helperText={hasUsernameError ? "Please enter a username." : undefined}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
@@ -304,7 +306,7 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
               }}
               InputLabelProps={{ sx: labelSx }}
               FormHelperTextProps={{ sx: helperSx }}
-              sx={{ ...inputSx, mt: 1 }}
+              sx={{ ...inputSx, mt: 2 }}
             />
 
             <TextField
@@ -323,7 +325,7 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
               }}
               InputLabelProps={{ sx: labelSx }}
               FormHelperTextProps={{ sx: helperSx }}
-              sx={{ ...inputSx, mt: 1 }}
+              sx={{ ...inputSx, mt: 2 }}
             />
 
             <TextField
@@ -337,7 +339,7 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
               helperText={
                 touched && confirmPassword !== "" && password !== confirmPassword
                   ? "Passwords do not match"
-                  : " "
+                  : undefined
               }
               InputProps={{
                 startAdornment: (
@@ -348,7 +350,7 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
               }}
               InputLabelProps={{ sx: labelSx }}
               FormHelperTextProps={{ sx: helperSx }}
-              sx={{ ...inputSx, mt: 1 }}
+              sx={{ ...inputSx, mt: 2 }}
             />
 
             <Button

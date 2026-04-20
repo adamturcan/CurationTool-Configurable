@@ -24,7 +24,6 @@ interface EditorGlobalMenuProps {
   onTranslateAll: (langCode: string) => void;
   isTagPanelOpen: boolean;
   onToggleTagPanel: (isOpen: boolean) => void;
-  isProcessing: boolean;
   hasSegments?: boolean;
   isAlreadySegmented?: boolean;
   hasActiveSegment?: boolean;
@@ -57,7 +56,6 @@ const EditorGlobalMenu: React.FC<EditorGlobalMenuProps> = ({
   onTranslateAll,
   isTagPanelOpen,
   onToggleTagPanel,
-  isProcessing,
   isAlreadySegmented = false,
   hasActiveSegment = false,
   languageOptions,
@@ -119,7 +117,7 @@ const EditorGlobalMenu: React.FC<EditorGlobalMenuProps> = ({
               <Tooltip title={action.name} placement="bottom" componentsProps={tooltipProps}>
                 <span>
                   <IconButton
-                    disabled={isProcessing || !!action.disabled}
+                    disabled={!!action.disabled}
                     onClick={action.onClick}
                     sx={{
                       width: 42,

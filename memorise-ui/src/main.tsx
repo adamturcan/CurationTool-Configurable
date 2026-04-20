@@ -25,7 +25,7 @@ const handleBoundaryError = (error: Error, errorInfo: React.ErrorInfo) => {
   });
 };
 
-document.title = import.meta.env.VITE_APP_TITLE ?? 'Memorise UI';
+document.title = import.meta.env.VITE_APP_TITLE || 'Memorise UI';
 
 const faviconUrl = import.meta.env.VITE_APP_LOGO;
 if (faviconUrl) {

@@ -1,5 +1,5 @@
-import React from "react";
-import { Box, Menu, MenuItem, Typography } from "@mui/material";
+import React, { useEffect, useRef, useCallback } from "react";
+import { Box, Menu, MenuItem, Typography, CircularProgress } from "@mui/material";
 
 import CallSplitIcon from "@mui/icons-material/CallSplit";
 
@@ -21,6 +21,7 @@ const EditorContainer: React.FC = () => {
 
   const setTagPanelOpen = useSessionStore((state) => state.setTagPanelOpen);
   const isTagPanelOpen = useSessionStore((state) => state.isTagPanelOpen);
+  const setDragging = useSessionStore((state) => state.setDragging);
 
   const { languageOptions, isLanguageListLoading } = useLanguageOptions();
 
@@ -29,8 +30,124 @@ const EditorContainer: React.FC = () => {
   const splits = useSegmentSplitMerge();
   const spans = useSpanInteractions(layers, splits.setSplitAnchor, () => splits.setSplitAnchor(null));
 
+  const segmentListRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const scrollSpeedRef = useRef(0);
+  const scrollRafRef = useRef(0);
+
+  useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    const EDGE_SIZE = 60;
+    const MAX_SPEED = 12;
+
+    const tick = () => {
+      if (scrollSpeedRef.current !== 0) {
+        container.scrollTop += scrollSpeedRef.current;
+        scrollRafRef.current = requestAnimationFrame(tick);
+      }
+    };
+
+    const handleDragOver = (e: DragEvent) => {
+      if (!(e.dataTransfer?.types as any)?.includes?.("application/segment-id") &&
+          !(e.dataTransfer?.types as any)?.contains?.("application/segment-id")) return;
+
+      const rect = container.getBoundingClientRect();
+      const y = e.clientY;
+      let speed = 0;
+
+      if (y < rect.top + EDGE_SIZE) {
+        const ratio = Math.max(0, 1 - (y - rect.top) / EDGE_SIZE);
+        speed = -Math.max(1, Math.round(ratio * MAX_SPEED));
+      } else if (y > rect.bottom - EDGE_SIZE) {
+        const ratio = Math.max(0, 1 - (rect.bottom - y) / EDGE_SIZE);
+        speed = Math.max(1, Math.round(ratio * MAX_SPEED));
+      }
+
+      const wasScrolling = scrollSpeedRef.current !== 0;
+      scrollSpeedRef.current = speed;
+      if (speed !== 0 && !wasScrolling) {
+        scrollRafRef.current = requestAnimationFrame(tick);
+      }
+    };
+
+    const stopScroll = () => {
+      scrollSpeedRef.current = 0;
+      cancelAnimationFrame(scrollRafRef.current);
+    };
+
+    container.addEventListener("dragover", handleDragOver);
+    container.addEventListener("dragleave", stopScroll);
+    container.addEventListener("drop", stopScroll);
+    document.addEventListener("dragend", stopScroll);
+    return () => {
+      stopScroll();
+      container.removeEventListener("dragover", handleDragOver);
+      container.removeEventListener("dragleave", stopScroll);
+      container.removeEventListener("drop", stopScroll);
+      document.removeEventListener("dragend", stopScroll);
+    };
+  }, []);
+
+  useEffect(() => {
+    const dragging = splits.draggingFromIndex !== null;
+    setDragging(dragging);
+    if (dragging) setTagPanelOpen(false);
+  }, [splits.draggingFromIndex, setDragging, setTagPanelOpen]);
+
+  const deactivate = useCallback(() => {
+    setActiveSegmentId(undefined);
+    const blur = () => {
+      const el = document.activeElement;
+      if (el instanceof HTMLElement && el.closest(".cm-editor")) el.blur();
+    };
+    blur();
+    requestAnimationFrame(blur);
+  }, [setActiveSegmentId]);
+
+  useEffect(() => {
+    const handleMouseDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (segmentListRef.current?.contains(target)) return;
+      if (target.closest("button, input, [role=tab], [role=menuitem], [role=dialog], [role=presentation]")) return;
+      e.preventDefault();
+      deactivate();
+    };
+    document.addEventListener("mousedown", handleMouseDown);
+    return () => document.removeEventListener("mousedown", handleMouseDown);
+  }, [deactivate]);
+
   return (
-    <div style={{ height: "100%", width: "100%", ...sxUtil.flexColumn, boxSizing: "border-box", overflow: "hidden", backgroundColor: "transparent" }}>
+    <div style={{ height: "100%", width: "100%", ...sxUtil.flexColumn, boxSizing: "border-box", overflow: "hidden", backgroundColor: "transparent", position: "relative" }}>
+
+      {ops.isProcessing && (
+        <Box
+          sx={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 1400,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 1.5,
+            bgcolor: "rgba(31, 44, 36, 0.65)",
+            backdropFilter: "blur(2px)",
+          }}
+        >
+          <CircularProgress size={28} sx={{ color: "gold.main" }} />
+          <Typography variant="body2" fontWeight={600} sx={{ color: "gold.main", textShadow: shadows.text }}>
+            {ops.processingState?.message ?? "Processing…"}
+          </Typography>
+          {ops.processingState?.total != null && (
+            <Typography variant="caption" sx={{ color: "gold.main", opacity: 0.8 }}>
+              {ops.processingState.current ?? 0} / {ops.processingState.total}
+            </Typography>
+          )}
+        </Box>
+      )}
 
       <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", pt: 2, pb: 1, zIndex: 50 }}>
         <EditorGlobalMenu
@@ -39,7 +156,6 @@ const EditorContainer: React.FC = () => {
           onSemTag={ops.handleRunGlobalSemTag}
           onSave={ops.handleSave}
           onTranslateAll={ops.handleRunGlobalTranslate}
-          isProcessing={ops.isProcessing}
           isTagPanelOpen={isTagPanelOpen}
           onToggleTagPanel={(isOpen) => {
             setTagPanelOpen(isOpen);
@@ -55,8 +171,8 @@ const EditorContainer: React.FC = () => {
         />
       </Box>
 
-      <Box sx={{ flexGrow: 1, overflowY: "auto", width: "100%", px: { xs: 2, md: 4 }, py: 2 }}>
-        <Box sx={{ borderRadius: "8px", border: 1, borderColor: "divider", boxShadow: shadows.sm, overflow: "hidden", backgroundColor: "transparent" }}>
+      <Box ref={scrollContainerRef} sx={{ flexGrow: 1, overflowY: "auto", width: "100%", px: { xs: 2, md: 4 }, py: 2 }}>
+        <Box ref={segmentListRef} sx={{ borderRadius: "8px", border: 1, borderColor: "divider", boxShadow: shadows.sm, overflow: "hidden", backgroundColor: "transparent" }}>
           {!session?.segments || session.segments.length === 0 ? (
             <SegmentDragProvider onDraggingChange={splits.setDraggingFromIndex} draggingFromIndex={splits.draggingFromIndex}>
               <SegmentBlock

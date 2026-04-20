@@ -16,9 +16,6 @@ export function catchApiError(
 ): WorkflowResult {
   const appError = toAppError(error, { operation });
   logAppError(appError);
-  const notice = presentAppError(appError);
-  return {
-    ok: false,
-    notice: message ? { ...notice, message } : notice,
-  };
+  const notice = presentAppError(appError, message ? { message } : undefined);
+  return { ok: false, notice };
 }

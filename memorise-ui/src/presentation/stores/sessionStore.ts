@@ -19,6 +19,8 @@ interface SessionStore {
 
   isTagPanelOpen: boolean;
   setTagPanelOpen: (isOpen: boolean) => void;
+  isDragging: boolean;
+  setDragging: (dragging: boolean) => void;
 
   loadSession: (workspace: WorkspaceDTO) => void;
   setLoading: () => void;
@@ -39,6 +41,8 @@ export const useSessionStore = create<SessionStore>()(
 
       isTagPanelOpen: false,
       setTagPanelOpen: (isOpen) => set({ isTagPanelOpen: isOpen }),
+      isDragging: false,
+      setDragging: (dragging) => set({ isDragging: dragging }),
 
       isDirty: false,
 
@@ -116,7 +120,7 @@ export const useSessionStore = create<SessionStore>()(
         if (!hasChange) return;
         set({
           session: { ...current, ...updates },
-          isDirty: true,
+          isDirty: 'isDirty' in updates ? !!updates.isDirty : true,
         });
       },
 

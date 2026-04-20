@@ -54,7 +54,8 @@ export class TranslationWorkflowService {
 
   async addTranslation(
     targetLang: string,
-    session: { segments: Segment[]; translations: TranslationDTO[]; text?: string }
+    session: { segments: Segment[]; translations: TranslationDTO[]; text?: string },
+    onProgress?: (current: number, total: number) => void
   ): Promise<TranslationResult> {
     if (!session.segments || session.segments.length === 0) {
       const fullText = session.text || "";
@@ -78,14 +79,18 @@ export class TranslationWorkflowService {
 
       let sourceLang = "auto";
 
-      const results = await Promise.all(
-        segmentsToTranslate.map(async (seg) => {
-          if (!seg.text?.trim()) return { id: seg.id, text: "" };
+      const results: { id: string; text: string }[] = [];
+      for (let i = 0; i < segmentsToTranslate.length; i++) {
+        const seg = segmentsToTranslate[i];
+        if (!seg.text?.trim()) {
+          results.push({ id: seg.id, text: "" });
+        } else {
           const res = await this.apiService.translate({ text: seg.text, targetLang });
           if (res.sourceLang) sourceLang = res.sourceLang;
-          return { id: seg.id, text: res.translatedText };
-        })
-      );
+          results.push({ id: seg.id, text: res.translatedText });
+        }
+        onProgress?.(i + 1, segmentsToTranslate.length);
+      }
 
       const segmentTranslations: Record<string, string> = { ...(existing?.segmentTranslations || {}) };
       results.forEach(r => { segmentTranslations[r.id] = r.text; });
