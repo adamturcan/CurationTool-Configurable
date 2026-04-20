@@ -51,8 +51,10 @@ const EditorContainer: React.FC = () => {
     };
 
     const handleDragOver = (e: DragEvent) => {
-      if (!(e.dataTransfer?.types as any)?.includes?.("application/segment-id") &&
-          !(e.dataTransfer?.types as any)?.contains?.("application/segment-id")) return;
+      const types = e.dataTransfer?.types;
+      if (!types) return;
+      const hasDrag = Array.from(types).includes("application/segment-id");
+      if (!hasDrag) return;
 
       const rect = container.getBoundingClientRect();
       const y = e.clientY;
