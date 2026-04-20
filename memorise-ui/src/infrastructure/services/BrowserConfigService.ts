@@ -33,8 +33,14 @@ export class BrowserConfigService implements ConfigService {
       {
         name: "Machine Translation",
         key: "translate",
-        url: (import.meta.env.VITE_TRANSLATION_API_URL
-          ?? "https://mt-api.dev.memorise.sdu.dk").replace(/\/$/, ""),
+        url: import.meta.env.VITE_TRANSLATION_API_URL
+          ?? "https://mt-api.dev.memorise.sdu.dk/translate",
+      },
+      {
+        name: "Supported Languages",
+        key: "translate-languages",
+        url: import.meta.env.VITE_TRANSLATION_LANGUAGES_URL
+          ?? "https://mt-api.dev.memorise.sdu.dk/supported_languages",
       },
     ];
   }

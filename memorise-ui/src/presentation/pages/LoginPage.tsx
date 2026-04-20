@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from "react";
-import { shadows } from "../../shared/theme";
+import { shadows, loginColors } from "../../shared/theme";
 import {
   Box,
   Paper,
@@ -20,14 +20,7 @@ type Props = {
   onRegister?: (username: string, email: string, password: string) => Promise<void>;
 };
 
-const COLORS = {
-  cardBg: "#0B0B0B",
-  logo: "#F1E3B6",
-  btnBg: "#8F6B22",
-  btnHover: "#7E5F1E",
-  btnText: "#FFFFFF",
-  pageBg: "linear-gradient(135deg, #C6AE82 0%, #9B7A4A 50%, #654A33 100%)",
-};
+const COLORS = loginColors;
 
 const inputSx = {
   "& .MuiOutlinedInput-root": {
@@ -36,9 +29,9 @@ const inputSx = {
     borderRadius: 2,
     transition: "box-shadow .2s ease, border-color .2s ease",
     "& fieldset": { borderColor: "rgba(255,255,255,0.18)" },
-    "&:hover fieldset": { borderColor: COLORS.logo },
+    "&:hover fieldset": { borderColor: COLORS.accent },
     "&.Mui-focused fieldset": {
-      borderColor: COLORS.logo,
+      borderColor: COLORS.accent,
       boxShadow: "0 0 0 3px rgba(232,220,176,0.22)",
     },
     "&.Mui-error fieldset": { borderColor: "#FF6B6B" },
@@ -51,7 +44,7 @@ const inputSx = {
 
 const labelSx = {
   color: "rgba(255,255,255,0.75)",
-  "&.Mui-focused": { color: COLORS.logo },
+  "&.Mui-focused": { color: COLORS.accent },
   "&.Mui-error": { color: "#FF9A9A" },
 };
 
@@ -137,16 +130,17 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
         display: "grid",
         placeItems: "center",
         px: 2,
-        background: "linear-gradient(135deg, #2f3e34 0%, #8d7f57 100%)",
+        background: COLORS.gradient,
       }}
     >
       <Paper
         sx={{
           width: "100%",
           maxWidth: 560,
-          p: { xs: 3, sm: 5 },
+          px: { xs: 3, sm: 4 },
+          py: { xs: 2, sm: 3 },
           borderRadius: 3,
-          backgroundColor: "#1F2C24",
+          backgroundColor: COLORS.cardBg,
           border: "1px solid rgba(255,255,255,0.05)",
           boxShadow: shadows.lg,
           textAlign: "center",
@@ -155,8 +149,8 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
         {/* Logo */}
         <Box sx={{ display: "flex", justifyContent: "center", m: 0 }}>
           <img
-            src={import.meta.env.BASE_URL + "memorise-dct.png"}
-            alt="Memorise data curation tool logo"
+            src={import.meta.env.VITE_APP_LOGO_FULL || import.meta.env.BASE_URL + "memorise-dct.png"}
+            alt={import.meta.env.VITE_APP_TITLE || "Memorise data curation tool"}
             style={{
               maxHeight: "20%",
               maxWidth: "50%",
@@ -172,6 +166,7 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
             value={tab}
             onChange={(_, v) => clearOnTabChange(v)}
             centered
+            textColor="inherit"
             sx={{
               mb: 2,
               "& .MuiTab-root": {
@@ -179,8 +174,8 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
                 fontWeight: 700,
                 textTransform: "none",
               },
-              "& .Mui-selected": { color: COLORS.logo },
-              "& .MuiTabs-indicator": { backgroundColor: COLORS.logo },
+              "& .Mui-selected": { color: COLORS.accent },
+              "& .MuiTabs-indicator": { backgroundColor: COLORS.accent },
             }}
           >
             <Tab label="Sign In" value="login" />
@@ -210,11 +205,11 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
               onChange={(e) => setUsername(e.target.value)}
               onBlur={() => setTouched(true)}
               error={hasUsernameError}
-              helperText={hasUsernameError ? "Please enter your username." : " "}
+              helperText={hasUsernameError ? "Please enter your username." : undefined}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <PersonOutlineRoundedIcon sx={{ color: COLORS.logo, opacity: 0.9 }} />
+                    <PersonOutlineRoundedIcon sx={{ color: COLORS.accent, opacity: 0.9 }} />
                   </InputAdornment>
                 ),
               }}
@@ -234,13 +229,13 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
                 InputProps={{
                   startAdornment: (
                     <InputAdornment position="start">
-                      <LockOutlinedIcon sx={{ color: COLORS.logo, opacity: 0.9 }} />
+                      <LockOutlinedIcon sx={{ color: COLORS.accent, opacity: 0.9 }} />
                     </InputAdornment>
                   ),
                 }}
                 InputLabelProps={{ sx: labelSx }}
                 FormHelperTextProps={{ sx: helperSx }}
-                sx={{ ...inputSx, mt: 1 }}
+                sx={{ ...inputSx, mt: 2 }}
               />
             )}
 
@@ -256,9 +251,9 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
                 fontWeight: 800,
                 textTransform: "none",
                 borderRadius: 2,
-                backgroundColor: "#DDD1A0",
-                color: "#0B0B0B",
-                "&:hover": { backgroundColor: "#EDE8D4" },
+                backgroundColor: COLORS.btnBg,
+                color: COLORS.btnText,
+                "&:hover": { backgroundColor: COLORS.btnHover },
                 "&.Mui-disabled": {
                   backgroundColor: "rgba(255,255,255,0.12)",
                   color: "rgba(255,255,255,0.35)",
@@ -282,11 +277,11 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
               onChange={(e) => setUsername(e.target.value)}
               onBlur={() => setTouched(true)}
               error={hasUsernameError}
-              helperText={hasUsernameError ? "Please enter a username." : " "}
+              helperText={hasUsernameError ? "Please enter a username." : undefined}
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <PersonOutlineRoundedIcon sx={{ color: COLORS.logo, opacity: 0.9 }} />
+                    <PersonOutlineRoundedIcon sx={{ color: COLORS.accent, opacity: 0.9 }} />
                   </InputAdornment>
                 ),
               }}
@@ -305,13 +300,13 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <EmailOutlinedIcon sx={{ color: COLORS.logo, opacity: 0.9 }} />
+                    <EmailOutlinedIcon sx={{ color: COLORS.accent, opacity: 0.9 }} />
                   </InputAdornment>
                 ),
               }}
               InputLabelProps={{ sx: labelSx }}
               FormHelperTextProps={{ sx: helperSx }}
-              sx={{ ...inputSx, mt: 1 }}
+              sx={{ ...inputSx, mt: 2 }}
             />
 
             <TextField
@@ -324,13 +319,13 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <LockOutlinedIcon sx={{ color: COLORS.logo, opacity: 0.9 }} />
+                    <LockOutlinedIcon sx={{ color: COLORS.accent, opacity: 0.9 }} />
                   </InputAdornment>
                 ),
               }}
               InputLabelProps={{ sx: labelSx }}
               FormHelperTextProps={{ sx: helperSx }}
-              sx={{ ...inputSx, mt: 1 }}
+              sx={{ ...inputSx, mt: 2 }}
             />
 
             <TextField
@@ -344,18 +339,18 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
               helperText={
                 touched && confirmPassword !== "" && password !== confirmPassword
                   ? "Passwords do not match"
-                  : " "
+                  : undefined
               }
               InputProps={{
                 startAdornment: (
                   <InputAdornment position="start">
-                    <LockOutlinedIcon sx={{ color: COLORS.logo, opacity: 0.9 }} />
+                    <LockOutlinedIcon sx={{ color: COLORS.accent, opacity: 0.9 }} />
                   </InputAdornment>
                 ),
               }}
               InputLabelProps={{ sx: labelSx }}
               FormHelperTextProps={{ sx: helperSx }}
-              sx={{ ...inputSx, mt: 1 }}
+              sx={{ ...inputSx, mt: 2 }}
             />
 
             <Button
@@ -372,9 +367,9 @@ const LoginPage: React.FC<Props> = ({ onLogin, onRegister }) => {
                 fontWeight: 800,
                 textTransform: "none",
                 borderRadius: 2,
-                backgroundColor: "#DDD1A0",
-                color: "#0B0B0B",
-                "&:hover": { backgroundColor: "#EDE8D4" },
+                backgroundColor: COLORS.btnBg,
+                color: COLORS.btnText,
+                "&:hover": { backgroundColor: COLORS.btnHover },
                 "&.Mui-disabled": {
                   backgroundColor: "rgba(255,255,255,0.12)",
                   color: "rgba(255,255,255,0.35)",

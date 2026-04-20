@@ -2,8 +2,8 @@ import type { NerSpan, LanguageCode, TranslationRequest, TranslationResponse, Se
 import type {
   ApiService as ApiServiceContract,
 } from '../../core/interfaces/ApiService';
-import { errorHandlingService } from './ErrorHandlingService';
 import { getConfigService } from '../providers/configProvider';
+import { toAppError, toValidationError, logAppError } from '../../shared/errors';
 
 
 const FALLBACK_LANGUAGES: LanguageCode[] = [
@@ -40,7 +40,8 @@ export class BrowserApiService implements ApiServiceContract {
     ner: "https://ner-api.dev.memorise.sdu.dk/recognize",
     segment: "https://textseg-api.dev.memorise.sdu.dk/segment",
     classify: "https://semtag-api.dev.memorise.sdu.dk/classify",
-    translate: "https://mt-api.dev.memorise.sdu.dk",
+    translate: "https://mt-api.dev.memorise.sdu.dk/translate",
+    "translate-languages": "https://mt-api.dev.memorise.sdu.dk/supported_languages",
   };
 
   private getEndpointUrl(key: string): string {
@@ -62,7 +63,7 @@ export class BrowserApiService implements ApiServiceContract {
       });
 
       if (!response.ok) {
-        throw errorHandlingService.handleApiError(response, context);
+        throw toAppError(response, context);
       }
 
       const data = await response.json();
@@ -72,12 +73,11 @@ export class BrowserApiService implements ApiServiceContract {
         : Array.isArray(data?.results) ? data.results : [];
 
     } catch (error) {
-      if (errorHandlingService.isAppError(error)) throw error;
-      throw errorHandlingService.handleApiError(error, context);
+      throw toAppError(error, context);
     }
   }
 
-  // NER 
+  // NER
 
   async ner(text: string): Promise<NerSpan[]> {
     const context = { operation: "run NER", payloadLength: text.length };
@@ -90,7 +90,7 @@ export class BrowserApiService implements ApiServiceContract {
       });
 
       if (!response.ok) {
-        throw errorHandlingService.handleApiError(response, context);
+        throw toAppError(response, context);
       }
 
       const result = await response.json();
@@ -104,8 +104,7 @@ export class BrowserApiService implements ApiServiceContract {
       }));
 
     } catch (error) {
-      if (errorHandlingService.isAppError(error)) throw error;
-      throw errorHandlingService.handleApiError(error, context);
+      throw toAppError(error, context);
     }
   }
 
@@ -124,7 +123,7 @@ export class BrowserApiService implements ApiServiceContract {
       });
 
       if (!response.ok) {
-        throw errorHandlingService.handleApiError(response, context);
+        throw toAppError(response, context);
       }
 
       const data = await response.json();
@@ -156,7 +155,7 @@ export class BrowserApiService implements ApiServiceContract {
 
       return segments;
     } catch (error) {
-      throw errorHandlingService.handleApiError(error, context);
+      throw toAppError(error, context);
     }
   }
 
@@ -164,14 +163,14 @@ export class BrowserApiService implements ApiServiceContract {
 
   async translate(request: TranslationRequest): Promise<TranslationResponse> {
     if (!request.text || !request.text.trim()) {
-      throw errorHandlingService.handleValidationError(
+      throw toValidationError(
         "Translation text cannot be empty",
         { operation: "validate translation request", field: "text" }
       );
     }
 
     if (request.text.length > 50000) {
-      throw errorHandlingService.handleValidationError(
+      throw toValidationError(
         "Translation text too long (max 50,000 characters)",
         { operation: "validate translation request", field: "text", length: request.text.length }
       );
@@ -186,21 +185,20 @@ export class BrowserApiService implements ApiServiceContract {
     const supportedSet = await this.memoizedSupportedLanguagesSet();
 
     if (!supportedSet.has(targetLang)) {
-      throw errorHandlingService.handleValidationError(
+      throw toValidationError(
         `Unsupported target language: ${targetLang}`,
         { operation: "validate translation request", field: "targetLang", value: targetLang }
       );
     }
 
     if (sourceLang && !supportedSet.has(sourceLang)) {
-      throw errorHandlingService.handleValidationError(
+      throw toValidationError(
         `Unsupported source language: ${sourceLang}`,
         { operation: "validate translation request", field: "sourceLang", value: sourceLang }
       );
     }
 
-    const translationBase = this.getEndpointUrl('translate').replace(/\/$/, '');
-    const endpoint = `${translationBase}/translate`;
+    const endpoint = this.getEndpointUrl('translate');
     const context = { operation: "translate text", endpoint, targetLang, payloadLength: request.text.length };
 
     let response: Response;
@@ -211,22 +209,22 @@ export class BrowserApiService implements ApiServiceContract {
         body: JSON.stringify({ tgt_lang: targetLang, text: request.text }),
       });
     } catch (error) {
-      throw errorHandlingService.handleApiError(error, context);
+      throw toAppError(error, context);
     }
 
     if (!response.ok) {
-      throw errorHandlingService.handleApiError(response, context);
+      throw toAppError(response, context);
     }
 
     let data: { text?: string };
     try {
       data = (await response.json()) as { text?: string };
     } catch (error) {
-      throw errorHandlingService.handleApiError(error, { ...context, operation: "parse translation response" });
+      throw toAppError(error, { ...context, operation: "parse translation response" });
     }
 
     if (!data || typeof data.text !== "string") {
-      throw errorHandlingService.handleValidationError(
+      throw toValidationError(
         "Translation API returned an invalid response",
         { ...context, responseSnapshot: data }
       );
@@ -246,15 +244,14 @@ export class BrowserApiService implements ApiServiceContract {
 
     if (!this.supportedLanguagesPromise) {
       this.supportedLanguagesPromise = (async () => {
-        const translationBase = this.getEndpointUrl('translate').replace(/\/$/, '');
-        const endpoint = `${translationBase}/supported_languages`;
+        const endpoint = this.getEndpointUrl('translate-languages');
         const context = { operation: "fetch supported languages", endpoint };
 
         try {
           const response = await fetch(endpoint);
 
           if (!response.ok) {
-            throw errorHandlingService.handleApiError(response, context);
+            throw toAppError(response, context);
           }
 
           const data = (await response.json()) as { languages?: unknown };
@@ -263,7 +260,7 @@ export class BrowserApiService implements ApiServiceContract {
             : null;
 
           if (!languages || languages.length === 0) {
-            throw errorHandlingService.handleValidationError(
+            throw toValidationError(
               "Supported languages response malformed",
               { ...context, receivedType: typeof data.languages }
             );
@@ -274,8 +271,8 @@ export class BrowserApiService implements ApiServiceContract {
           return languages;
 
         } catch (error) {
-          const appError = errorHandlingService.handleApiError(error, context);
-          errorHandlingService.logError(appError, { component: "BrowserApiService.getSupportedLanguages" });
+          const appError = toAppError(error, context);
+          logAppError(appError, { component: "BrowserApiService.getSupportedLanguages" });
           console.warn("Falling back to bundled supported languages list:", appError.message);
 
           this.supportedLanguagesCache = [...FALLBACK_LANGUAGES];

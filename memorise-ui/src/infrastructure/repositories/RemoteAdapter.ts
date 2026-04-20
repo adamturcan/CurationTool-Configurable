@@ -1,44 +1,90 @@
 import type { WorkspaceRepository } from '../../core/interfaces/WorkspaceRepository';
-import type { Workspace } from '../../core/entities/Workspace';
-import type { Segment } from '../../types';
+import { Workspace } from '../../core/entities/Workspace';
+import type { Segment, WorkspaceDTO } from '../../types';
 
 /**
- * Placeholder for future server-backed storage. Every method throws until
- * a real backend is wired in.
+ * Server-backed workspace storage via backend REST API.
+ * Used when VITE_BACKEND_URL is set.
  *
  * @category Infrastructure
  */
 export class RemoteAdapter implements WorkspaceRepository {
-  private readonly notImplementedMsg: string;
+  private readonly backendUrl: string;
+  private readonly getAuthToken: () => string | null;
 
   constructor(backendUrl: string, getAuthToken?: () => string | null) {
-    const authStatus = getAuthToken ? 'auth configured' : 'no auth';
-    this.notImplementedMsg =
-      `RemoteAdapter for ${backendUrl} is not yet implemented (${authStatus}). ` +
-      'Set VITE_BACKEND_URL to empty to use local storage.';
+    this.backendUrl = backendUrl.replace(/\/$/, '');
+    this.getAuthToken = getAuthToken ?? (() => null);
   }
 
-  async findById(): Promise<Workspace | null> {
-    throw new Error(this.notImplementedMsg);
+  async findById(id: string): Promise<Workspace | null> {
+    const response = await this.fetch(`/api/workspaces/${encodeURIComponent(id)}`);
+    if (response.status === 404) return null;
+    if (!response.ok) throw new Error(`Failed to fetch workspace (HTTP ${response.status})`);
+    const dto = await response.json() as WorkspaceDTO;
+    return Workspace.fromDto(dto);
   }
 
-  async findByOwner(): Promise<Workspace[]> {
-    throw new Error(this.notImplementedMsg);
+  async findByOwner(ownerId: string): Promise<Workspace[]> {
+    const response = await this.fetch(`/api/workspaces?owner=${encodeURIComponent(ownerId)}`);
+    if (!response.ok) throw new Error(`Failed to fetch workspaces (HTTP ${response.status})`);
+    const dtos = await response.json() as WorkspaceDTO[];
+    return dtos.map(dto => Workspace.fromDto(dto));
   }
 
-  async save(): Promise<void> {
-    throw new Error(this.notImplementedMsg);
+  async save(workspace: Workspace): Promise<void> {
+    const dto = workspace.toDto();
+    const response = await this.fetch(`/api/workspaces/${encodeURIComponent(dto.id!)}`, {
+      method: 'PUT',
+      body: JSON.stringify(dto),
+    });
+    if (response.status === 404) {
+      // New workspace — create
+      const createResponse = await this.fetch('/api/workspaces', {
+        method: 'POST',
+        body: JSON.stringify(dto),
+      });
+      if (!createResponse.ok) throw new Error(`Failed to create workspace (HTTP ${createResponse.status})`);
+      return;
+    }
+    if (!response.ok) throw new Error(`Failed to save workspace (HTTP ${response.status})`);
   }
 
-  async delete(): Promise<void> {
-    throw new Error(this.notImplementedMsg);
+  async delete(id: string): Promise<void> {
+    const response = await this.fetch(`/api/workspaces/${encodeURIComponent(id)}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok && response.status !== 404) {
+      throw new Error(`Failed to delete workspace (HTTP ${response.status})`);
+    }
   }
 
-  async getRawPersistenceForOwner(): Promise<Array<{ id: string; segments?: Segment[] }>> {
-    throw new Error(this.notImplementedMsg);
+  async getRawPersistenceForOwner(ownerId: string): Promise<Array<{ id: string; segments?: Segment[] }>> {
+    const response = await this.fetch(`/api/workspaces?owner=${encodeURIComponent(ownerId)}`);
+    if (!response.ok) return [];
+    const dtos = await response.json() as WorkspaceDTO[];
+    return dtos.map(dto => ({ id: dto.id, segments: dto.segments }));
   }
 
-  async updateSegments(): Promise<void> {
-    throw new Error(this.notImplementedMsg);
+  async updateSegments(workspaceId: string, segments: Segment[] | undefined): Promise<void> {
+    const response = await this.fetch(`/api/workspaces/${encodeURIComponent(workspaceId)}/segments`, {
+      method: 'PUT',
+      body: JSON.stringify({ segments: segments ?? [] }),
+    });
+    if (!response.ok) throw new Error(`Failed to update segments (HTTP ${response.status})`);
+  }
+
+  private async fetch(path: string, init?: RequestInit): Promise<Response> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...(init?.headers as Record<string, string> ?? {}),
+    };
+    const token = this.getAuthToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
+    return globalThis.fetch(`${this.backendUrl}${path}`, {
+      ...init,
+      headers,
+    });
   }
 }

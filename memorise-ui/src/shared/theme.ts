@@ -1,5 +1,6 @@
-/** MUI theme configuration with custom palette, typography, and component overrides. */
+/** MUI theme configuration — palette loaded from theme.config.json */
 import { createTheme, responsiveFontSizes } from "@mui/material";
+import config from "../../theme.config.json";
 
 /** Named shadow tokens */
 export const shadows = {
@@ -8,6 +9,15 @@ export const shadows = {
   lg: "0 14px 40px rgba(0,0,0,0.2)",
   text: "0 2px 4px rgba(0,0,0,0.35)",
 } as const;
+
+/** Background gradient from theme config */
+export const appGradient = config.gradient;
+
+/** Login page colors from theme config */
+export const loginColors = config.login;
+
+/** Sidebar bubble colors from theme config */
+export const sidebarColors = config.sidebar;
 
 declare module "@mui/material/styles" {
   interface Palette {
@@ -21,22 +31,7 @@ declare module "@mui/material/styles" {
 let theme = createTheme({
   palette: {
     mode: "light",
-    primary: { main: "#1D4ED8", dark: "#1E40AF" },
-    secondary: { main: "#21426C" },
-    error: { main: "#DC2626", dark: "#B91C1C" },
-    gold: { main: "#DDD1A0", dark: "#C8A24A", contrastText: "#0F172A" },
-    text: {
-      primary: "#0F172A",
-      secondary: "#334155",
-    },
-    divider: "#E2E8F0",
-    background: {
-      default: "#545742",
-      paper: "#FFFFFF",
-    },
-    action: {
-      hover: "#F8FAFC",
-    },
+    ...config.palette,
   },
 
   typography: {

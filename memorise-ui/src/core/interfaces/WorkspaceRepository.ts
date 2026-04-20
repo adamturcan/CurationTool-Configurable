@@ -3,7 +3,7 @@ import type { Segment } from '../../types';
 
 /**
  * Storage contract for workspace persistence. Implemented by
- * LocalStorageAdapter (localStorage) and RemoteAdapter (server API).
+ * LocalStorageWorkspaceRepository (localStorage) and RemoteAdapter (server API).
  * StorageGateway delegates to the active adapter based on configuration.
  *
  * @category Interfaces

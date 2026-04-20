@@ -10,6 +10,8 @@ export interface ApiEndpointConfig {
   key: string;
   /** Full URL to the endpoint */
   url: string;
+  /** Adapter key (e.g., "sdu-ner") — absent means default adapter */
+  adapter?: string;
 }
 
 /**

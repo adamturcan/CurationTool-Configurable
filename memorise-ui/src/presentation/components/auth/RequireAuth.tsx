@@ -21,7 +21,7 @@ export const RequireAuth: React.FC<{ children: React.ReactNode }> = ({ children 
         }}
       >
         <img
-          src={import.meta.env.BASE_URL + 'memorise.png'}
+          src={import.meta.env.VITE_APP_LOGO || import.meta.env.BASE_URL + 'memorise.png'}
           alt="Loading"
           style={{ height: 36, opacity: 0.7 }}
         />

@@ -13,6 +13,13 @@ import {
   CircularProgress,
   Chip,
   TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  IconButton,
 } from "@mui/material";
 import RefreshIcon from "@mui/icons-material/Refresh";
 import SaveIcon from "@mui/icons-material/Save";
@@ -20,13 +27,25 @@ import EditIcon from "@mui/icons-material/Edit";
 import CancelIcon from "@mui/icons-material/Close";
 import { shadows } from "../../../shared/theme";
 import { getConfigService } from "../../../infrastructure/providers/configProvider";
+import { getAuthService } from "../../../infrastructure/providers/authProvider";
 import { getApiHealthService } from "../../../infrastructure/providers/apiHealthProvider";
 import type { HealthCheckResult } from "../../../infrastructure/services/ApiHealthService";
 import type { ApiEndpointConfig } from "../../../core/interfaces/ConfigService";
 
+interface AdapterSchema {
+  request: unknown;
+  response: unknown;
+}
+
+interface AdapterOption {
+  key: string;
+  name: string;
+  schema?: AdapterSchema;
+}
+
 /**
  * Unified admin panel: shows config source, resolved endpoints, health status,
- * and allows editing endpoint URLs in server mode.
+ * and allows editing endpoint URLs and adapters in server mode.
  */
 const ConfigPanel: React.FC = () => {
   const [results, setResults] = useState<HealthCheckResult[]>([]);
@@ -34,13 +53,26 @@ const ConfigPanel: React.FC = () => {
   const [configReady, setConfigReady] = useState(false);
   const [endpoints, setEndpoints] = useState<ApiEndpointConfig[]>([]);
 
+  // Schema preview dialog
+  const [schemaDialog, setSchemaDialog] = useState<{ name: string; schema: AdapterSchema } | null>(null);
+
   // Edit state
   const [editing, setEditing] = useState(false);
   const [editedUrls, setEditedUrls] = useState<Record<string, string>>({});
+  const [editedAdapters, setEditedAdapters] = useState<Record<string, string>>({});
+  const [availableAdapters, setAvailableAdapters] = useState<Record<string, AdapterOption[]>>({});
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   const isServerMode = !!import.meta.env.VITE_BACKEND_URL;
+  const backendUrl = (import.meta.env.VITE_BACKEND_URL ?? '').replace(/\/$/, '');
+
+  const getAuthHeaders = (): Record<string, string> => {
+    const headers: Record<string, string> = {};
+    const token = getAuthService().getToken();
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+    return headers;
+  };
 
   const runChecks = useCallback(async (eps: ApiEndpointConfig[]) => {
     setResults(
@@ -56,12 +88,44 @@ const ConfigPanel: React.FC = () => {
       }))
     );
 
+    if (isServerMode) {
+      // In server mode, health checks go through the backend (avoids CORS issues)
+      try {
+        const response = await fetch(`${backendUrl}/api/health`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+          body: JSON.stringify({ endpoints: eps.map(ep => ({ key: ep.key, name: ep.name, url: ep.url })) }),
+        });
+        if (response.ok) {
+          const checked = await response.json();
+          setResults(checked);
+          return;
+        }
+      } catch {
+        // Fall through to client-side checks
+      }
+    }
+
     const checked = await getApiHealthService().checkAll(eps);
     setResults(checked);
-  }, []);
+  }, [isServerMode, backendUrl]);
+
+  const fetchAvailableAdapters = useCallback(async () => {
+    if (!isServerMode) return;
+    try {
+      const response = await fetch(`${backendUrl}/api/adapters`, { headers: getAuthHeaders() });
+      if (response.ok) {
+        const data = await response.json() as Record<string, AdapterOption[]>;
+        setAvailableAdapters(data);
+      }
+    } catch {
+      // Adapter list not critical
+    }
+  }, [isServerMode, backendUrl]);
 
   useEffect(() => {
     let cancelled = false;
+    void fetchAvailableAdapters();
 
     (async () => {
       try {
@@ -83,25 +147,30 @@ const ConfigPanel: React.FC = () => {
     })();
 
     return () => { cancelled = true; };
-  }, [runChecks]);
+  }, [runChecks, fetchAvailableAdapters]);
 
   const handleRefresh = useCallback(async () => {
     await runChecks(endpoints);
   }, [runChecks, endpoints]);
 
-  const startEditing = () => {
+  const startEditing = async () => {
     const urlMap: Record<string, string> = {};
+    const adapterMap: Record<string, string> = {};
     for (const ep of endpoints) {
       urlMap[ep.key] = ep.url;
+      adapterMap[ep.key] = ep.adapter ?? '';
     }
     setEditedUrls(urlMap);
+    setEditedAdapters(adapterMap);
     setSaveError(null);
     setEditing(true);
+    await fetchAvailableAdapters();
   };
 
   const cancelEditing = () => {
     setEditing(false);
     setEditedUrls({});
+    setEditedAdapters({});
     setSaveError(null);
   };
 
@@ -112,6 +181,7 @@ const ConfigPanel: React.FC = () => {
     const updated = endpoints.map((ep) => ({
       ...ep,
       url: editedUrls[ep.key] ?? ep.url,
+      adapter: editedAdapters[ep.key] || ep.adapter,
     }));
 
     try {
@@ -119,6 +189,7 @@ const ConfigPanel: React.FC = () => {
       setEndpoints(updated);
       setEditing(false);
       setEditedUrls({});
+      setEditedAdapters({});
       await runChecks(updated);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : "Failed to save");
@@ -127,7 +198,11 @@ const ConfigPanel: React.FC = () => {
     }
   };
 
-  const hasChanges = endpoints.some((ep) => editedUrls[ep.key] !== undefined && editedUrls[ep.key] !== ep.url);
+  const hasChanges = endpoints.some(
+    (ep) =>
+      (editedUrls[ep.key] !== undefined && editedUrls[ep.key] !== ep.url) ||
+      (editedAdapters[ep.key] !== undefined && editedAdapters[ep.key] !== (ep.adapter ?? ''))
+  );
 
   const statusChip = (result: HealthCheckResult) => {
     if (result.status === "checking") {
@@ -296,6 +371,7 @@ const ConfigPanel: React.FC = () => {
                 <TableRow>
                   <TableCell>Endpoint</TableCell>
                   <TableCell>URL</TableCell>
+                  <TableCell>Adapter</TableCell>
                   {!editing && <TableCell align="center">Status</TableCell>}
                   {!editing && <TableCell align="right">Latency</TableCell>}
                   {!editing && <TableCell align="right">Last Checked</TableCell>}
@@ -304,6 +380,7 @@ const ConfigPanel: React.FC = () => {
               <TableBody>
                 {endpoints.map((ep) => {
                   const result = results.find((r) => r.key === ep.key);
+                  const adapterOptions = availableAdapters[ep.key] ?? [];
                   return (
                     <TableRow
                       key={ep.key}
@@ -347,6 +424,47 @@ const ConfigPanel: React.FC = () => {
                           </Typography>
                         )}
                       </TableCell>
+                      <TableCell>
+                        {editing && adapterOptions.length > 0 ? (
+                          <FormControl size="small" sx={{ minWidth: 160 }}>
+                            <Select
+                              value={editedAdapters[ep.key] ?? ep.adapter ?? ''}
+                              onChange={(e) =>
+                                setEditedAdapters((prev) => ({ ...prev, [ep.key]: e.target.value }))
+                              }
+                            >
+                              {adapterOptions.map((opt) => (
+                                <MenuItem key={opt.key} value={opt.key}>
+                                  {opt.name}
+                                </MenuItem>
+                              ))}
+                            </Select>
+                          </FormControl>
+                        ) : (
+                          <Chip
+                            label={ep.adapter ?? "default"}
+                            size="small"
+                            clickable={!!ep.adapter}
+                            onClick={() => {
+                              if (!ep.adapter) return;
+                              const opts = availableAdapters[ep.key] ?? [];
+                              const match = opts.find(o => o.key === ep.adapter);
+                              if (match?.schema) {
+                                setSchemaDialog({ name: match.name, schema: match.schema });
+                              }
+                            }}
+                            sx={{
+                              fontWeight: 600,
+                              fontFamily: "monospace",
+                              bgcolor: "#F3F4F6",
+                              color: "#374151",
+                              border: 1,
+                              borderColor: "#D1D5DB",
+                              cursor: ep.adapter ? "pointer" : "default",
+                            }}
+                          />
+                        )}
+                      </TableCell>
                       {!editing && (
                         <TableCell align="center">
                           {result ? statusChip(result) : "\u2014"}
@@ -379,11 +497,21 @@ const ConfigPanel: React.FC = () => {
 
       {/* Error details */}
       {!editing && results.some((r) => r.error && r.status === "down") && (
-        <Box mt={2} ml={{ xs: 0, sm: 3 }}>
+        <Paper
+          sx={{
+            mt: 2,
+            ml: { xs: 0, sm: 2 },
+            p: 2,
+            borderRadius: 2,
+            bgcolor: "#FEF2F2",
+            border: 1,
+            borderColor: "#FECACA",
+          }}
+        >
           <Typography
             variant="subtitle2"
             fontWeight={700}
-            sx={{ color: "text.primary", mb: 1 }}
+            sx={{ color: "#991B1B", mb: 1 }}
           >
             Errors
           </Typography>
@@ -393,13 +521,46 @@ const ConfigPanel: React.FC = () => {
               <Typography
                 key={r.key}
                 variant="body2"
-                sx={{ color: "error.main", mb: 0.5 }}
+                sx={{ color: "#991B1B", mb: 0.5 }}
               >
-                {r.name}: {r.error}
+                <strong>{r.name}</strong> — {r.error}
               </Typography>
             ))}
-        </Box>
+        </Paper>
       )}
+
+      {/* Adapter schema preview dialog */}
+      <Dialog
+        open={!!schemaDialog}
+        onClose={() => setSchemaDialog(null)}
+        maxWidth="sm"
+        fullWidth
+      >
+        {schemaDialog && (
+          <>
+            <DialogTitle sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <Typography fontWeight={700}>{schemaDialog.name}</Typography>
+              <IconButton size="small" onClick={() => setSchemaDialog(null)}>
+                <CancelIcon />
+              </IconButton>
+            </DialogTitle>
+            <DialogContent>
+              <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1, color: "text.secondary" }}>
+                Request
+              </Typography>
+              <Paper sx={{ p: 2, mb: 2, bgcolor: "#F8FAFC", fontFamily: "monospace", fontSize: "0.85rem", overflow: "auto" }}>
+                <pre style={{ margin: 0 }}>{JSON.stringify(schemaDialog.schema.request, null, 2)}</pre>
+              </Paper>
+              <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1, color: "text.secondary" }}>
+                Response
+              </Typography>
+              <Paper sx={{ p: 2, bgcolor: "#F8FAFC", fontFamily: "monospace", fontSize: "0.85rem", overflow: "auto" }}>
+                <pre style={{ margin: 0 }}>{JSON.stringify(schemaDialog.schema.response, null, 2)}</pre>
+              </Paper>
+            </DialogContent>
+          </>
+        )}
+      </Dialog>
     </Box>
   );
 };

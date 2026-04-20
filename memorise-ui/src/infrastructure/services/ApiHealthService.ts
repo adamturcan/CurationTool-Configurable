@@ -62,7 +62,7 @@ export class ApiHealthService {
         key: endpoint.key,
         name: endpoint.name,
         url: endpoint.url,
-        status: response.status < 500 ? "up" : "down",
+        status: response.status !== 404 && response.status < 500 ? "up" : "down",
         latencyMs,
         httpStatus: response.status,
         error: response.ok ? null : `HTTP ${response.status}`,
