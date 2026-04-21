@@ -31,6 +31,7 @@ const NewWorkspaceDialog: React.FC<Props> = ({ open, onClose, onCreate, defaultN
   const canSubmit = trimmed.length > 0 && !isSubmitting;
 
   const handleSubmit = async () => {
+    if (!open) return;
     if (!canSubmit) return;
     setIsSubmitting(true);
     try {
