@@ -162,9 +162,10 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
 
   const filteredLanguageOptions = useMemo(() => {
     const query = languageSearch.trim().toLowerCase();
-    if (!query) return languageOptions;
-    return languageOptions.filter(({ code, label }: LanguageOption) => code.toLowerCase().includes(query) || label.toLowerCase().includes(query));
-  }, [languageOptions, languageSearch]);
+    const base = languageOptions.filter((o: LanguageOption) => !availableLangs.includes(o.code));
+    if (!query) return base;
+    return base.filter(({ code, label }: LanguageOption) => code.toLowerCase().includes(query) || label.toLowerCase().includes(query));
+  }, [languageOptions, languageSearch, availableLangs]);
 
   const handleDelete = () => { onDeleteTranslation(localLang, segment.id); setLocalLang("original"); setDeleteDialogOpen(false); };
 
@@ -323,7 +324,7 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
               </Box>
             </Tooltip>
           )}
-          <IconButton size="small" onClick={(e) => { e.stopPropagation(); setIsHeaderOpen(!isHeaderOpen); }} sx={{ color: "#94a3b8", width: 28, height: 28 }}>
+          <IconButton size="small" onClick={(e) => { e.stopPropagation(); onActivate(segment.id); setIsHeaderOpen(!isHeaderOpen); }} sx={{ color: "#94a3b8", width: 28, height: 28 }}>
             {isHeaderOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
           </IconButton>
         </Box>
@@ -331,7 +332,10 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
         {!isHeaderOpen && <Box sx={{ height: "32px", width: "100%" }} />}
 
         <Collapse in={isHeaderOpen}>
-          <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 48px 8px 16px" }}>
+          <Box sx={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 48px 8px 16px" }}>
+            <Box sx={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", fontSize: 12, color: "#64748b", fontWeight: 500 }}>
+              segment-{index + 1}
+            </Box>
             <Box sx={{ ...sxUtil.flexRow, gap: 1.5 }}>
               <TranslateIcon sx={{ color: "#94a3b8", fontSize: "18px" }} />
               <FormControl size="small" sx={{ minWidth: 140 }}>

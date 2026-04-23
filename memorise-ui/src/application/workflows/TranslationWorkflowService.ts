@@ -72,9 +72,11 @@ export class TranslationWorkflowService {
 
     try {
       const existing = session.translations?.find(t => t.language === targetLang);
-      const editedFlags = existing?.editedSegmentTranslations || {};
+      const existingSegTrans = existing?.segmentTranslations || {};
 
-      const segmentsToTranslate = session.segments.filter(seg => !editedFlags[seg.id]);
+      const segmentsToTranslate = session.segments.filter(seg =>
+        existingSegTrans[seg.id] === undefined
+      );
       const skippedCount = session.segments.length - segmentsToTranslate.length;
 
       let sourceLang = "auto";
@@ -116,7 +118,7 @@ export class TranslationWorkflowService {
         : [...(session.translations || []), newTranslation];
 
       const message = skippedCount > 0
-        ? `Translated ${segmentsToTranslate.length} segment(s) to ${targetLang} (${skippedCount} edited skipped).`
+        ? `Translated ${segmentsToTranslate.length} segment(s) to ${targetLang} (${skippedCount} already-translated segment(s) skipped).`
         : `Translated document to ${targetLang}.`;
 
       return {

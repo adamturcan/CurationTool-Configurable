@@ -17,6 +17,14 @@ export interface ConflictEntry {
   span: NerSpan;
   snippet: string;
   source: ConflictSource;
+  segmentIndex?: number;
+}
+
+/** 1-based segment extent in the same coordinate space as the span offsets */
+export interface SegmentBoundary {
+  start: number;
+  end: number;
+  index: number;
 }
 
 /** Data passed to the UI dialog for each conflict — user picks "api" or "existing" */
@@ -25,6 +33,7 @@ export interface ConflictPrompt {
   conflicts: ConflictEntry[];
   index: number;
   total: number;
+  language?: string;
 }
 
 export const resolveApiSpanConflicts = async (params: {
@@ -33,8 +42,16 @@ export const resolveApiSpanConflicts = async (params: {
   userSpans: NerSpan[];
   existingApiSpans: NerSpan[];
   onConflict: (prompt: ConflictPrompt) => Promise<"api" | "existing">;
+  segmentBoundaries?: SegmentBoundary[];
+  language?: string;
 }): Promise<{ nextUserSpans: NerSpan[]; nextApiSpans: NerSpan[]; conflictsHandled: number }> => {
-  const { text, incomingSpans, userSpans, existingApiSpans, onConflict } = params;
+  const { text, incomingSpans, userSpans, existingApiSpans, onConflict, segmentBoundaries, language } = params;
+
+  const locateSegment = (offset: number): number | undefined => {
+    if (!segmentBoundaries) return undefined;
+    const found = segmentBoundaries.find(b => offset >= b.start && offset < b.end);
+    return found?.index;
+  };
 
   // Mutable copy of user spans — entries may be removed if user chooses "api"
   let nextUserSpans = [...userSpans];
@@ -96,21 +113,25 @@ export const resolveApiSpanConflicts = async (params: {
         span: candidate,
         snippet: text.slice(candidate.start, candidate.end) || "[empty]",
         source: "api",
+        segmentIndex: locateSegment(candidate.start),
       },
       conflicts: [
         ...conflictingUserSpans.map((span) => ({
           span,
           snippet: text.slice(span.start, span.end) || "[empty]",
           source: "user" as const,
+          segmentIndex: locateSegment(span.start),
         })),
         ...conflictingApiSpans.map((span) => ({
           span,
           snippet: text.slice(span.start, span.end) || "[empty]",
           source: "api" as const,
+          segmentIndex: locateSegment(span.start),
         })),
       ],
       index: conflictIndex,
       total: totalUserConflicts || conflictIndex,
+      language,
     };
 
     const choice = await onConflict(conflictPrompt);

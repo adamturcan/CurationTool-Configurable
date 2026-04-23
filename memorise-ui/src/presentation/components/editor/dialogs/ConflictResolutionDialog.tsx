@@ -33,13 +33,26 @@ const chipBySource: Record<ConflictSource, { label: string; color: "primary" | "
 const getEntityColor = (entity: string) => ENTITY_COLORS[entity] ?? "#94A3B8";
 
 /** Renders a dialog for resolving overlapping NER annotation conflicts */
+const formatLanguageLabel = (lang?: string) => {
+  if (!lang || lang === "original") return "Original";
+  return lang.toUpperCase();
+};
+
+const buildContextLabel = (segmentIndex: number | undefined, language: string | undefined) => {
+  const parts: string[] = [];
+  if (segmentIndex !== undefined) parts.push(`Segment ${segmentIndex}`);
+  parts.push(formatLanguageLabel(language));
+  return parts.join(" · ");
+};
+
 const ConflictResolutionDialog: React.FC<Props> = ({
   prompt,
   onKeepExisting,
   onKeepApi,
 }) => {
-  const { candidate, conflicts, index, total } = prompt;
+  const { candidate, conflicts, index, total, language } = prompt;
   const candidateColor = getEntityColor(candidate.span.entity);
+  const contextLabel = buildContextLabel(candidate.segmentIndex, language);
 
   return (
     <Dialog
@@ -60,9 +73,12 @@ const ConflictResolutionDialog: React.FC<Props> = ({
         Resolve annotation conflict
       </DialogTitle>
       <DialogContent>
-        <DialogContentText id="ner-conflict-dialog-description" sx={{ mb: 2 }}>
+        <DialogContentText id="ner-conflict-dialog-description" sx={{ mb: 0.5 }}>
           Conflict {index} of {total}
         </DialogContentText>
+        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 2 }}>
+          {contextLabel}
+        </Typography>
         <DialogContentText sx={{ mb: 3 }}>
           We found overlapping annotations. Choose which annotation you want to keep.
         </DialogContentText>

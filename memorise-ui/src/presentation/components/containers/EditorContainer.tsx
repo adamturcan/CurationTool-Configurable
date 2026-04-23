@@ -28,6 +28,19 @@ const EditorContainer: React.FC = () => {
 
   const { languageOptions, isLanguageListLoading } = useLanguageOptions();
 
+  const globalLanguageOptions = useMemo(() => {
+    const translations = session?.translations ?? [];
+    const segments = session?.segments ?? [];
+    const fullyTranslated = new Set(
+      translations
+        .filter(t => segments.length === 0
+          ? !!t.text
+          : segments.every(s => t.segmentTranslations?.[s.id] !== undefined))
+        .map(t => t.language)
+    );
+    return languageOptions.filter(o => !fullyTranslated.has(o.code));
+  }, [languageOptions, session?.translations, session?.segments]);
+
   const layers = useLayerOperations();
   const ops = useEditorOperations(layers);
   const splits = useSegmentSplitMerge();
@@ -201,7 +214,7 @@ const EditorContainer: React.FC = () => {
           hasActiveSegment={!!activeSegmentId && activeSegmentId !== "root"}
           hasSegments={(session?.segments?.length ?? 0) > 0}
           isAlreadySegmented={(session?.segments?.length ?? 0) > 1}
-          languageOptions={languageOptions}
+          languageOptions={globalLanguageOptions}
           isLanguageListLoading={isLanguageListLoading}
         />
       </Box>

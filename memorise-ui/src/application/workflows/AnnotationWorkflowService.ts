@@ -28,9 +28,9 @@ export class AnnotationWorkflowService {
 
 
 
-  async runNer(session: { layer: AnnotationLayer, activeSegmentId?: string, segments: Segment[], deletedApiKeys: string[] }, onConflict: (prompt: ConflictPrompt) => Promise<"api" | "existing">): Promise<AnnotationResult> {
+  async runNer(session: { layer: AnnotationLayer, activeSegmentId?: string, segments: Segment[], deletedApiKeys: string[], lang?: string }, onConflict: (prompt: ConflictPrompt) => Promise<"api" | "existing">): Promise<AnnotationResult> {
 
-    const { layer, activeSegmentId, segments, deletedApiKeys } = session;
+    const { layer, activeSegmentId, segments, deletedApiKeys, lang } = session;
 
     let textToProcess = "";
     let globalOffset = 0;
@@ -69,8 +69,28 @@ export class AnnotationWorkflowService {
 
       const filteredApiSpans = apiSpans.filter((s) => !deletedApiKeys.includes(`${s.start}:${s.end}:${s.entity}`));
 
+      const virtualText = layer.segmentTranslations
+        ? segments.map(s => layer.segmentTranslations?.[s.id] ?? "").join("")
+        : (layer.text || "");
+
+      let segmentBoundaries: { start: number; end: number; index: number }[] | undefined;
+      if (segments.length > 0) {
+        if (layer.segmentTranslations) {
+          let cursor = 0;
+          segmentBoundaries = segments.map((s, i) => {
+            const len = (layer.segmentTranslations?.[s.id] ?? "").length;
+            const start = cursor;
+            cursor += len;
+            return { start, end: cursor, index: i + 1 };
+          });
+        } else {
+          segmentBoundaries = segments.map((s, i) => ({ start: s.start, end: s.end, index: i + 1 }));
+        }
+      }
+
       const { nextUserSpans, nextApiSpans, conflictsHandled } = await resolveApiSpanConflicts({
-        text: layer.text || "", incomingSpans, userSpans, existingApiSpans: filteredApiSpans, onConflict,
+        text: virtualText, incomingSpans, userSpans, existingApiSpans: filteredApiSpans, onConflict,
+        segmentBoundaries, language: lang,
       });
 
       return { ok: true, notice: { message: conflictsHandled > 0 ? "NER completed with conflicts." : "NER completed.", tone: "success" }, layerPatch: { userSpans: nextUserSpans, apiSpans: nextApiSpans }, deletedApiKeys: [] };

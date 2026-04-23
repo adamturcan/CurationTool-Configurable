@@ -148,7 +148,7 @@ export function useEditorOperations(layers: LayerOps) {
     setActiveSegmentId(segmentId);
     const layer = resolveLayer(lang);
     if (layer && segmentId) {
-      const result = await annotationWorkflowService.runNer({ layer, activeSegmentId: segmentId, segments: session?.segments || [], deletedApiKeys: session?.deletedApiKeys ?? [] }, requestConflictResolution);
+      const result = await annotationWorkflowService.runNer({ layer, activeSegmentId: segmentId, segments: session?.segments || [], deletedApiKeys: session?.deletedApiKeys ?? [], lang }, requestConflictResolution);
       if (result.ok) {
         applyLayerPatch(lang, result.layerPatch);
         updateSession({ deletedApiKeys: result.deletedApiKeys });
@@ -204,7 +204,7 @@ export function useEditorOperations(layers: LayerOps) {
         let originalOk = false;
         const originalLayer = resolveLayer("original");
         if (originalLayer) {
-          const result = await annotationWorkflowService.runNer({ layer: originalLayer, segments, deletedApiKeys: session?.deletedApiKeys ?? [] }, requestConflictResolution);
+          const result = await annotationWorkflowService.runNer({ layer: originalLayer, segments, deletedApiKeys: session?.deletedApiKeys ?? [], lang: "original" }, requestConflictResolution);
           if (result.ok) {
             applyLayerPatch("original", result.layerPatch);
             updateSession({ deletedApiKeys: result.deletedApiKeys });
@@ -231,7 +231,7 @@ export function useEditorOperations(layers: LayerOps) {
             editedSegmentTranslations: tLayer.editedSegmentTranslations,
           };
 
-          const result = await annotationWorkflowService.runNer({ layer, segments: freshSession?.segments || [], deletedApiKeys: freshSession?.deletedApiKeys ?? [] }, requestConflictResolution);
+          const result = await annotationWorkflowService.runNer({ layer, segments: freshSession?.segments || [], deletedApiKeys: freshSession?.deletedApiKeys ?? [], lang: t.language }, requestConflictResolution);
           if (result.ok) {
             applyLayerPatch(t.language, result.layerPatch);
             if (result.deletedApiKeys) updateSession({ deletedApiKeys: result.deletedApiKeys });
@@ -273,7 +273,7 @@ export function useEditorOperations(layers: LayerOps) {
             apiSpans: currentSession.apiSpans ?? [],
           };
 
-          const result = await annotationWorkflowService.runNer({ layer: originalLayer, activeSegmentId: seg.id, segments, deletedApiKeys: currentSession.deletedApiKeys ?? [] }, requestConflictResolution);
+          const result = await annotationWorkflowService.runNer({ layer: originalLayer, activeSegmentId: seg.id, segments, deletedApiKeys: currentSession.deletedApiKeys ?? [], lang: "original" }, requestConflictResolution);
           if (result.ok) {
             applyLayerPatch("original", result.layerPatch);
             updateSession({ deletedApiKeys: result.deletedApiKeys });
@@ -297,7 +297,7 @@ export function useEditorOperations(layers: LayerOps) {
               editedSegmentTranslations: tLayer.editedSegmentTranslations,
             };
 
-            const result = await annotationWorkflowService.runNer({ layer, activeSegmentId: seg.id, segments, deletedApiKeys: freshSession?.deletedApiKeys ?? [] }, requestConflictResolution);
+            const result = await annotationWorkflowService.runNer({ layer, activeSegmentId: seg.id, segments, deletedApiKeys: freshSession?.deletedApiKeys ?? [], lang: t.language }, requestConflictResolution);
             if (result.ok) {
               applyLayerPatch(t.language, result.layerPatch);
               if (result.deletedApiKeys) updateSession({ deletedApiKeys: result.deletedApiKeys });

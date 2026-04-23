@@ -192,6 +192,7 @@ const EditorGlobalMenu: React.FC<EditorGlobalMenuProps> = ({
                         options={languageOptions || []}
                         getOptionLabel={(option: LanguageOption) => option.label}
                         loading={isLanguageListLoading}
+                        noOptionsText="All segments are fully translated"
                         onChange={(_event, newValue: LanguageOption) => {
                           if (newValue) { onTranslateAll(newValue.code); setShowTranslate(false); }
                         }}
