@@ -103,7 +103,7 @@ const PanelContainer: React.FC = () => {
   }, [thesaurusWorker]);
 
   const thesaurusConfig = useMemo(() => ({
-    fetchSuggestions: fetchThesaurus, defaultRestrictToThesaurus: false,
+    fetchSuggestions: fetchThesaurus, defaultRestrictToThesaurus: true,
     isThesaurusLoading: !thesaurusWorker.ready, resetKey: currentId ?? undefined
   }), [fetchThesaurus, thesaurusWorker.ready, currentId]);
 

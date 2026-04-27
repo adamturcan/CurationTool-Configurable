@@ -37,7 +37,7 @@ interface Props {
 
 /** Renders the tag list with grouped/hierarchical display and thesaurus search input */
 const TagTable: React.FC<Props> = ({ data, onDelete, thesaurus, thesaurusIndex, title, onClose }) => {
-  const [restrictOnly, setRestrictOnly] = useState(Boolean(thesaurus?.restrictToThesaurus ?? thesaurus?.defaultRestrictToThesaurus ?? false));
+  const [restrictOnly, setRestrictOnly] = useState(Boolean(thesaurus?.restrictToThesaurus ?? thesaurus?.defaultRestrictToThesaurus ?? true));
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
 
   useEffect(() => {

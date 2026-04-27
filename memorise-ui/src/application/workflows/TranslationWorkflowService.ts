@@ -216,10 +216,6 @@ export class TranslationWorkflowService {
       return { ok: false, notice: { message: "Translation layer not found.", tone: "error" } };
     }
 
-    if (translation.editedSegmentTranslations?.[segmentId]) {
-      return { ok: false, notice: { message: "Cannot update a manually edited translation.", tone: "warning" } };
-    }
-
     const seg = session.segments?.find(s => s.id === segmentId);
     if (!seg?.text?.trim()) {
       return { ok: false, notice: { message: "Segment is empty.", tone: "error" } };

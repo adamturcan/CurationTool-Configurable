@@ -93,10 +93,19 @@ const ManageWorkspacesPage: React.FC = () => {
     setEditingId(null);
     setDraftName("");
   };
+  const isRenameDuplicate = (id: string, candidate: string): boolean => {
+    const lower = candidate.trim().toLowerCase();
+    if (!lower) return false;
+    return workspaces.some(
+      (other) => other.id !== id && other.name.trim().toLowerCase() === lower
+    );
+  };
+
   const saveEdit = async () => {
     if (!editingId) return;
     const name = draftName.trim();
     if (!name) return;
+    if (isRenameDuplicate(editingId, name)) return;
     const id = editingId;
     try {
       const service = getWorkspaceApplicationService();
@@ -231,10 +240,20 @@ const ManageWorkspacesPage: React.FC = () => {
                               }
                             }}
                             autoFocus
+                            error={isRenameDuplicate(ws.id, draftName)}
+                            helperText={
+                              isRenameDuplicate(ws.id, draftName)
+                                ? "Another workspace already uses this name."
+                                : undefined
+                            }
                           />
                           <IconButton
                             size="small"
                             onClick={saveEdit}
+                            disabled={
+                              !draftName.trim() ||
+                              isRenameDuplicate(ws.id, draftName)
+                            }
                             sx={{ color: "primary.main" }}
                           >
                             <CheckIcon />

@@ -31,8 +31,8 @@ interface Props {
 /** Renders the animated right panel shell with tag table and thesaurus input */
 const RightPanel: React.FC<Props> = (props) => {
   return (
-    // 1. THE INVISIBLE GHOST LAYOUT
-    <Box sx={{
+    // 1. THE INVISIBLE LAYOUT
+    <Box data-tag-panel="1" sx={{
       position: "relative",
       width: props.isExpanded ? 300 : 0,
       height: "100%",

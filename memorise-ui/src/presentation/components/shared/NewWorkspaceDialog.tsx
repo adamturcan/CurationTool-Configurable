@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Button,
   Dialog,
@@ -13,10 +13,11 @@ interface Props {
   onClose: () => void;
   onCreate: (name: string) => void | Promise<void>;
   defaultName?: string;
+  existingNames?: string[];
 }
 
 /** Prompts the user for a workspace name before creating a new workspace */
-const NewWorkspaceDialog: React.FC<Props> = ({ open, onClose, onCreate, defaultName = "" }) => {
+const NewWorkspaceDialog: React.FC<Props> = ({ open, onClose, onCreate, defaultName = "", existingNames = [] }) => {
   const [name, setName] = useState(defaultName);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,7 +29,14 @@ const NewWorkspaceDialog: React.FC<Props> = ({ open, onClose, onCreate, defaultN
   }, [open, defaultName]);
 
   const trimmed = name.trim();
-  const canSubmit = trimmed.length > 0 && !isSubmitting;
+
+  const isDuplicate = useMemo(() => {
+    if (!trimmed) return false;
+    const lower = trimmed.toLowerCase();
+    return existingNames.some(n => n.trim().toLowerCase() === lower);
+  }, [trimmed, existingNames]);
+
+  const canSubmit = trimmed.length > 0 && !isSubmitting && !isDuplicate;
 
   const handleSubmit = async () => {
     if (!open) return;
@@ -65,6 +73,8 @@ const NewWorkspaceDialog: React.FC<Props> = ({ open, onClose, onCreate, defaultN
             }
           }}
           disabled={isSubmitting}
+          error={isDuplicate}
+          helperText={isDuplicate ? "You already have a workspace with this name. Pick a different one." : " "}
         />
       </DialogContent>
       <DialogActions sx={{ px: 3, pb: 2.5, gap: 1 }}>

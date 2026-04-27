@@ -1,4 +1,4 @@
-import type { WorkspaceDTO, WorkflowResult } from "../../types";
+import type { WorkspaceDTO, WorkflowResult, TagItem } from "../../types";
 import { getWorkspaceApplicationService } from "../../infrastructure/providers/workspaceProvider";
 
 export interface ExportOutput {
@@ -160,44 +160,80 @@ export class ExportWorkflowService {
     doc.setTextColor(0);
     y += 6;
 
-    // Source text
-    if (workspace.text) {
-      addSection("Source Text");
-      addWrappedText(workspace.text);
+    const sourceText = workspace.text ?? "";
+    const segments = workspace.segments ?? [];
+    const docTags = workspace.tags?.filter(t => !t.segmentId) ?? [];
+    const segmentTagsById = new Map<string, TagItem[]>();
+    for (const tag of workspace.tags ?? []) {
+      if (!tag.segmentId) continue;
+      const list = segmentTagsById.get(tag.segmentId) ?? [];
+      list.push(tag);
+      segmentTagsById.set(tag.segmentId, list);
+    }
+
+    const allSpans = [...(workspace.userSpans ?? []), ...(workspace.apiSpans ?? [])];
+    const spansForSegment = (start: number, end: number) =>
+      allSpans
+        .filter(s => s.start >= start && s.end <= end)
+        .sort((a, b) => a.start - b.start);
+
+    // Source text — always the original text, never a translation
+    if (sourceText) {
+      addSection("Source Text (Original)");
+      addWrappedText(sourceText);
       y += 6;
     }
 
-    // Segments
-    if (workspace.segments?.length) {
-      addSection(`Segments (${workspace.segments.length})`);
-      for (const seg of workspace.segments) {
-        ensureSpace(12);
+    // Segments with per-segment tags & NER
+    if (segments.length) {
+      addSection(`Segments (${segments.length})`);
+      const ordered = [...segments].sort((a, b) => a.order - b.order);
+      ordered.forEach((seg, idx) => {
+        ensureSpace(14);
         doc.setFont("NotoSans", "bold");
-        doc.text(seg.id, margin, y);
+        doc.text(`Segment ${idx + 1}  [${seg.start}–${seg.end}]`, margin, y);
         doc.setFont("NotoSans", "normal");
         y += 5;
-        if (seg.text) {
-          addWrappedText(seg.text);
+
+        const segText = sourceText ? sourceText.substring(seg.start, seg.end) : (seg.text ?? "");
+        if (segText) addWrappedText(segText);
+
+        const segTags = segmentTagsById.get(seg.id) ?? [];
+        if (segTags.length) {
+          ensureSpace(6);
+          doc.setTextColor(80);
+          addWrappedText(`Semantic tags: ${segTags.map(t => t.name).join(", ")}`);
+          doc.setTextColor(0);
+        }
+
+        const segSpans = spansForSegment(seg.start, seg.end);
+        if (segSpans.length) {
+          ensureSpace(6);
+          doc.setTextColor(80);
+          const spanList = segSpans
+            .map(s => `${sourceText.substring(s.start, s.end)} (${s.entity}${s.origin === "api" ? "" : ", user"})`)
+            .join("; ");
+          addWrappedText(`Entities: ${spanList}`);
+          doc.setTextColor(0);
         }
         y += 3;
-      }
+      });
       y += 4;
     }
 
-    // Spans
+    // Spans summary
     const userCount = workspace.userSpans?.length ?? 0;
     const apiCount = workspace.apiSpans?.length ?? 0;
     if (userCount > 0 || apiCount > 0) {
-      addSection("Annotations");
+      addSection("Annotation Totals");
       doc.text(`User spans: ${userCount}  |  API spans: ${apiCount}`, margin, y);
       y += 8;
     }
 
-    // Tags
-    if (workspace.tags?.length) {
-      addSection(`Tags (${workspace.tags.length})`);
-      const tagNames = workspace.tags.map(t => t.name).join(", ");
-      addWrappedText(tagNames);
+    // Document-level tags
+    if (docTags.length) {
+      addSection(`Document Tags (${docTags.length})`);
+      addWrappedText(docTags.map(t => t.name).join(", "));
       y += 6;
     }
 
@@ -211,16 +247,37 @@ export class ExportWorkflowService {
       y += 6;
     }
 
-    // Translations
-    if (workspace.translations?.length) {
-      addSection(`Translations (${workspace.translations.length})`);
-      for (const t of workspace.translations) {
+    // Translations — skip language layers with no remaining content
+    const liveTranslations = (workspace.translations ?? []).filter(t => {
+      const segCount = Object.values(t.segmentTranslations ?? {}).filter(s => s && s.length > 0).length;
+      return segCount > 0 || (t.text && t.text.length > 0);
+    });
+    if (liveTranslations.length) {
+      addSection(`Translations (${liveTranslations.length})`);
+      const segOrder = [...segments].sort((a, b) => a.order - b.order);
+      for (const t of liveTranslations) {
         ensureSpace(14);
         doc.setFont("NotoSans", "bold");
-        doc.text(`${t.language} (from ${t.sourceLang})`, margin, y);
+        const editedCount = Object.values(t.editedSegmentTranslations ?? {}).filter(Boolean).length;
+        const editedSuffix = editedCount > 0 ? `  · ${editedCount} edited` : "";
+        doc.text(`${t.language} (from ${t.sourceLang})${editedSuffix}`, margin, y);
         doc.setFont("NotoSans", "normal");
         y += 5;
-        if (t.text) {
+
+        if (segOrder.length && t.segmentTranslations) {
+          segOrder.forEach((seg, idx) => {
+            const segText = t.segmentTranslations?.[seg.id];
+            if (!segText) return;
+            const isEdited = Boolean(t.editedSegmentTranslations?.[seg.id]);
+            ensureSpace(8);
+            doc.setTextColor(80);
+            doc.text(`Segment ${idx + 1}${isEdited ? " (edited)" : ""}`, margin, y);
+            doc.setTextColor(0);
+            y += 4;
+            addWrappedText(segText);
+            y += 2;
+          });
+        } else if (t.text) {
           addWrappedText(t.text);
         }
         y += 4;

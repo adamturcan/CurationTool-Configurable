@@ -133,6 +133,24 @@ const BubbleSidebar: React.FC<Props> = ({
           </Zoom>
         ))}
 
+        {workspaces.length > 3 && (
+          <Zoom in unmountOnExit>
+            <Box>
+              <Bubble
+                label={`${workspaces.length - 3} more — Manage Workspaces`}
+                icon={
+                  <Box component="span" sx={{ fontSize: "0.95rem", fontWeight: 800, lineHeight: 1 }}>
+                    {`+${workspaces.length - 3}`}
+                  </Box>
+                }
+                onClick={() => guardedNavigate("/manage-workspaces")}
+                selected={isSelected("/manage-workspaces")}
+                ariaLabel={`Show ${workspaces.length - 3} more workspaces`}
+              />
+            </Box>
+          </Zoom>
+        )}
+
         <Bubble
           label="New Workspace"
           icon={<AddIcon />}

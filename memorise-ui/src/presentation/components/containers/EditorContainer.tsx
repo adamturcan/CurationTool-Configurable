@@ -158,7 +158,7 @@ const EditorContainer: React.FC = () => {
     const handleMouseDown = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
       if (segmentListRef.current?.contains(target)) return;
-      if (target.closest("button, input, [role=tab], [role=menuitem], [role=dialog], [role=presentation]")) return;
+      if (target.closest("button, input, textarea, [role=tab], [role=menuitem], [role=dialog], [role=presentation], [role=combobox], [role=listbox], [role=option], [data-tag-panel]")) return;
       e.preventDefault();
       deactivate();
     };

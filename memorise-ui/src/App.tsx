@@ -30,7 +30,6 @@ const LoginPage = lazy(() => import("./presentation/pages/LoginPage"));
 const ServicesPage = lazy(() => import("./presentation/pages/ServicesPage"));
 
 // Redirects users who land directly on /workspace/new back to manage,
-// where the New Workspace dialog is the expected entry point.
 const NewWorkspaceRedirect: React.FC = () => (
   <Navigate to="/manage-workspaces" replace />
 );
@@ -329,6 +328,7 @@ const App: React.FC = () => {
           onClose={() => setIsNewWorkspaceDialogOpen(false)}
           onCreate={handleNewWorkspaceSubmit}
           defaultName={defaultNewWorkspaceName}
+          existingNames={workspaces.map((w) => w.name)}
         />
         </Box>
       </StateSynchronizer>

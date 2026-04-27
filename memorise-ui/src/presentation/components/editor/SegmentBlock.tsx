@@ -93,6 +93,7 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const [languageSearch, setLanguageSearch] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [reTranslateConfirmOpen, setReTranslateConfirmOpen] = useState(false);
   const [isHeaderOpen, setIsHeaderOpen] = useState(false);
   const [showSemTagOptions, setShowSemTagOptions] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -116,7 +117,9 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
   useEffect(() => { if (localLang !== "original" && !availableLangs.includes(localLang)) setLocalLang("original"); }, [localLang, availableLangs]);
 
   useEffect(() => {
-    if (!isActive) {
+    if (isActive) {
+      setIsHeaderOpen(true);
+    } else {
       setIsHeaderOpen(false);
       setShowSemTagOptions(false);
     }
@@ -135,7 +138,6 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
   }, [localLang, segment, translations, allSegments]);
 
   // Extract spans that overlap this segment's range, convert from global to local
-  // (0-based) coordinates, and filter out dismissed API spans.
   const localSpans = useMemo(() => {
     if (!isActive) return [];
 
@@ -346,10 +348,21 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
               </FormControl>
               <Tooltip title="Translate segment"><IconButton size="small" onClick={(e) => { e.stopPropagation(); setAnchorEl(e.currentTarget); }} sx={{ bgcolor: "gold.main", color: "secondary.main", width: "28px", height: "28px", borderRadius: "6px" }}><AddIcon fontSize="small" /></IconButton></Tooltip>
               {localLang !== "original" && (
-                <Tooltip title={isSegmentEdited ? "Cannot update: translation was manually edited" : "Re-translate this segment from API"}>
-                  <span>
-                    <IconButton size="small" disabled={isSegmentEdited} onClick={(e) => { e.stopPropagation(); onUpdateTranslation(segment.id, localLang); }} sx={{ bgcolor: isSegmentEdited ? alpha("#9e9e9e", 0.08) : alpha(ENTITY_COLORS.DATE, 0.1), color: isSegmentEdited ? "#9e9e9e" : ENTITY_COLORS.DATE, borderRadius: "6px", width: "28px", height: "28px" }}><SyncIcon fontSize="small" /></IconButton>
-                  </span>
+                <Tooltip title={isSegmentEdited ? "Re-translate from original (will overwrite your edits)" : "Re-translate this segment from the original text"}>
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isSegmentEdited) {
+                        setReTranslateConfirmOpen(true);
+                      } else {
+                        onUpdateTranslation(segment.id, localLang);
+                      }
+                    }}
+                    sx={{ bgcolor: alpha(ENTITY_COLORS.DATE, 0.1), color: ENTITY_COLORS.DATE, borderRadius: "6px", width: "28px", height: "28px" }}
+                  >
+                    <SyncIcon fontSize="small" />
+                  </IconButton>
                 </Tooltip>
               )}
               {localLang !== "original" && <Tooltip title="Clear Translation"><IconButton size="small" onClick={(e) => { e.stopPropagation(); setDeleteDialogOpen(true); }} sx={{ bgcolor: (t) => alpha(t.palette.error.main, 0.1), color: "error.main", width: "28px", height: "28px", borderRadius: "6px" }}><DeleteOutlineIcon fontSize="small" /></IconButton></Tooltip>}
@@ -462,6 +475,25 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
         <DialogTitle>Clear Segment Translation</DialogTitle>
         <DialogContent><DialogContentText>Are you sure you want to delete the {localLang.toUpperCase()} translation for this specific segment?</DialogContentText></DialogContent>
         <DialogActions><Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button><Button onClick={handleDelete} color="error" variant="contained">Clear</Button></DialogActions>
+      </Dialog>
+
+      <Dialog open={reTranslateConfirmOpen} onClose={() => setReTranslateConfirmOpen(false)}>
+        <DialogTitle>Re-translate Segment</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This will re-translate the segment from the original text and overwrite your manual edits to the {localLang.toUpperCase()} translation. Continue?
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button autoFocus onClick={() => setReTranslateConfirmOpen(false)}>Cancel</Button>
+          <Button
+            color="warning"
+            variant="contained"
+            onClick={() => { onUpdateTranslation(segment.id, localLang); setReTranslateConfirmOpen(false); }}
+          >
+            Re-translate
+          </Button>
+        </DialogActions>
       </Dialog>
     </Box>
   );
