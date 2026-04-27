@@ -80,7 +80,7 @@ export function useEditorOperations(layers: LayerOps) {
     } finally {
       setProcessingMessage(null);
     }
-  }, [session, updateTranslations, setActiveTab, setDraftText, notify, handleError]);
+  }, [session, draftText, updateTranslations, setActiveTab, setDraftText, notify, handleError]);
 
   const handleTranslateSegment = useCallback(async (segmentId: string, lang: string) => {
     if (!session) return;
@@ -157,7 +157,7 @@ export function useEditorOperations(layers: LayerOps) {
       else notify(result.notice);
     }
     setProcessingMessage(null);
-  }, [notify, setActiveSegmentId, session, draftText, requestConflictResolution, resolveLayer, applyLayerPatch, updateSession]);
+  }, [notify, setActiveSegmentId, session, requestConflictResolution, resolveLayer, applyLayerPatch, updateSession]);
 
   const handleRunSegmentSemTag = useCallback(async (segmentId: string, lang: string) => {
     setProcessingMessage(`Running Sem-Tag on segment (${lang})...`);
@@ -319,7 +319,7 @@ export function useEditorOperations(layers: LayerOps) {
         }
       }
     } finally { setProcessingMessage(null); }
-  }, [session, draftText, notify, requestConflictResolution, resolveLayer, applyLayerPatch, updateSession]);
+  }, [session, notify, setActiveSegmentId, requestConflictResolution, resolveLayer, applyLayerPatch, updateSession]);
 
   const handleRunGlobalSemTag = useCallback(async () => {
     setProcessingMessage("Running semantic tagging...");
@@ -370,7 +370,7 @@ export function useEditorOperations(layers: LayerOps) {
     } finally {
       setProcessingMessage(null);
     }
-  }, [session, draftText, notify, updateSession]);
+  }, [session, draftText, notify, setActiveSegmentId, updateSession]);
 
   const handleSave = useCallback(async () => {
     if (!session) return;

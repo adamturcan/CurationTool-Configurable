@@ -13,7 +13,7 @@ const PanelContainer: React.FC = () => {
   const activeSegmentId = useSessionStore((state) => state.activeSegmentId);
 
   const currentId = routeId ?? session?.id ?? null;
-  const tags = session?.tags ?? [];
+  const tags = useMemo(() => session?.tags ?? [], [session?.tags]);
 
   const thesaurusWorker = useThesaurusWorker();
   const thesaurusIndexForDisplay = useThesaurusDisplay(thesaurusWorker);
@@ -76,7 +76,7 @@ const PanelContainer: React.FC = () => {
     } catch {
       //TODO: handle error
     }
-  }, [activeSegmentId, tags, notify]);
+  }, [activeSegmentId, tags, notify, setTagPanelOpen]);
 
   const deleteTag = useCallback(
     (name: string, keywordId?: number, parentId?: number) => {

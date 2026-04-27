@@ -115,7 +115,7 @@ export function useSpanInteractions(
     markSegmentEdited(activeSegmentId, actionLangContext);
     useSessionStore.getState().incrementCounter({ group: 'ner', action: 'textEdited' });
     closeEditMenu();
-  }, [activeSpan, cmReplaceFn, closeEditMenu, actionLangContext, session, draftText, activeSegmentId, resolveLayer, applyLayerPatch, markSegmentEdited, updateSession, notify]);
+  }, [activeSpan, cmReplaceFn, closeEditMenu, actionLangContext, session, activeSegmentId, resolveLayer, applyLayerPatch, markSegmentEdited, updateSession, notify]);
 
   const handleCategorySelect = useCallback((category: string) => {
     if (activeSpan?.id) {

@@ -84,6 +84,7 @@ export const SegmentDragProvider: React.FC<{
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useSegmentDrag = () => {
   const ctx = useContext(SegmentDragContext);
   if (!ctx) throw new Error("useSegmentDrag must be used inside SegmentDragProvider");
