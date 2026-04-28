@@ -1,0 +1,21 @@
+node_modules
+dist
+*.tsbuildinfo
+
+# Logs
+*.log
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Runtime data
+data/*.json
+!data/.gitkeep
+
+# Editor
+.DS_Store
+.idea
+.vscode
+*.sw?
