@@ -1,4 +1,4 @@
-import type { NerSpan, LanguageCode, TranslationRequest, TranslationResponse, Segment } from '../../types';
+import type { NerSpan, TranslationRequest, TranslationResponse, Segment, SupportedLanguage } from '../../types';
 
 /** Untyped at the interface level — TaggingWorkflowService defines the concrete shape */
 export type ClassificationResult = unknown;
@@ -18,8 +18,8 @@ export interface ApiService {
   ner(text: string): Promise<NerSpan[]>;
   /** Translate text between languages */
   translate(params: TranslationRequest): Promise<TranslationResponse>;
-  /** Retrieve supported translation language codes */
-  getSupportedLanguages(): Promise<LanguageCode[]>;
+  /** Retrieve supported translation languages (ISO code + human-readable name) */
+  getSupportedLanguages(): Promise<SupportedLanguage[]>;
 }
 
 

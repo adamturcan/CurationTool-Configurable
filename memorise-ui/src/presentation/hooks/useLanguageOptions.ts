@@ -19,7 +19,7 @@ export function useLanguageOptions() {
       .getSupportedLanguages()
       .then((langs) => {
         if (mounted) {
-          setOptions(langs.map((c) => ({ code: c, label: c })));
+          setOptions(langs.map((l) => ({ code: l.code, label: l.name || l.code })));
         }
       })
       .catch(() => { })

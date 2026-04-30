@@ -1,15 +1,26 @@
 import type { TranslateAdapter, AdapterSchema } from '../NlpAdapter.js';
-import type { TranslationRequest, TranslationResponse, LanguageCode } from '../../types.js';
+import type { TranslationRequest, TranslationResponse, SupportedLanguage } from '../../types.js';
 
 const LANGUAGE_CODE_MAP: Record<string, string> = {
   eng: 'en', ces: 'cs', dan: 'da', nld: 'nl',
 };
 
-const FALLBACK_LANGUAGES: LanguageCode[] = [
-  'ar', 'be', 'bg', 'bs', 'cs', 'da', 'de', 'el', 'en', 'es', 'et', 'fa', 'fi', 'fr', 'ga',
-  'he', 'hi', 'hr', 'hu', 'hy', 'it', 'jp', 'ko', 'ku', 'lt', 'lv', 'mk', 'mt', 'nl', 'no',
-  'pl', 'pt', 'ro', 'ru', 'sk', 'sl', 'sr', 'sv', 'tr', 'uk', 'vi', 'yi', 'zh',
-];
+function parseLanguagesPayload(raw: unknown): SupportedLanguage[] | null {
+  if (!Array.isArray(raw)) return null;
+  const parsed: SupportedLanguage[] = [];
+  for (const entry of raw) {
+    if (typeof entry === 'string') {
+      parsed.push({ code: entry, name: entry });
+    } else if (entry && typeof entry === 'object') {
+      const code = (entry as { code?: unknown }).code;
+      const name = (entry as { name?: unknown }).name;
+      if (typeof code === 'string') {
+        parsed.push({ code, name: typeof name === 'string' && name.length > 0 ? name : code });
+      }
+    }
+  }
+  return parsed.length > 0 ? parsed : null;
+}
 
 export class SduTranslateAdapter implements TranslateAdapter {
   readonly key = 'sdu-translate';
@@ -20,7 +31,7 @@ export class SduTranslateAdapter implements TranslateAdapter {
     response: { text: "Hello World" },
   };
 
-  private cachedLanguages: LanguageCode[] | null = null;
+  private cachedLanguages: SupportedLanguage[] | null = null;
 
   async call(request: TranslationRequest, endpointUrl: string): Promise<TranslationResponse> {
     let targetLang = request.targetLang;
@@ -47,31 +58,21 @@ export class SduTranslateAdapter implements TranslateAdapter {
     return {
       translatedText: data.text,
       targetLang,
-      sourceLang: sourceLang as LanguageCode | undefined,
+      sourceLang,
     };
   }
 
-  async getSupportedLanguages(endpointUrl: string): Promise<LanguageCode[]> {
+  async getSupportedLanguages(endpointUrl: string): Promise<SupportedLanguage[]> {
     if (this.cachedLanguages) return this.cachedLanguages;
 
-    try {
-      const response = await fetch(endpointUrl);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const response = await fetch(endpointUrl);
+    if (!response.ok) throw new Error(`Supported languages API error: HTTP ${response.status}`);
 
-      const data = await response.json() as { languages?: unknown };
-      const languages = Array.isArray(data.languages)
-        ? data.languages.filter((l): l is string => typeof l === 'string')
-        : null;
+    const data = await response.json() as { languages?: unknown };
+    const parsed = parseLanguagesPayload(data.languages);
+    if (!parsed) throw new Error('Supported languages API returned invalid response');
 
-      if (languages && languages.length > 0) {
-        this.cachedLanguages = languages;
-        return languages;
-      }
-    } catch {
-      // fall through to fallback
-    }
-
-    this.cachedLanguages = [...FALLBACK_LANGUAGES];
-    return this.cachedLanguages;
+    this.cachedLanguages = parsed;
+    return parsed;
   }
 }

@@ -1,5 +1,3 @@
-export type LanguageCode = string;
-
 export interface NerSpan {
   id?: string;
   origin?: 'api' | 'user';
@@ -20,14 +18,19 @@ export interface Segment {
 
 export interface TranslationRequest {
   text: string;
-  targetLang: LanguageCode;
-  sourceLang?: LanguageCode;
+  targetLang: string;
+  sourceLang?: string;
 }
 
 export interface TranslationResponse {
   translatedText: string;
-  targetLang: LanguageCode;
-  sourceLang?: LanguageCode;
+  targetLang: string;
+  sourceLang?: string;
+}
+
+export interface SupportedLanguage {
+  code: string;
+  name: string;
 }
 
 export type TagSource = 'api' | 'user';

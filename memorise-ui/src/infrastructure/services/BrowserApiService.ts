@@ -1,19 +1,30 @@
-import type { NerSpan, LanguageCode, TranslationRequest, TranslationResponse, Segment } from '../../types';
+import type { NerSpan, TranslationRequest, TranslationResponse, Segment, SupportedLanguage } from '../../types';
 import type {
   ApiService as ApiServiceContract,
 } from '../../core/interfaces/ApiService';
 import { getConfigService } from '../providers/configProvider';
-import { toAppError, toValidationError, logAppError } from '../../shared/errors';
+import { toAppError, toValidationError } from '../../shared/errors';
 
 
-const FALLBACK_LANGUAGES: LanguageCode[] = [
-  "ar", "be", "bg", "bs", "cs", "da", "de", "el", "en", "es", "et", "fa", "fi", "fr", "ga",
-  "he", "hi", "hr", "hu", "hy", "it", "jp", "ko", "ku", "lt", "lv", "mk", "mt", "nl", "no",
-  "pl", "pt", "ro", "ru", "sk", "sl", "sr", "sv", "tr", "uk", "vi", "yi", "zh",
-];
+function parseLanguagesPayload(raw: unknown): SupportedLanguage[] | null {
+  if (!Array.isArray(raw)) return null;
+  const parsed: SupportedLanguage[] = [];
+  for (const entry of raw) {
+    if (typeof entry === "string") {
+      parsed.push({ code: entry, name: entry });
+    } else if (entry && typeof entry === "object") {
+      const code = (entry as { code?: unknown }).code;
+      const name = (entry as { name?: unknown }).name;
+      if (typeof code === "string") {
+        parsed.push({ code, name: typeof name === "string" && name.length > 0 ? name : code });
+      }
+    }
+  }
+  return parsed.length > 0 ? parsed : null;
+}
 
 
-const LANGUAGE_CODE_MAP: Record<string, LanguageCode> = {
+const LANGUAGE_CODE_MAP: Record<string, string> = {
   eng: "en",
   ces: "cs",
   dan: "da",
@@ -26,15 +37,15 @@ const LANGUAGE_CODE_MAP: Record<string, LanguageCode> = {
  * Accessed via getApiService() provider — never instantiated directly.
  *
  * Endpoints are resolved via ConfigService (env vars or server config) with SDU defaults as fallback.
- * Language list is cached after first fetch with a bundled fallback if API is down.
+ * Language list is cached after a successful fetch; failures propagate to the caller.
  *
  * @category Infrastructure
  */
 export class BrowserApiService implements ApiServiceContract {
 
-  private supportedLanguagesCache: LanguageCode[] | null = null;
-  private supportedLanguagesSetCache: Set<LanguageCode> | null = null;
-  private supportedLanguagesPromise: Promise<LanguageCode[]> | null = null;
+  private supportedLanguagesCache: SupportedLanguage[] | null = null;
+  private supportedLanguagesSetCache: Set<string> | null = null;
+  private supportedLanguagesPromise: Promise<SupportedLanguage[]> | null = null;
 
   private static readonly FALLBACK_URLS: Record<string, string> = {
     ner: "https://ner-api.dev.memorise.sdu.dk/recognize",
@@ -233,11 +244,11 @@ export class BrowserApiService implements ApiServiceContract {
     return {
       translatedText: data.text,
       targetLang,
-      sourceLang: sourceLang as LanguageCode | undefined,
+      sourceLang: sourceLang as string | undefined,
     };
   }
 
-  async getSupportedLanguages(): Promise<LanguageCode[]> {
+  async getSupportedLanguages(): Promise<SupportedLanguage[]> {
     if (this.supportedLanguagesCache) {
       return this.supportedLanguagesCache;
     }
@@ -249,17 +260,11 @@ export class BrowserApiService implements ApiServiceContract {
 
         try {
           const response = await fetch(endpoint);
-
-          if (!response.ok) {
-            throw toAppError(response, context);
-          }
+          if (!response.ok) throw toAppError(response, context);
 
           const data = (await response.json()) as { languages?: unknown };
-          const languages = Array.isArray(data.languages)
-            ? data.languages.filter((lang): lang is LanguageCode => typeof lang === "string")
-            : null;
-
-          if (!languages || languages.length === 0) {
+          const languages = parseLanguagesPayload(data.languages);
+          if (!languages) {
             throw toValidationError(
               "Supported languages response malformed",
               { ...context, receivedType: typeof data.languages }
@@ -267,17 +272,8 @@ export class BrowserApiService implements ApiServiceContract {
           }
 
           this.supportedLanguagesCache = languages;
-          this.supportedLanguagesSetCache = new Set(languages);
+          this.supportedLanguagesSetCache = new Set(languages.map((l) => l.code));
           return languages;
-
-        } catch (error) {
-          const appError = toAppError(error, context);
-          logAppError(appError, { component: "BrowserApiService.getSupportedLanguages" });
-          console.warn("Falling back to bundled supported languages list:", appError.message);
-
-          this.supportedLanguagesCache = [...FALLBACK_LANGUAGES];
-          this.supportedLanguagesSetCache = new Set(FALLBACK_LANGUAGES);
-          return this.supportedLanguagesCache;
         } finally {
           this.supportedLanguagesPromise = null;
         }
@@ -287,10 +283,10 @@ export class BrowserApiService implements ApiServiceContract {
     return this.supportedLanguagesPromise;
   }
 
-  private async memoizedSupportedLanguagesSet(): Promise<Set<LanguageCode>> {
+  private async memoizedSupportedLanguagesSet(): Promise<Set<string>> {
     if (this.supportedLanguagesSetCache) return this.supportedLanguagesSetCache;
     const languages = await this.getSupportedLanguages();
-    this.supportedLanguagesSetCache = new Set(languages);
+    this.supportedLanguagesSetCache = new Set(languages.map((l) => l.code));
     return this.supportedLanguagesSetCache;
   }
 }

@@ -1,4 +1,4 @@
-import type { NerSpan, Segment, ClassificationResult, TranslationRequest, TranslationResponse, LanguageCode } from '../types.js';
+import type { NerSpan, Segment, ClassificationResult, TranslationRequest, TranslationResponse, SupportedLanguage } from '../types.js';
 
 export interface AdapterSchema {
   request: unknown;
@@ -27,5 +27,5 @@ export interface ClassifyAdapter extends NlpAdapter<{ text: string }, Classifica
 
 export interface TranslateAdapter extends NlpAdapter<TranslationRequest, TranslationResponse> {
   readonly serviceType: 'translate';
-  getSupportedLanguages(endpointUrl: string): Promise<LanguageCode[]>;
+  getSupportedLanguages(endpointUrl: string): Promise<SupportedLanguage[]>;
 }

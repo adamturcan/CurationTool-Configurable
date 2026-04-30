@@ -1,4 +1,4 @@
-import type { NerSpan, LanguageCode, TranslationRequest, TranslationResponse, Segment } from '../../types';
+import type { NerSpan, TranslationRequest, TranslationResponse, Segment, SupportedLanguage } from '../../types';
 import type { ApiService } from '../../core/interfaces/ApiService';
 
 /**
@@ -34,7 +34,7 @@ export class BackendProxyApiService implements ApiService {
     return this.post('/api/translate', request);
   }
 
-  async getSupportedLanguages(): Promise<LanguageCode[]> {
+  async getSupportedLanguages(): Promise<SupportedLanguage[]> {
     return this.get('/api/translate/languages');
   }
 

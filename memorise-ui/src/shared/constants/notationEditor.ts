@@ -2,14 +2,23 @@
 
 /** visible entity colors */
 export const ENTITY_COLORS: Record<string, string> = {
-  PER: "#C2185B",      // Person (magenta)
-  PERS: "#C2185B",     // Person (magenta) - alternative
-  DATE: "#1976D2",     // Date (blue)
-  LOC: "#388E3C",      // Location (green)
-  ORG: "#F57C00",      // Organization (orange)
-  CAMP: "#6A1B9A",    // Camp (purple)
-  GHETTO: "#5D4037",   // Ghetto (brown)
-  MISC: "#607D8B",     // Miscellaneous (blue-grey)
+  // Holocaust-domain (project home corpus)
+  PER: "#C2185B",         // Person (magenta)
+  PERS: "#C2185B",        // Person — SDU alias
+  PERSON: "#C2185B",      // Person — legal-mock alias
+  DATE: "#1976D2",        // Date (blue)
+  LOC: "#388E3C",         // Location (green)
+  ORG: "#F57C00",         // Organization (orange)
+  CAMP: "#6A1B9A",        // Camp (purple)
+  GHETTO: "#5D4037",      // Ghetto (brown)
+  MISC: "#607D8B",        // Miscellaneous (blue-grey)
+  // Legal-domain (legal-mock-sdu)
+  LAW: "#00838F",         // Statute / case law (deep cyan)
+  // Medical-domain (medical-mock-clinical)
+  DISEASE: "#D32F2F",     // Disease / condition (red)
+  MEDICATION: "#FBC02D",  // Medication (amber)
+  ANATOMY: "#5E35B1",     // Anatomical structure (deep purple)
+  PROCEDURE: "#3949AB",   // Clinical procedure (indigo)
 } as const;
 
 /** fixed category list for the quick-add / edit menu */

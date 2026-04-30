@@ -1,5 +1,5 @@
 import type { TranslateAdapter, AdapterSchema } from '../NlpAdapter.js';
-import type { TranslationRequest, TranslationResponse, LanguageCode } from '../../types.js';
+import type { TranslationRequest, TranslationResponse, SupportedLanguage } from '../../types.js';
 
 interface MedicalTranslateOutput {
   expanded_text: string;
@@ -33,7 +33,7 @@ export class MockMedicalTranslateAdapter implements TranslateAdapter {
     },
   };
 
-  private cachedLanguages: LanguageCode[] | null = null;
+  private cachedLanguages: SupportedLanguage[] | null = null;
 
   async call(request: TranslationRequest, endpointUrl: string): Promise<TranslationResponse> {
     const response = await fetch(endpointUrl, {
@@ -53,33 +53,35 @@ export class MockMedicalTranslateAdapter implements TranslateAdapter {
 
     return {
       translatedText: data.output.expanded_text,
-      targetLang: (data.output.language ?? 'en') as LanguageCode,
+      targetLang: data.output.language ?? 'en',
       sourceLang: request.sourceLang,
     };
   }
 
-  async getSupportedLanguages(endpointUrl: string): Promise<LanguageCode[]> {
+  async getSupportedLanguages(endpointUrl: string): Promise<SupportedLanguage[]> {
     if (this.cachedLanguages) return this.cachedLanguages;
 
-    try {
-      const response = await fetch(endpointUrl);
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const response = await fetch(endpointUrl);
+    if (!response.ok) throw new Error(`Medical supported languages API error: HTTP ${response.status}`);
 
-      const data = await response.json() as MedicalLanguagesResponse;
-      if (Array.isArray(data?.supported)) {
-        const languages = data.supported
-          .map(l => l?.code)
-          .filter((c): c is string => typeof c === 'string');
-        if (languages.length > 0) {
-          this.cachedLanguages = languages;
-          return languages;
-        }
-      }
-    } catch {
-      // fall through to single-language fallback
+    const data = await response.json() as MedicalLanguagesResponse;
+    if (!Array.isArray(data?.supported)) {
+      throw new Error('Medical supported languages API returned invalid response');
     }
 
-    this.cachedLanguages = ['en'];
-    return this.cachedLanguages;
+    const languages: SupportedLanguage[] = data.supported
+      .filter((l): l is { code: string; name: string } =>
+        !!l && typeof l.code === 'string')
+      .map(l => ({
+        code: l.code,
+        name: typeof l.name === 'string' && l.name.length > 0 ? l.name : l.code,
+      }));
+
+    if (languages.length === 0) {
+      throw new Error('Medical supported languages API returned empty list');
+    }
+
+    this.cachedLanguages = languages;
+    return languages;
   }
 }
