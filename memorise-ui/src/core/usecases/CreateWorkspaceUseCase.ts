@@ -6,8 +6,8 @@ import { requireOwnerId, requireWorkspaceName } from './validators';
 
 const OPERATION = 'CreateWorkspaceUseCase';
 
-/** All fields except ownerId and name are optional — defaults to empty/temporary workspace */
-export interface CreateWorkspaceRequest {
+/** All fields except ownerId and name are optional - defaults to empty/temporary workspace */
+interface CreateWorkspaceRequest {
   ownerId: string;
   name: string;
   workspaceId?: string;

@@ -1,6 +1,6 @@
 /**
- * Core AppError type and constructors. Layer-neutral - safe to import from
- * any layer (core, application, infrastructure, presentation).
+ * Core AppError type and constructors.
+ * Layer-neutral - safe to import from any layer (core, application, infrastructure, presentation).
  *
  * @category Shared
  */

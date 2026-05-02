@@ -1,7 +1,7 @@
 /**
  * Resolves conflicts when new API spans overlap existing user or API spans.
- * Walks each incoming span, detects overlaps, and prompts the user to choose
- * which to keep via an async callback. Non-conflicting spans are auto-accepted.
+ * Walks each incoming span, detects overlaps, and prompts the user to choose which to keep via an async callback.
+ * Non-conflicting spans are auto-accepted.
  *
  * @category Services
  */
@@ -21,13 +21,13 @@ export interface ConflictEntry {
 }
 
 /** 1-based segment extent in the same coordinate space as the span offsets */
-export interface SegmentBoundary {
+interface SegmentBoundary {
   start: number;
   end: number;
   index: number;
 }
 
-/** Data passed to the UI dialog for each conflict — user picks "api" or "existing" */
+/** Data passed to the UI dialog for each conflict - user picks "api" or "existing" */
 export interface ConflictPrompt {
   candidate: ConflictEntry;
   conflicts: ConflictEntry[];
@@ -53,10 +53,10 @@ export const resolveApiSpanConflicts = async (params: {
     return found?.index;
   };
 
-  // Mutable copy of user spans — entries may be removed if user chooses "api"
+  // Mutable copy of user spans - entries may be removed if user chooses "api"
   let nextUserSpans = [...userSpans];
 
-  // Track retained existing API spans by key — removals happen during conflict resolution
+  // Track retained existing API spans by key - removals happen during conflict resolution
   const retainedApiMap = new Map<string, NerSpan>();
   existingApiSpans.forEach((span) => {
     retainedApiMap.set(keyOfSpan(span), span);
@@ -83,13 +83,13 @@ export const resolveApiSpanConflicts = async (params: {
       spansOverlap(candidate, existing)
     );
 
-    // No conflicts — auto-accept the incoming span
+    // No conflicts - auto-accept the incoming span
     if (conflictingUserSpans.length === 0 && conflictingApiSpans.length === 0) {
       acceptedNewApiSpans.push(candidate);
       continue;
     }
 
-    // Only API-vs-API conflict with same entity type — silently replace (no user prompt)
+    // Only API-vs-API conflict with same entity type - silently replace (no user prompt)
     if (conflictingUserSpans.length === 0) {
       const hasEntityChange = conflictingApiSpans.some(
         (existing) => existing.entity !== candidate.entity
@@ -104,7 +104,7 @@ export const resolveApiSpanConflicts = async (params: {
       }
     }
 
-    // Real conflict — prompt the user to choose
+    // Real conflict - prompt the user to choose
     conflictIndex += 1;
     conflictsHandled += 1;
 
@@ -136,7 +136,7 @@ export const resolveApiSpanConflicts = async (params: {
 
     const choice = await onConflict(conflictPrompt);
 
-    // User chose the new API span — remove all conflicting spans it replaces
+    // User chose the new API span - remove all conflicting spans it replaces
     if (choice === "api") {
       if (conflictingUserSpans.length > 0) {
         const toRemove = new Set(conflictingUserSpans.map((span) => keyOfSpan(span)));

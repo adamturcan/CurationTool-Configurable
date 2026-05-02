@@ -1,9 +1,8 @@
 import type { Segment } from "../../types";
 
 /**
- * Pure functions for segment boundary calculations. Handles offset
- * computation between segments and the full text, segment split/merge/join
- * operations, and boundary shifting after text edits.
+ * Pure functions for segment boundary calculations.
+ * Handles offset computation between segments and the full text, segment split/merge/join operations, and boundary shifting after text edits.
  *
  * @category Entities
  */
@@ -21,8 +20,7 @@ export const SegmentLogic = {
       return seg ? seg.start : 0;
     }
 
-    // For translations, offsets must be computed by summing preceding segment lengths,
-    // because translated segments have different lengths than the originals
+    // For translations, offsets must be computed by summing preceding segment lengths, because translated segments have different lengths than the originals
     let offset = 0;
     for (const s of segments) {
       if (s.id === segmentId) break;
@@ -159,12 +157,12 @@ export const SegmentLogic = {
     }
 
     return segments.map((segment) => {
-      // The edited segment just gets its end updated
+      // The edited segment gets its end updated
       if (segment.id === editedSegmentId) {
         return { ...segment, end: newSegmentEnd };
       }
 
-      // Segments fully after the edit: shift both boundaries
+      // Segments fully changed after the edit: shift both boundaries
       if (segment.start > oldSegmentEnd) {
         return {
           ...segment,
@@ -200,11 +198,12 @@ export const SegmentLogic = {
     }
 
     const sourceSegment = segments[sourceIndex];
-    // No-op: can't drag before segment start or to the same position
+    // can't drag before segment start or to the same position
+    // TODO: update to allow dragging the start boundary as well.
     if (globalTargetPosition <= sourceSegment.start) return null;
     if (globalTargetPosition === sourceSegment.end) return null;
 
-    // --- EXPANDING: dragging the boundary forward (past current end) ---
+   
     if (globalTargetPosition > sourceSegment.end) {
 
       // Find which segment the target position falls into
@@ -212,7 +211,7 @@ export const SegmentLogic = {
         (s) => globalTargetPosition >= s.start && globalTargetPosition <= s.end
       );
 
-      // Special case: dragged to end of text — absorb all remaining segments
+      // Special case: dragged to end of text - absorb all remaining segments
       if (targetIndex === -1) {
         if (globalTargetPosition === fullText.length) {
           const lastSeg = segments[segments.length - 1];
@@ -243,14 +242,14 @@ export const SegmentLogic = {
       let nextSegments: Segment[] = [];
 
       if (globalTargetPosition === targetSegment.end) {
-        // Target fully absorbed — remove it
+        // Target fully absorbed - remove it
         nextSegments = [
           ...segments.slice(0, sourceIndex),
           newSourceSegment,
           ...segments.slice(targetIndex + 1),
         ];
       } else if (globalTargetPosition === targetSegment.start) {
-        // Landed exactly at target's start — keep target as-is
+        // Landed exactly at target's start - keep target as-is
         nextSegments = [
           ...segments.slice(0, sourceIndex),
           newSourceSegment,
@@ -258,7 +257,7 @@ export const SegmentLogic = {
           ...segments.slice(targetIndex + 1),
         ];
       } else {
-        // Landed mid-target — shrink target's start to the drop position
+        // Landed mid-target - shrink target's start to the drop position
         const shrunkTargetSegment: Segment = {
           ...targetSegment,
           start: globalTargetPosition,
@@ -276,7 +275,7 @@ export const SegmentLogic = {
       return nextSegments.map((s, index) => ({ ...s, order: index }));
     }
 
-    // --- SHRINKING: dragging the boundary backward (before current end) ---
+    // dragging the boundary backward (before current end)
     else if (globalTargetPosition < sourceSegment.end) {
       // Can't shrink the last segment (nothing to give space to)
       if (sourceIndex === segments.length - 1) return null;
@@ -300,7 +299,7 @@ export const SegmentLogic = {
       let nextSegments: Segment[] = [];
 
       if (globalTargetPosition === targetSegment.start) {
-        // Source fully absorbed into next — remove source
+        // Source fully absorbed into next - remove source
         nextSegments = [
           ...segments.slice(0, targetIndex),
           expandedNextSegment,

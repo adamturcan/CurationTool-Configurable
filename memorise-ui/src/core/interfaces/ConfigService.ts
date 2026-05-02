@@ -4,13 +4,13 @@
  * @category Interfaces
  */
 export interface ApiEndpointConfig {
-  /** Human-readable name (e.g., "Named Entity Recognition") */
+  /** Human-readable name */
   name: string;
-  /** Key identifier (e.g., "ner", "segment", "classify", "translate") */
+  /** Key identifier */
   key: string;
   /** Full URL to the endpoint */
   url: string;
-  /** Adapter key (e.g., "sdu-ner") — absent means default adapter */
+  /** Adapter key - absent means default adapter */
   adapter?: string;
 }
 

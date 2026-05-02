@@ -20,7 +20,7 @@ export interface WorkspaceMetadata {
   updatedAt: number;
 }
 
-/** Raw input for constructing a Workspace — accepts Tags and Translation DTOs */
+/** Raw input for constructing a Workspace - accepts Tags and Translation DTOs */
 export interface WorkspaceInput {
   id: string;
   name: string;
@@ -105,10 +105,10 @@ function freezeCounters(counters: WorkspaceCounters): WorkspaceCounters {
 }
 
 /**
- * Immutable workspace aggregate root. Holds source text, NER spans,
- * tags (as plain TagItem DTOs), and translations (as plain TranslationDTO
- * objects). All mutations return a new instance via `with*()` builder
- * methods. Internal arrays are frozen to prevent accidental mutation.
+ * Immutable workspace aggregate root.
+ * Holds source text, NER spans, tags (as plain TagItem DTOs), and translations (as plain TranslationDTO objects).
+ * All mutations return a new instance via `with*()` builder methods.
+ * Internal arrays are frozen to prevent accidental mutation.
  *
  * Mapping convention: hydrate via fromDto(), serialize via toDto().
  *

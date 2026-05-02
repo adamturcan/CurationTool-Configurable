@@ -4,7 +4,7 @@
  *
  * Use cases form the stable API between application services and the
  * persistence layer. They depend on WorkspaceRepository (interface),
- * not on any concrete implementation — so switching from localStorage
+ * not on any concrete implementation - so switching from localStorage
  * to a server-backed database only requires swapping the repository
  * in the provider, without changing use cases or anything above them.
  *
@@ -14,7 +14,7 @@ import { createAppError, type AppError } from '../../shared/errors';
 import type { Workspace } from '../entities/Workspace';
 import type { WorkspaceRepository } from '../interfaces/WorkspaceRepository';
 
-/** Config for requireNonEmptyString — identifies the field for error reporting */
+/** Config for requireNonEmptyString - identifies the field for error reporting */
 interface ValidationOptions {
   operation: string;
   field: string;
@@ -76,16 +76,6 @@ export function requireWorkspaceName(
   });
 }
 
-export function requireTranslationLanguage(
-  language: unknown,
-  operation: string
-): string {
-  return requireNonEmptyString(language, {
-    operation,
-    field: 'language',
-    code: 'WORKSPACE_TRANSLATION_LANGUAGE_REQUIRED',
-  });
-}
 
 /** Loads a workspace by ID from the repository, throws WORKSPACE_NOT_FOUND if missing */
 export async function requireExistingWorkspace(

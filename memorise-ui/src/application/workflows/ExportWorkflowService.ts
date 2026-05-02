@@ -1,12 +1,12 @@
 import type { WorkspaceDTO, WorkflowResult, TagItem } from "../../types";
 import { getWorkspaceApplicationService } from "../../infrastructure/providers/workspaceProvider";
 
-export interface ExportOutput {
+interface ExportOutput {
   blob: Blob;
   filename: string;
 }
 
-export type ExportResult = WorkflowResult & {
+type ExportResult = WorkflowResult & {
   output?: ExportOutput;
 };
 

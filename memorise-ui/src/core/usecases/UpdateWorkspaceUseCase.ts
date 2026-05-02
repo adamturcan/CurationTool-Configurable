@@ -6,7 +6,7 @@ import { requireWorkspaceId, requireExistingWorkspace } from './validators';
 
 const OPERATION = 'UpdateWorkspaceUseCase';
 
-/** Partial update — only defined fields are applied. Undefined fields are left unchanged. */
+/** Partial update - only defined fields are applied. Undefined fields are left unchanged. */
 export interface UpdateWorkspacePatch {
   name?: string;
   text?: string;
@@ -21,7 +21,7 @@ export interface UpdateWorkspacePatch {
   updatedAt?: number;
 }
 
-export interface UpdateWorkspaceRequest {
+interface UpdateWorkspaceRequest {
   workspaceId: string;
   patch: UpdateWorkspacePatch;
 }
@@ -90,7 +90,7 @@ export class UpdateWorkspaceUseCase {
 
     await this.workspaceRepository.save(workspace);
 
-    // Segments are metadata not on the domain entity — persisted separately
+    // Segments are metadata not on the domain entity - persisted separately
     if (patch.segments !== undefined && this.workspaceRepository.updateSegments) {
       await this.workspaceRepository.updateSegments(workspace.id, patch.segments);
     }

@@ -1,6 +1,5 @@
 /**
- * Normalize raw errors (HTTP responses, network failures, validation issues,
- * repository failures) into the unified AppError shape.
+ * Normalize raw errors (HTTP responses, network failures, validation issues, repository failures) into the unified AppError shape.
  *
  * @category Shared
  */
