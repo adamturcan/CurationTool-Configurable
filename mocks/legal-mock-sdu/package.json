@@ -1,0 +1,13 @@
+{
+  "name": "legal-mock-sdu",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Drop-in mock NLP service that mimics the SDU upstream contract verbatim, serving legal-domain responses.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

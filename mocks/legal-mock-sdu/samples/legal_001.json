@@ -1,0 +1,35 @@
+{
+  "id": "legal_001",
+  "title": "Brown v. Board (Supreme Court excerpt)",
+  "text": "In Brown v. Board, Justice Warren held that segregation violates the Equal Protection Clause. The Court announced this ruling on May 17, 1954. It overruled Plessy v. Ferguson.",
+  "entities": [
+    { "text": "Brown v. Board", "type": "ORG" },
+    { "text": "Justice Warren", "type": "PERSON" },
+    { "text": "Equal Protection Clause", "type": "LAW" },
+    { "text": "The Court", "type": "ORG" },
+    { "text": "May 17, 1954", "type": "DATE" },
+    { "text": "Plessy v. Ferguson", "type": "LAW" }
+  ],
+  "sentences": [
+    "In Brown v. Board, Justice Warren held that segregation violates the Equal Protection Clause.",
+    "The Court announced this ruling on May 17, 1954.",
+    "It overruled Plessy v. Ferguson."
+  ],
+  "classify": [
+    { "label": 1101, "score": 0.93, "name": "constitutional law" },
+    { "label": 1205, "score": 0.88, "name": "civil rights" },
+    { "label": 1399, "score": 0.71, "name": "supreme court precedent" }
+  ],
+  "translations": {
+    "de": [
+      "In Brown gegen Board entschied Richter Warren, dass Rassentrennung gegen die Gleichheitsklausel verstößt.",
+      "Das Gericht verkündete dieses Urteil am 17. Mai 1954.",
+      "Es hob Plessy gegen Ferguson auf."
+    ],
+    "sk": [
+      "Vo veci Brown proti Board sudca Warren rozhodol, že segregácia porušuje doložku rovnakej ochrany.",
+      "Súd oznámil toto rozhodnutie 17. mája 1954.",
+      "Zrušil rozhodnutie Plessy proti Ferguson."
+    ]
+  }
+}

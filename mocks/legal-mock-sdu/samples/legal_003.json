@@ -1,0 +1,34 @@
+{
+  "id": "legal_003",
+  "title": "License agreement clause (synthetic contract)",
+  "text": "This Agreement is entered into on March 3, 2024 between Acme Corporation and Smith LLP. The Licensee shall pay a fee of USD 50,000 within thirty days. New York law governs this Agreement.",
+  "entities": [
+    { "text": "March 3, 2024", "type": "DATE" },
+    { "text": "Acme Corporation", "type": "ORG" },
+    { "text": "Smith LLP", "type": "ORG" },
+    { "text": "USD 50,000", "type": "MISC" },
+    { "text": "New York", "type": "LOC" }
+  ],
+  "sentences": [
+    "This Agreement is entered into on March 3, 2024 between Acme Corporation and Smith LLP.",
+    "The Licensee shall pay a fee of USD 50,000 within thirty days.",
+    "New York law governs this Agreement."
+  ],
+  "classify": [
+    { "label": 1601, "score": 0.92, "name": "contract law" },
+    { "label": 1605, "score": 0.84, "name": "licensing" },
+    { "label": 1619, "score": 0.70, "name": "choice of law" }
+  ],
+  "translations": {
+    "de": [
+      "Diese Vereinbarung wird am 3. März 2024 zwischen Acme Corporation und Smith LLP geschlossen.",
+      "Der Lizenznehmer zahlt eine Gebühr von 50.000 USD innerhalb von dreißig Tagen.",
+      "Diese Vereinbarung unterliegt dem Recht des Bundesstaates New York."
+    ],
+    "sk": [
+      "Táto Zmluva je uzatvorená 3. marca 2024 medzi spoločnosťou Acme Corporation a Smith LLP.",
+      "Nadobúdateľ licencie zaplatí poplatok 50 000 USD do tridsiatich dní.",
+      "Touto Zmluvou sa spravuje právo štátu New York."
+    ]
+  }
+}

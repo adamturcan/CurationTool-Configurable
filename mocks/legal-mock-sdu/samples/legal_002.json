@@ -1,0 +1,34 @@
+{
+  "id": "legal_002",
+  "title": "Communications Decency Act § 230 (statute excerpt)",
+  "text": "Section 230(c)(1) of the Communications Decency Act provides that no interactive computer service shall be treated as the publisher of information. Congress enacted this provision in 1996. The United States courts have applied it broadly.",
+  "entities": [
+    { "text": "Section 230(c)(1)", "type": "LAW" },
+    { "text": "Communications Decency Act", "type": "LAW" },
+    { "text": "Congress", "type": "ORG" },
+    { "text": "1996", "type": "DATE" },
+    { "text": "United States", "type": "LOC" }
+  ],
+  "sentences": [
+    "Section 230(c)(1) of the Communications Decency Act provides that no interactive computer service shall be treated as the publisher of information.",
+    "Congress enacted this provision in 1996.",
+    "The United States courts have applied it broadly."
+  ],
+  "classify": [
+    { "label": 1411, "score": 0.94, "name": "internet law" },
+    { "label": 1502, "score": 0.86, "name": "intermediary liability" },
+    { "label": 1218, "score": 0.74, "name": "statutory interpretation" }
+  ],
+  "translations": {
+    "de": [
+      "§ 230(c)(1) des Communications Decency Act sieht vor, dass kein interaktiver Computerdienst als Herausgeber von Informationen behandelt werden darf.",
+      "Der Kongress erließ diese Bestimmung im Jahr 1996.",
+      "Die Gerichte der Vereinigten Staaten haben sie weitreichend angewendet."
+    ],
+    "sk": [
+      "Paragraf 230(c)(1) zákona Communications Decency Act stanovuje, že žiadna interaktívna počítačová služba sa nepovažuje za vydavateľa informácií.",
+      "Kongres prijal toto ustanovenie v roku 1996.",
+      "Súdy Spojených štátov ho uplatňujú v širokom rozsahu."
+    ]
+  }
+}

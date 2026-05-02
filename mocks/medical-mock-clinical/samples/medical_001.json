@@ -1,0 +1,50 @@
+{
+  "id": "medical_001",
+  "title": "Type 2 diabetes follow-up (synthetic SOAP note)",
+  "text": "Patient A is a 64-year-old male with a history of type 2 diabetes mellitus. Currently taking aspirin 81mg daily and metformin 500mg twice daily. Plan: continue current regimen, recheck HbA1c in 3 months.",
+  "entities": [
+    {
+      "text": "type 2 diabetes mellitus",
+      "type": "DISEASE",
+      "confidence": 0.94,
+      "codes": [{ "system": "ICD10", "code": "E11" }]
+    },
+    {
+      "text": "aspirin",
+      "type": "MEDICATION",
+      "confidence": 0.97,
+      "attributes": { "dose": "81mg", "frequency": "daily", "route": "PO" },
+      "codes": [{ "system": "RxNorm", "code": "1191" }]
+    },
+    {
+      "text": "metformin",
+      "type": "MEDICATION",
+      "confidence": 0.96,
+      "attributes": { "dose": "500mg", "frequency": "twice daily", "route": "PO" },
+      "codes": [{ "system": "RxNorm", "code": "6809" }]
+    }
+  ],
+  "sections": [
+    { "name": "subjective", "text": "Patient A is a 64-year-old male with a history of type 2 diabetes mellitus." },
+    { "name": "assessment", "text": "Currently taking aspirin 81mg daily and metformin 500mg twice daily." },
+    { "name": "plan",       "text": "Plan: continue current regimen, recheck HbA1c in 3 months." }
+  ],
+  "categories": [
+    {
+      "icd10_chapter": "IV",
+      "name": "Endocrine, nutritional and metabolic diseases",
+      "code_range": "E00-E89",
+      "score": 0.91,
+      "subcategories": [
+        { "code": "E11", "name": "Type 2 diabetes mellitus", "score": 0.88 }
+      ]
+    }
+  ],
+  "expansion": {
+    "expanded_text": "Patient A is a 64-year-old male with a history of type 2 diabetes mellitus. Currently taking aspirin 81mg daily and metformin 500mg twice daily. Plan: continue current regimen, recheck Hemoglobin A1c in 3 months.",
+    "language": "en",
+    "expansions": [
+      { "abbreviation": "HbA1c", "expansion": "Hemoglobin A1c", "position": 184 }
+    ]
+  }
+}

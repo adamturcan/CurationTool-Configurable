@@ -1,0 +1,13 @@
+{
+  "name": "medical-mock-clinical",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Mock clinical-NLP service with a deliberately different shape from SDU. The corresponding MockMedical adapters in server/src/adapters/ normalise this shape into the platform's internal value-objects.",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

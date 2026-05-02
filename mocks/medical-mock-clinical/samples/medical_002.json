@@ -1,0 +1,44 @@
+{
+  "id": "medical_002",
+  "title": "Hypertension first visit (synthetic SOAP note)",
+  "text": "Patient B is a 45-year-old female presenting with elevated blood pressure. BP today 152/96 mmHg. Started on lisinopril 10mg once daily. Plan: BP recheck in 2 weeks.",
+  "entities": [
+    {
+      "text": "elevated blood pressure",
+      "type": "DISEASE",
+      "confidence": 0.92,
+      "codes": [{ "system": "ICD10", "code": "I10" }]
+    },
+    {
+      "text": "lisinopril",
+      "type": "MEDICATION",
+      "confidence": 0.97,
+      "attributes": { "dose": "10mg", "frequency": "once daily", "route": "PO" },
+      "codes": [{ "system": "RxNorm", "code": "29046" }]
+    }
+  ],
+  "sections": [
+    { "name": "subjective", "text": "Patient B is a 45-year-old female presenting with elevated blood pressure." },
+    { "name": "objective",  "text": "BP today 152/96 mmHg." },
+    { "name": "plan",       "text": "Started on lisinopril 10mg once daily. Plan: BP recheck in 2 weeks." }
+  ],
+  "categories": [
+    {
+      "icd10_chapter": "IX",
+      "name": "Diseases of the circulatory system",
+      "code_range": "I00-I99",
+      "score": 0.93,
+      "subcategories": [
+        { "code": "I10", "name": "Essential (primary) hypertension", "score": 0.90 }
+      ]
+    }
+  ],
+  "expansion": {
+    "expanded_text": "Patient B is a 45-year-old female presenting with elevated blood pressure. Blood pressure today 152/96 millimeters of mercury. Started on lisinopril 10mg once daily. Plan: blood pressure recheck in 2 weeks.",
+    "language": "en",
+    "expansions": [
+      { "abbreviation": "BP",   "expansion": "Blood pressure",            "position": 75 },
+      { "abbreviation": "mmHg", "expansion": "millimeters of mercury",    "position": 100 }
+    ]
+  }
+}

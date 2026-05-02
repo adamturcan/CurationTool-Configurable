@@ -1,0 +1,66 @@
+{
+  "id": "medical_003",
+  "title": "Acute pharyngitis encounter (synthetic SOAP note)",
+  "text": "Patient C is a 28-year-old male with sore throat for 3 days. Exam reveals erythematous pharynx. Acute pharyngitis. Prescribed amoxicillin 500mg three times daily for 7 days.",
+  "entities": [
+    {
+      "text": "sore throat",
+      "type": "DISEASE",
+      "confidence": 0.88,
+      "codes": [{ "system": "ICD10", "code": "R07.0" }]
+    },
+    {
+      "text": "erythematous pharynx",
+      "type": "DISEASE",
+      "confidence": 0.85
+    },
+    {
+      "text": "pharynx",
+      "type": "ANATOMY",
+      "confidence": 0.93,
+      "codes": [{ "system": "UMLS", "code": "C0031354" }]
+    },
+    {
+      "text": "Acute pharyngitis",
+      "type": "DISEASE",
+      "confidence": 0.95,
+      "codes": [{ "system": "ICD10", "code": "J02.9" }]
+    },
+    {
+      "text": "amoxicillin",
+      "type": "MEDICATION",
+      "confidence": 0.97,
+      "attributes": {
+        "dose": "500mg",
+        "frequency": "three times daily",
+        "duration": "7 days",
+        "route": "PO"
+      },
+      "codes": [{ "system": "RxNorm", "code": "723" }]
+    }
+  ],
+  "sections": [
+    { "name": "subjective", "text": "Patient C is a 28-year-old male with sore throat for 3 days." },
+    { "name": "objective",  "text": "Exam reveals erythematous pharynx." },
+    { "name": "assessment", "text": "Acute pharyngitis." },
+    { "name": "plan",       "text": "Prescribed amoxicillin 500mg three times daily for 7 days." }
+  ],
+  "categories": [
+    {
+      "icd10_chapter": "X",
+      "name": "Diseases of the respiratory system",
+      "code_range": "J00-J99",
+      "score": 0.94,
+      "subcategories": [
+        { "code": "J02.9", "name": "Acute pharyngitis, unspecified", "score": 0.91 }
+      ]
+    }
+  ],
+  "expansion": {
+    "expanded_text": "Patient C is a 28-year-old male with sore throat for 3 days. Exam reveals erythematous pharynx. Acute pharyngitis. Prescribed amoxicillin 500mg three times daily for 7 days by mouth.",
+    "language": "en",
+    "expansions": [
+      { "abbreviation": "PO", "expansion": "by mouth", "position": 174 }
+    ]
+  }
+}
