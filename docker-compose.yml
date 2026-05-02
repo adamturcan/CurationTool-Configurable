@@ -1,0 +1,33 @@
+# Frontend + backend with JSON file storage. Run with: docker compose up
+
+services:
+  memorise-ui:
+    build:
+      context: ./memorise-ui
+      args:
+        VITE_BASE_PATH: /
+        VITE_BACKEND_URL: http://localhost:3001
+    ports:
+      - "3000:80"
+    depends_on:
+      - memorise-api
+    restart: unless-stopped
+
+  memorise-api:
+    build:
+      context: ./server
+    ports:
+      - "3001:3001"
+    environment:
+      - JWT_SECRET=${JWT_SECRET:-dev-secret}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - DB_ADAPTER=${DB_ADAPTER:-json}
+      - DB_CONNECTION=${DB_CONNECTION:-/data}
+      - CORS_ORIGIN=http://localhost:3000
+      - MAX_TEXT_LENGTH=${MAX_TEXT_LENGTH:-50000}
+    volumes:
+      - api-data:/data
+    restart: unless-stopped
+
+volumes:
+  api-data:

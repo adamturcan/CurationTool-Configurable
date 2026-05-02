@@ -1,36 +1,41 @@
 # Memorise UI
 
-A client-side text curation tool for NLP-assisted annotation of Holocaust testimonies. Built with React, TypeScript, and MUI.
+The frontend of the Memorise data curation tool. It is a single-page React + TypeScript app built with Vite and MUI, and can be used either standalone (everything in localStorage, no login) or together with the backend in `server/` (login, persistent workspaces, server-side NLP proxying).
 
-## Features
+## What it does
 
-- **Text Editor** with CodeMirror 6 — per-segment editing with live span decorations
-- **Named Entity Recognition** — API-powered NER with conflict resolution for overlapping spans
-- **Segmentation** — split text into sentences via API, drag-to-reorder, merge/split segments
-- **Translation** — per-segment machine translation with independent NER per language
-- **Semantic Tagging** — API classification with thesaurus-backed hierarchical tag system
-- **Workspace Management** — create, rename, delete workspaces with localStorage persistence
+* Lets the user create workspaces with a source text and edit it segment by segment.
+* Runs NER, sentence segmentation, semantic classification and machine translation against the configured services and renders the results as span decorations and tabs.
+* Resolves conflicts between user edits and re-running NER on the same text.
+* Lets the user split, join and reorder segments, with translations kept in sync.
+* Maintains a hierarchical thesaurus for semantic tags, searched in a Web Worker so the main thread stays responsive.
+* Has an admin-only Services page where the configured NLP endpoints can be edited at runtime (when running in server mode).
 
-## Quick Start
+## How to run it
 
 ```bash
 npm install
 npm run dev
 ```
 
-App runs at `http://localhost:5173/DataCurationTool/` by default (the base path is configurable — see below).
+The dev server runs at `http://localhost:5173/DataCurationTool/`. The base path `/DataCurationTool/` is the default because the GitHub Pages deploy is served from that subpath. To run from the root path, set `VITE_BASE_PATH=/`.
 
-## Environment Variables
+To connect to the local backend, also set `VITE_BACKEND_URL=http://localhost:3001` in `.env`.
 
-All configuration goes through `VITE_*` env vars. Copy `.env.example` to `.env` to override any defaults locally:
+For a production build:
 
-| Variable | Default (from `vite.config.ts`) | Purpose |
-|----------|--------------------------------|---------|
-| `VITE_BASE_PATH` | `/DataCurationTool/` | URL base path. Set to `/` for Docker/standalone; GitHub Pages deploys use the default. |
-| `VITE_NER_API_URL` | `https://ner-api.dev.memorise.sdu.dk/recognize` | NER endpoint |
-| `VITE_SEGMENT_API_URL` | `https://textseg-api.dev.memorise.sdu.dk/segment` | Segmentation endpoint |
-| `VITE_CLASSIFY_API_URL` | `https://semtag-api.dev.memorise.sdu.dk/classify` | Classification endpoint |
-| `VITE_TRANSLATION_API_URL` | `https://mt-api.dev.memorise.sdu.dk` | Translation endpoint |
+```bash
+npm run build
+npm run preview
+```
+
+## Environment variables
+
+All configuration is baked in at build time through `VITE_*` env vars. Copy `.env.example` to `.env` and override what you need:
+
+* `VITE_BASE_PATH` — URL base path (default `/DataCurationTool/`, set to `/` for Docker/standalone).
+* `VITE_BACKEND_URL` — URL of the backend in server mode. Leaving it unset selects the standalone (localStorage) mode.
+* `VITE_NER_API_URL`, `VITE_SEGMENT_API_URL`, `VITE_CLASSIFY_API_URL`, `VITE_TRANSLATION_API_URL` — direct URLs of the four NLP services. Only used in standalone mode, in server mode the backend resolves them.
 
 ## Docker
 
@@ -38,83 +43,57 @@ All configuration goes through `VITE_*` env vars. Copy `.env.example` to `.env` 
 docker compose up -d --build
 ```
 
-App listens on host port **3000** (plain HTTP, container port 80). TLS and reverse-proxying are deployment concerns, not handled by the image.
-
-### Project-specific deployment notes
-
-- **Config is baked in at build time.** This is a static SPA — there is no runtime config. Any change to a `VITE_*` variable requires a rebuild. Always use `docker compose up -d --build` when pulling new code or changing config; `docker compose up` alone reuses the cached image and silently serves stale bundles.
-- **Override endpoints for production.** The defaults in `docker-compose.yml` point at `*.dev.memorise.sdu.dk`. For a production deployment, set the four `VITE_*_API_URL` variables (see the [Environment Variables](#environment-variables) table) in a `.env` file next to `docker-compose.yml`, or export them in the shell before `docker compose up`. Compose picks them up via `${VAR:-default}` substitution.
-- **`VITE_BASE_PATH` matters.** Use `/` (the Docker default) when the app is served from the root of a dedicated subdomain. Use `/some-prefix/` when served under a subpath of a shared domain. Mismatches produce a blank page with 404s on every asset.
-- **CORS requires coordination with the NLP API owners.** The browser calls `VITE_NER_API_URL`, `VITE_SEGMENT_API_URL`, `VITE_CLASSIFY_API_URL`, and `VITE_TRANSLATION_API_URL` directly — there is no backend proxy. Each of those APIs must include the UI's production origin in their `Access-Control-Allow-Origin` response header, otherwise the corresponding feature fails silently (error visible only in the browser console). This is the single most likely deployment failure mode.
-- **No persistent storage.** All workspace state lives in the user's browser `localStorage`. The container has no volumes, no database, and nothing to back up at the infrastructure layer. Clearing browser data on the client side means data loss — document this for end users if relevant.
-- **No server-side auth.** The bundled `LoginPage` is a UI affordance, not a security boundary. If access control is required, enforce it at the reverse proxy (SSO, Basic Auth, OAuth2 proxy).
+The image is a static SPA served by nginx on host port `3000`. Because it is static and the config is baked in, any change to a `VITE_*` variable needs `--build`, otherwise the cached image keeps serving the old bundle.
 
 ## Scripts
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev` | Development server with HMR |
-| `npm run build` | Type-check + production build |
-| `npm run preview` | Serve the production build locally |
-| `npm run test` | Run unit tests (Vitest) |
-| `npm run test:ui` | Vitest browser UI |
-| `npm run lint` | ESLint check |
-| `npm run build:docs` | Generate API docs (TypeDoc) → `docs/api/` |
-| `npm run build:thesaurus` | Build thesaurus search index from full JSON |
+* `npm run dev` — Vite dev server with hot reload.
+* `npm run build` — type-check then production build.
+* `npm run preview` — serve the production build locally.
+* `npm test` — run unit tests with Vitest.
+* `npm run test:ui` — Vitest browser UI.
+* `npm run lint` — ESLint check.
+* `npm run build:docs` — generate API docs via TypeDoc into `docs/api/`.
+* `npm run build:thesaurus` — rebuild the thesaurus search index from the full JSON.
 
-## Architecture
-
-Four layers, with a thin shared kernel:
+## Project layout
 
 ```
 src/
-  core/           Domain logic (entities, interfaces, use cases, pure services)
-  application/    Facade + workflow services + error presenter
-    WorkspaceApplicationService.ts    CRUD facade over use cases
-    workflows/                        Per-feature orchestration (NER, translation, segmentation, tagging, export)
-    errors/                           presentAppError + catchApiError helper
-  infrastructure/ External integrations (localStorage repo, HTTP API service, providers)
-  presentation/   React components, hooks, Zustand stores
-  shared/         Layer-neutral kernel: error primitives, theme, constants, utilities
-    errors/                           AppError type, normalizers, logger
+  core/           Domain types, interfaces and pure logic (entities, use cases)
+  application/    Workflow services that orchestrate use cases for each feature
+  infrastructure/ Concrete adapters for storage, the API and config
+  presentation/   React components, hooks and Zustand stores
+  shared/         Cross-cutting helpers (errors, theme, constants, utilities)
   types/          Shared TypeScript DTOs
 ```
 
-**Data flow:** UI event → hook → workflow service → use case → entity/repository → Zustand store → re-render.
+The general flow is: the user does something in a component, a hook calls a workflow service, the workflow service goes through the use case and the repository, results land in a Zustand store, and the components re-render from the store.
 
-**Key design decisions:**
-- `Workspace` entity uses an immutable builder pattern (`with*()` methods) with `fromDto()`/`toDto()` for persistence
-- Tags and translations are plain DTOs — no entity wrappers
-- Zustand stores hold DTOs; workflow services operate on DTOs
-- Storage is abstracted via `WorkspaceRepository` interface for future backend migration
-- NER spans are split into user-created and API-generated collections so conflicts can be resolved explicitly
-- Unified error handling: any raw error (HTTP / network / validation / repository) is normalized to an `AppError` in `shared/errors`; the application layer converts that to a user-facing `Notice` via `presentAppError`, so UX messages live in one catalog
+A few decisions worth knowing about:
 
-## Testing
+* The `Workspace` entity is immutable, mutations return a new instance via `with*()` builder methods.
+* Tags and translations are kept as plain DTOs, not entity wrappers.
+* Storage goes through a `WorkspaceRepository` interface, so the same code works against localStorage in standalone mode and against the backend in server mode.
+* NER spans are split into user-created and API-generated lists so re-running NER does not silently overwrite the user's edits.
+* Errors are normalised into an `AppError` in `shared/errors`, then turned into a user-facing `Notice` in the application layer, so all UX messages live in one place.
 
-Unit tests live in `src/__tests__/` (flat). The suite covers one representative per architectural layer — domain entity, domain algorithm, validators, error pipeline, application facade, infrastructure adapter. Presentation components are covered separately via E2E (out of scope for this repo).
+## Tests
+
+Unit tests live in `src/__tests__/`. They cover one representative per layer (a domain entity, a use case validator, the error pipeline, the application facade, an infrastructure adapter), so the architectural seams are guarded. UI components are not covered here, that would be E2E.
 
 ```bash
 npm test
 ```
 
-## Tech Stack
+## Tech stack
 
-- **React 19** + **TypeScript 5.8**
-- **Vite 6** — build tooling
-- **MUI 7** — component library + theming
-- **Zustand 5** — state management
-- **CodeMirror 6** — text editor
-- **Fuse.js** — fuzzy thesaurus search (Web Worker)
-- **Vitest** — unit testing
-- **TypeDoc** — API documentation generation
-- **Docker** (nginx:alpine) — containerized deployment
-- **GitHub Actions** — CI/CD with type-check, lint, test, build, deploy
+React 19, TypeScript 5.8, Vite 6, MUI 7, Zustand 5, CodeMirror 6, Fuse.js for the thesaurus search, Vitest for tests, TypeDoc for API docs, nginx-alpine for the production image.
 
 ## Thesaurus
 
-The semantic tagging feature uses a hierarchical thesaurus index. To rebuild from the full JSON:
+The semantic tagging feature uses a hierarchical thesaurus index, loaded by a Web Worker at runtime. To rebuild it from the full JSON:
 
-1. Place `thesaurus-full.json` in `public/`
-2. Run `npm run build:thesaurus`
-3. Output: `public/thesaurus-index.json` (loaded by Web Worker at runtime)
+1. Place `thesaurus-full.json` in `public/`.
+2. Run `npm run build:thesaurus`.
+3. The output is `public/thesaurus-index.json`.

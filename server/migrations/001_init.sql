@@ -1,7 +1,4 @@
 -- MEMORISE Curation Platform — initial Postgres schema.
--- Mirrors the entity set persisted by JsonFileAdapter (users.json, workspaces.json, config.json).
--- Idempotent: PostgresAdapter also runs equivalent CREATE TABLE IF NOT EXISTS at boot,
--- so this file primarily serves the docker-entrypoint-initdb.d hook on first container start.
 
 CREATE TABLE IF NOT EXISTS users (
   id              TEXT PRIMARY KEY,

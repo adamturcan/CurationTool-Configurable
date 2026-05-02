@@ -1,0 +1,73 @@
+# Frontend + backend + Postgres + the two mock NLP services.
+# Run with: docker compose -f docker-compose.postgres.yml up --build
+# Uses ports 3000 (ui), 3001 (api), 5001 (legal mock), 5002 (medical mock), 5432 (postgres),
+# so stop any other stack first if those ports are in use.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: memorise
+      POSTGRES_USER: memorise
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-memorise-dev}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./server/migrations:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U memorise -d memorise"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  legal-mock:
+    build:
+      context: ./mocks/legal-mock-sdu
+    ports:
+      - "5001:5001"
+    restart: unless-stopped
+
+  medical-mock:
+    build:
+      context: ./mocks/medical-mock-clinical
+    ports:
+      - "5002:5002"
+    restart: unless-stopped
+
+  memorise-api:
+    build:
+      context: ./server
+    depends_on:
+      postgres:
+        condition: service_healthy
+      legal-mock:
+        condition: service_started
+      medical-mock:
+        condition: service_started
+    ports:
+      - "3001:3001"
+    environment:
+      - JWT_SECRET=${JWT_SECRET:-dev-secret}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - DB_ADAPTER=postgres
+      - DB_CONNECTION=postgres://memorise:${POSTGRES_PASSWORD:-memorise-dev}@postgres:5432/memorise
+      - CORS_ORIGIN=http://localhost:3000
+      - MAX_TEXT_LENGTH=${MAX_TEXT_LENGTH:-50000}
+    restart: unless-stopped
+
+  memorise-ui:
+    build:
+      context: ./memorise-ui
+      args:
+        VITE_BASE_PATH: /
+        VITE_BACKEND_URL: http://localhost:3001
+    ports:
+      - "3000:80"
+    depends_on:
+      - memorise-api
+    restart: unless-stopped
+
+volumes:
+  postgres-data:

@@ -20,18 +20,19 @@ ARG VITE_APP_TITLE=
 ARG VITE_APP_LOGO=
 ARG VITE_APP_LOGO_FULL=
 
-RUN echo "VITE_BASE_PATH=$VITE_BASE_PATH" > .env && \
-    echo "VITE_BACKEND_URL=$VITE_BACKEND_URL" >> .env && \
-    echo "VITE_NER_API_URL=$VITE_NER_API_URL" >> .env && \
-    echo "VITE_SEGMENT_API_URL=$VITE_SEGMENT_API_URL" >> .env && \
-    echo "VITE_CLASSIFY_API_URL=$VITE_CLASSIFY_API_URL" >> .env && \
-    echo "VITE_TRANSLATION_API_URL=$VITE_TRANSLATION_API_URL" >> .env && \
-    echo "VITE_TRANSLATION_LANGUAGES_URL=$VITE_TRANSLATION_LANGUAGES_URL" >> .env && \
-    [ -n "$VITE_THESAURUS_URL" ] && echo "VITE_THESAURUS_URL=$VITE_THESAURUS_URL" >> .env; \
-    [ -n "$VITE_APP_TITLE" ] && echo "VITE_APP_TITLE=$VITE_APP_TITLE" >> .env; \
-    [ -n "$VITE_APP_LOGO" ] && echo "VITE_APP_LOGO=$VITE_APP_LOGO" >> .env; \
-    [ -n "$VITE_APP_LOGO_FULL" ] && echo "VITE_APP_LOGO_FULL=$VITE_APP_LOGO_FULL" >> .env; \
-    true
+RUN { \
+      echo "VITE_BASE_PATH=$VITE_BASE_PATH"; \
+      echo "VITE_BACKEND_URL=$VITE_BACKEND_URL"; \
+      echo "VITE_NER_API_URL=$VITE_NER_API_URL"; \
+      echo "VITE_SEGMENT_API_URL=$VITE_SEGMENT_API_URL"; \
+      echo "VITE_CLASSIFY_API_URL=$VITE_CLASSIFY_API_URL"; \
+      echo "VITE_TRANSLATION_API_URL=$VITE_TRANSLATION_API_URL"; \
+      echo "VITE_TRANSLATION_LANGUAGES_URL=$VITE_TRANSLATION_LANGUAGES_URL"; \
+      echo "VITE_THESAURUS_URL=$VITE_THESAURUS_URL"; \
+      echo "VITE_APP_TITLE=$VITE_APP_TITLE"; \
+      echo "VITE_APP_LOGO=$VITE_APP_LOGO"; \
+      echo "VITE_APP_LOGO_FULL=$VITE_APP_LOGO_FULL"; \
+    } > .env
 
 RUN if [ -f public/thesaurus-full.json ]; then node scripts/buildThesaurusIndex.js; fi && \
     npx tsc -b && npx vite build
