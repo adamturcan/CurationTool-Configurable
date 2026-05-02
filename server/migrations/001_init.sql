@@ -1,4 +1,4 @@
--- MEMORISE Curation Platform — initial Postgres schema.
+-- Initial Postgres schema for the Memorise curation tool.
 
 CREATE TABLE IF NOT EXISTS users (
   id              TEXT PRIMARY KEY,

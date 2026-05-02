@@ -1,3 +1,7 @@
+/**
+ * Server entry point.
+ * Sets up the Express app, the database adapter, the registry of NLP adapters and the four route groups, and seeds a default config and admin user on first run.
+ */
 import express from 'express';
 import cors from 'cors';
 import { createDbAdapter } from './db/index.js';
@@ -41,7 +45,7 @@ app.use('/api', configRoutes(db, registry));
 app.use('/api', nlpRoutes(registry, db));
 app.use('/api', workspaceRoutes(db));
 
-// Seed default config if empty
+/** Seeds the default endpoint config and admin user on first run; skipped if either already exists. */
 async function seedConfig() {
   const existing = await db.getEndpointConfig();
   if (existing.length === 0) {

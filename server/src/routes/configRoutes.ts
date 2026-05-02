@@ -3,14 +3,19 @@ import type { DbAdapter } from '../db/DbAdapter.js';
 import type { AdapterRegistry } from '../adapters/AdapterRegistry.js';
 import { authMiddleware, adminMiddleware } from '../middleware/authMiddleware.js';
 
+/**
+ * Config routes mounted under `/api`: read the endpoint config, write it (admin only), probe endpoint health, and list registered adapters.
+ */
 export function configRoutes(db: DbAdapter, registry: AdapterRegistry): Router {
   const router = Router();
 
+  /** `GET /api/config` - returns the configured NLP services. Public so the frontend can read it before login. */
   router.get('/config', async (_req, res) => {
     const endpoints = await db.getEndpointConfig();
     res.json({ endpoints });
   });
 
+  /** `PUT /api/config` - admin-only endpoint that replaces the full endpoint configuration. */
   router.put('/config', authMiddleware, adminMiddleware, async (req, res) => {
     const { endpoints } = req.body as { endpoints?: unknown };
     if (!Array.isArray(endpoints)) {
@@ -21,6 +26,9 @@ export function configRoutes(db: DbAdapter, registry: AdapterRegistry): Router {
     res.json({ endpoints });
   });
 
+  /**
+   * `POST /api/health` - pings each supplied endpoint (`HEAD`, falling back to `POST`) with a 5s timeout and returns its status and latency for the admin Services page.
+   */
   router.post('/health', authMiddleware, async (req, res) => {
     const { endpoints } = req.body as { endpoints?: { key: string; name: string; url: string }[] };
     if (!Array.isArray(endpoints)) {
@@ -80,6 +88,7 @@ export function configRoutes(db: DbAdapter, registry: AdapterRegistry): Router {
     res.json(results);
   });
 
+  /** `GET /api/adapters` - lists registered adapters; `?serviceType=ner` filters to one service. */
   router.get('/adapters', authMiddleware, (req, res) => {
     const serviceType = req.query.serviceType as string | undefined;
     if (serviceType) {

@@ -4,9 +4,14 @@ import type { AdapterRegistry } from '../adapters/AdapterRegistry.js';
 import type { TranslateAdapter } from '../adapters/NlpAdapter.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 
+/**
+ * NLP proxy routes mounted under `/api`
+ * The frontend posts here and the server resolves the configured adapter and endpoint URL before forwarding the call.
+ */
 export function nlpRoutes(registry: AdapterRegistry, db: DbAdapter): Router {
   const router = Router();
 
+  /** `POST /api/:serviceType` - runs one of `ner|segment|classify|translate` through the configured adapter. */
   router.post('/:serviceType(ner|segment|classify|translate)', authMiddleware, async (req, res) => {
     const serviceType = req.params.serviceType as string;
     const maxTextLength = parseInt(process.env.MAX_TEXT_LENGTH ?? '50000', 10);
@@ -42,6 +47,7 @@ export function nlpRoutes(registry: AdapterRegistry, db: DbAdapter): Router {
     }
   });
 
+  /** `GET /api/translate/languages` - returns the languages supported by the configured translate adapter. */
   router.get('/translate/languages', authMiddleware, async (_req, res) => {
     const endpoints = await db.getEndpointConfig();
     const langConfig = endpoints.find(ep => ep.key === 'translate-languages');

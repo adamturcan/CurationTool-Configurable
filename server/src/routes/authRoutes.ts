@@ -4,9 +4,11 @@ import jwt from 'jsonwebtoken';
 import type { DbAdapter } from '../db/DbAdapter.js';
 import { signTokens } from '../middleware/authMiddleware.js';
 
+/** Authentication routes mounted under `/auth`: login, register, logout and token refresh. */
 export function authRoutes(db: DbAdapter): Router {
   const router = Router();
 
+  /** `POST /auth/login` - verifies credentials and returns the user with a fresh token pair. */
   router.post('/login', async (req, res) => {
     const { username, password } = req.body as { username?: string; password?: string };
     if (!username) {
@@ -27,6 +29,7 @@ export function authRoutes(db: DbAdapter): Router {
     });
   });
 
+  /** `POST /auth/register` - validates input, creates the user and returns a token pair so they are signed in. */
   router.post('/register', async (req, res) => {
     const { username, email, password } = req.body as { username?: string; email?: string; password?: string };
     if (!username || !password) {
@@ -60,12 +63,13 @@ export function authRoutes(db: DbAdapter): Router {
     });
   });
 
+  /** `POST /auth/logout` - no-op; the client just discards its tokens. */
   router.post('/logout', (_req, res) => {
     res.sendStatus(204);
   });
 
+  /** `POST /auth/refresh` - exchanges a valid refresh token for a new access + refresh token pair. */
   router.post('/refresh', (req, res) => {
-    // For simplicity, verify the refresh token and issue new tokens
     const { refreshToken } = req.body as { refreshToken?: string };
     if (!refreshToken) {
       res.status(400).json({ error: 'Refresh token required' });

@@ -6,6 +6,10 @@ import bcrypt from 'bcryptjs';
 import type { DbAdapter } from './DbAdapter.js';
 import type { User, CreateUserInput, WorkspaceDTO, Segment, ApiEndpointConfig } from '../types.js';
 
+/**
+ * File-backed `DbAdapter` that stores each collection as a JSON file in a data directory.
+ * Used for local development and the standalone deployment.
+ */
 export class JsonFileAdapter implements DbAdapter {
   private readonly dataPath: string;
 
@@ -17,6 +21,7 @@ export class JsonFileAdapter implements DbAdapter {
     return join(this.dataPath, name);
   }
 
+  /** Creates the data directory on first write so a fresh checkout works without manual setup. */
   private async ensureDir(): Promise<void> {
     if (!existsSync(this.dataPath)) {
       await mkdir(this.dataPath, { recursive: true });
