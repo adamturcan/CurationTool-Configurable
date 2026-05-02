@@ -27,10 +27,8 @@ export type SegmentBreakdown = {
 };
 
 /**
- * Monotonic per-workspace counters of UI actions. Headline aggregates mirror
- * the breakdown sums (invariant: `created + deletedUser + deletedApi +
- * categoryChanged + textEdited === nerEdits`; same for segments).
- *
+ * Monotonic per-workspace counters of UI actions.
+ * Headline aggregates mirror the breakdown sums (invariant: `created + deletedUser + deletedApi + categoryChanged + textEdited === nerEdits`; same for segments).
  * @category Types
  */
 export type WorkspaceCounters = {
@@ -74,7 +72,7 @@ export type WorkspaceDTO = {
   name: string;
   isTemporary?: boolean;
   text?: string;
-  /** Manually created spans — kept separate from apiSpans for conflict resolution */
+  /** Manually created spans - kept separate from apiSpans for conflict resolution */
   userSpans?: NerSpan[];
   apiSpans?: NerSpan[];
   /** API span IDs the user dismissed, so they don't reappear on re-run */
@@ -90,8 +88,8 @@ export type WorkspaceDTO = {
 };
 
 /**
- * Per-language translation page. Mirrors workspace segment structure
- * but with language-specific text and independent NER spans.
+ * Per-language translation page.
+ * Mirrors workspace segment structure but with language-specific text and independent NER spans.
  *
  * @category Types
  */

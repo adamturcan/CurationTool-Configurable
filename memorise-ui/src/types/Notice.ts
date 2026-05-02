@@ -15,7 +15,7 @@ export interface Notice extends NoticeOptions {
   message: string;
 }
 
-/** Standard return type from workflow services — carries success/failure + a user-facing notice */
+/** Standard return type from workflow services - carries success/failure + a user-facing notice */
 export type WorkflowResult = {
   ok: boolean;
   notice: Notice;

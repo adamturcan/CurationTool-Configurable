@@ -5,7 +5,7 @@ import type { NerSpan, AnnotationLayer, Segment, WorkflowResult } from "../../ty
 import { SegmentLogic } from "../../core/entities/SegmentLogic";
 import { v4 as uuidv4 } from "uuid";
 
-/** Result of an annotation operation — carries span patches and dismissed API keys */
+/** Result of an annotation operation - carries span patches and dismissed API keys */
 export type AnnotationResult = WorkflowResult & {
   layerPatch?: { userSpans?: NerSpan[]; apiSpans?: NerSpan[] };
   deletedApiKeys?: string[];

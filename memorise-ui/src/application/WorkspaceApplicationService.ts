@@ -7,7 +7,6 @@ import {
   type UpdateWorkspacePatch,
 } from '../core/usecases/UpdateWorkspaceUseCase';
 import { LoadWorkspacesUseCase } from '../core/usecases/LoadWorkspacesUseCase';
-import { SyncWorkspaceTranslationsUseCase } from '../core/usecases/SyncWorkspaceTranslationsUseCase';
 import { Workspace } from '../core/entities/Workspace';
 import { requireOwnerId, requireWorkspaceName } from '../core/usecases/validators';
 
@@ -16,8 +15,8 @@ interface WorkspaceApplicationServiceDeps {
 }
 
 /**
- * Facade for workspace CRUD. Orchestrates use cases and handles
- * segment metadata preservation across load/save cycles.
+ * Facade for workspace CRUD.
+ * Orchestrates use cases and handles segment metadata preservation across load/save cycles.
  * Accessed via getWorkspaceApplicationService() provider.
  *
  * @category Application
@@ -28,7 +27,6 @@ export class WorkspaceApplicationService {
   private readonly updateUseCase: UpdateWorkspaceUseCase;
   private readonly deleteUseCase: DeleteWorkspaceUseCase;
   private readonly loadUseCase: LoadWorkspacesUseCase;
-  private readonly syncTranslationsUseCase: SyncWorkspaceTranslationsUseCase;
 
   constructor(deps: WorkspaceApplicationServiceDeps) {
     this.deps = deps;
@@ -36,17 +34,13 @@ export class WorkspaceApplicationService {
     this.updateUseCase = new UpdateWorkspaceUseCase(deps.workspaceRepository);
     this.deleteUseCase = new DeleteWorkspaceUseCase(deps.workspaceRepository);
     this.loadUseCase = new LoadWorkspacesUseCase(deps.workspaceRepository);
-    this.syncTranslationsUseCase = new SyncWorkspaceTranslationsUseCase(
-      deps.workspaceRepository
-    );
   }
 
   async loadForOwner(ownerId: string): Promise<WorkspaceDTO[]> {
     const workspaces = await this.loadUseCase.execute({ ownerId });
     workspaces.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0));
     
-    // Preserve segments from stored data when converting entity to DTO
-    // Segments are metadata not in domain entity, so we need to read them from persistence
+    // Preserve segments from stored data when converting entity to DTO    
     const rawPersistence = await this.getRawPersistenceForOwner(ownerId);
     const segmentsMap = new Map(rawPersistence.map(ws => [ws.id, ws.segments]));
     
@@ -70,7 +64,7 @@ export class WorkspaceApplicationService {
 
   /**
    * Helper method to get raw persistence data for an owner
-   * This is needed to preserve metadata (like segments) that's not in the domain entity
+   * Needed to preserve metadata (like segments) that's not in the domain entity
    */
   private async getRawPersistenceForOwner(ownerId: string): Promise<Array<{ id: string; segments?: Segment[] }>> {
     if (this.deps.workspaceRepository.getRawPersistenceForOwner) {
@@ -82,7 +76,7 @@ export class WorkspaceApplicationService {
 
   /**
    * Helper method to get raw persistence data for a specific workspace
-   * This is needed to preserve metadata (like segments) that's not in the domain entity
+   * Needed to preserve metadata (like segments) that's not in the domain entity
    */
   private async getRawPersistenceForWorkspace(workspaceId: string): Promise<{ segments?: Segment[] } | null> {
     // Get the workspace entity to find its owner
@@ -149,7 +143,7 @@ export class WorkspaceApplicationService {
       if (!dto.id) continue;
 
       if (existingIds.has(dto.id)) {
-        // Update existing workspace — use case handles segments too
+        // Update existing workspace - use case handles segments too
         await this.updateUseCase.execute({
           workspaceId: dto.id,
           patch: this.dtoToPatch(dto),
@@ -171,19 +165,6 @@ export class WorkspaceApplicationService {
         });
       }
     }
-  }
-
-  async syncWorkspaceTranslations(params: {
-    workspaceId: string;
-    translations: TranslationDTO[];
-  }): Promise<WorkspaceDTO | null> {
-    const workspace = await this.syncTranslationsUseCase.execute(params);
-    if (!workspace) return null;
-    
-    // Preserve segments from stored data
-    const rawPersistence = await this.getRawPersistenceForWorkspace(workspace.id);
-    const existingDto = rawPersistence ? { segments: rawPersistence.segments } : undefined;
-    return workspace.toDto(existingDto);
   }
 
   createWorkspaceDraft(ownerId: string, name: string): WorkspaceDTO {

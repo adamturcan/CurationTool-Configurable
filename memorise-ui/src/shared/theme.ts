@@ -1,4 +1,4 @@
-/** MUI theme configuration — palette loaded from theme.config.json */
+/** MUI theme configuration - palette loaded from theme.config.json */
 import { createTheme, responsiveFontSizes } from "@mui/material";
 import config from "../../theme.config.json";
 

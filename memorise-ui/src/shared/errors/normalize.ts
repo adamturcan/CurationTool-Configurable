@@ -21,7 +21,7 @@ export function toAppError(error: unknown, context?: ErrorContext): AppError {
       ? {
           ...context,
           userMessage: context?.userMessage ??
-            `The service encountered an internal error (HTTP ${error.status}). This is a server-side issue — please try again later.`,
+            `The service encountered an internal error (HTTP ${error.status}). This is a server-side issue - please try again later.`,
         }
       : context;
     return createAppError({
@@ -54,7 +54,7 @@ export function toAppError(error: unknown, context?: ErrorContext): AppError {
 
   if (isNetworkError) {
     return createAppError({
-      message: resolveMessage(context, "Network error. Check your connection and try again."),
+      message: resolveMessage(context, "Could not reach the service. This usually means it is offline, the URL is wrong, or it is blocking cross-origin requests. Check the browser console for details."),
       code: "NETWORK_ERROR",
       severity: "error",
       context,

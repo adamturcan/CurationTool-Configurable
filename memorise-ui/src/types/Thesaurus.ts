@@ -1,4 +1,4 @@
-/** Flattened index item for fast searching — stored in the pre-processed index file */
+/** Flattened index item for fast searching - stored in the pre-processed index file */
 export type ThesaurusIndexItem = {
   id: number;
   label: string;

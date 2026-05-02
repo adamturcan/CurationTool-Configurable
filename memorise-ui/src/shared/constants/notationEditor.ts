@@ -4,8 +4,8 @@
 export const ENTITY_COLORS: Record<string, string> = {
   // Holocaust-domain (project home corpus)
   PER: "#C2185B",         // Person (magenta)
-  PERS: "#C2185B",        // Person — SDU alias
-  PERSON: "#C2185B",      // Person — legal-mock alias
+  PERS: "#C2185B",        // Person - SDU alias
+  PERSON: "#C2185B",      // Person - legal-mock alias
   DATE: "#1976D2",        // Date (blue)
   LOC: "#388E3C",         // Location (green)
   ORG: "#F57C00",         // Organization (orange)

@@ -177,7 +177,7 @@ export class ExportWorkflowService {
         .filter(s => s.start >= start && s.end <= end)
         .sort((a, b) => a.start - b.start);
 
-    // Source text — always the original text, never a translation
+    // Source text - always the original text, never a translation
     if (sourceText) {
       addSection("Source Text (Original)");
       addWrappedText(sourceText);
@@ -191,7 +191,7 @@ export class ExportWorkflowService {
       ordered.forEach((seg, idx) => {
         ensureSpace(14);
         doc.setFont("NotoSans", "bold");
-        doc.text(`Segment ${idx + 1}  [${seg.start}–${seg.end}]`, margin, y);
+        doc.text(`Segment ${idx + 1}  [${seg.start}-${seg.end}]`, margin, y);
         doc.setFont("NotoSans", "normal");
         y += 5;
 
@@ -247,7 +247,7 @@ export class ExportWorkflowService {
       y += 6;
     }
 
-    // Translations — skip language layers with no remaining content
+    // Translations - skip language layers with no remaining content
     const liveTranslations = (workspace.translations ?? []).filter(t => {
       const segCount = Object.values(t.segmentTranslations ?? {}).filter(s => s && s.length > 0).length;
       return segCount > 0 || (t.text && t.text.length > 0);

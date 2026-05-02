@@ -13,7 +13,7 @@ export type NerSpan = {
   end: number;
   /** NER entity type (PER, LOC, ORG, DATE, CAMP, GHETTO, MISC) */
   entity: string;
-  /** Confidence score from the NER API (0–1), undefined for user-created spans */
+  /** Confidence score from the NER API (0-1), undefined for user-created spans */
   score?: number;
 };
 
@@ -25,7 +25,7 @@ export type SelectionBox = {
   left: number;
 };
 
-/** Maps span IDs to their current character offsets — used for fast coordinate lookups */
+/** Maps span IDs to their current character offsets - used for fast coordinate lookups */
 export type SpanCoordMap = Map<string, { start: number; end: number }>;
 
 /** Props for the entity category picker menu */

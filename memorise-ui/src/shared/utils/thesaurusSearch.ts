@@ -4,9 +4,9 @@ import type { ThesaurusIndexItem } from '../../types';
  * Find a tag in the thesaurus.
  *
  * Matching priority:
- * 1. By KeywordID + ParentID (if both provided) — most accurate, disambiguates duplicates
- * 2. By KeywordID only (if provided) — accurate for unique IDs
- * 3. By exact label match (case-insensitive) — prefer preferred terms over aliases
+ * 1. By KeywordID + ParentID (if both provided) - most accurate, disambiguates duplicates
+ * 2. By KeywordID only (if provided) - accurate for unique IDs
+ * 3. By exact label match (case-insensitive) - prefer preferred terms over aliases
  */
 export function findInThesaurus(
   tag: { name: string; keywordId?: number; parentId?: number },
