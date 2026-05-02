@@ -2,8 +2,7 @@ import type { ConfigService, ApiEndpointConfig, AppConfig } from '../../core/int
 
 /**
  * Reads API endpoint configuration from Vite env vars (import.meta.env).
- * Provides structured access to NER, segmentation, classification, and
- * translation API URLs with SDU defaults as fallback.
+ * Provides structured access to NER, segmentation, classification, and translation API URLs with SDU defaults as fallback.
  *
  * @category Infrastructure
  */
@@ -58,7 +57,7 @@ export class BrowserConfigService implements ConfigService {
   }
 
   async saveConfig(): Promise<void> {
-    // No-op in standalone mode — endpoints come from env vars
+    // No-op in standalone mode - endpoints come from env vars
   }
 
   isReady(): boolean {

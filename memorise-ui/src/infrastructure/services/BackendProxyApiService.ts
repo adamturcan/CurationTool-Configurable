@@ -3,8 +3,8 @@ import type { ApiService } from '../../core/interfaces/ApiService';
 
 /**
  * Thin proxy calling backend NLP routes instead of external APIs directly.
- * Used when VITE_BACKEND_URL is set. No format parsing — the backend handles
- * adapter selection and response normalization.
+ * Used when VITE_BACKEND_URL is set.
+ * No format parsing - the backend handles adapter selection and response normalization.
  *
  * @category Infrastructure
  */

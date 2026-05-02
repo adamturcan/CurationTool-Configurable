@@ -34,7 +34,7 @@ const LANGUAGE_CODE_MAP: Record<string, string> = {
 
 /**
  * Implements ApiService contract with HTTP calls to external NLP APIs.
- * Accessed via getApiService() provider — never instantiated directly.
+ * Accessed via getApiService() provider - never instantiated directly.
  *
  * Endpoints are resolved via ConfigService (env vars or server config) with SDU defaults as fallback.
  * Language list is cached after a successful fetch; failures propagate to the caller.
@@ -47,18 +47,8 @@ export class BrowserApiService implements ApiServiceContract {
   private supportedLanguagesSetCache: Set<string> | null = null;
   private supportedLanguagesPromise: Promise<SupportedLanguage[]> | null = null;
 
-  private static readonly FALLBACK_URLS: Record<string, string> = {
-    ner: "https://ner-api.dev.memorise.sdu.dk/recognize",
-    segment: "https://textseg-api.dev.memorise.sdu.dk/segment",
-    classify: "https://semtag-api.dev.memorise.sdu.dk/classify",
-    translate: "https://mt-api.dev.memorise.sdu.dk/translate",
-    "translate-languages": "https://mt-api.dev.memorise.sdu.dk/supported_languages",
-  };
-
   private getEndpointUrl(key: string): string {
-    return getConfigService().getEndpoint(key)?.url
-      ?? BrowserApiService.FALLBACK_URLS[key]
-      ?? '';
+    return getConfigService().getEndpoint(key)?.url ?? '';
   }
 
   // Classify 
@@ -244,7 +234,7 @@ export class BrowserApiService implements ApiServiceContract {
     return {
       translatedText: data.text,
       targetLang,
-      sourceLang: sourceLang as string | undefined,
+      sourceLang,
     };
   }
 
@@ -285,8 +275,7 @@ export class BrowserApiService implements ApiServiceContract {
 
   private async memoizedSupportedLanguagesSet(): Promise<Set<string>> {
     if (this.supportedLanguagesSetCache) return this.supportedLanguagesSetCache;
-    const languages = await this.getSupportedLanguages();
-    this.supportedLanguagesSetCache = new Set(languages.map((l) => l.code));
-    return this.supportedLanguagesSetCache;
+    await this.getSupportedLanguages();
+    return this.supportedLanguagesSetCache!;
   }
 }

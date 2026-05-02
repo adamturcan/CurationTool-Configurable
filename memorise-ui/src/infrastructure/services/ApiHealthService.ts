@@ -18,8 +18,8 @@ export interface HealthCheckResult {
 
 /**
  * Pings API endpoints to determine health status and response latency.
- * Tries HEAD first (no body, minimal overhead). Any HTTP response — even
- * 405 or 4xx — proves the server is reachable and counts as "up".
+ * Tries HEAD first (no body, minimal overhead).
+ * Any HTTP response - even 405 or 4xx - proves the server is reachable and counts as "up".
  * Falls back to POST with empty body only if HEAD fails at the network level.
  *
  * @category Infrastructure
@@ -37,7 +37,7 @@ export class ApiHealthService {
     const timer = setTimeout(() => controller.abort(), this.timeoutMs);
 
     try {
-      // HEAD is the lightest probe — no request/response body.
+      // HEAD is the lightest probe - no request/response body.
       // If the server responds at all (even 405), it's reachable.
       let response: Response;
       try {

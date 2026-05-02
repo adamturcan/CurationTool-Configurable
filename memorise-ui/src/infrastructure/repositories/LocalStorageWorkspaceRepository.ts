@@ -3,7 +3,7 @@ import type { WorkspaceRepository } from "../../core/interfaces/WorkspaceReposit
 import { Workspace } from "../../core/entities/Workspace";
 import type { WorkspaceDTO, TranslationDTO, Segment } from "../../types";
 
-/** Workspace DTO with required fields guaranteed — the shape written to localStorage */
+/** Workspace DTO with required fields guaranteed - the shape written to localStorage */
 type WorkspacePersistence = WorkspaceDTO & {
   owner: string;
   text: string;
@@ -20,8 +20,7 @@ const EMPTY_LIST: WorkspacePersistence[] = [];
 const REPOSITORY_NAME = "LocalStorageWorkspaceRepository";
 
 /**
- * WorkspaceRepository implementation backed by browser localStorage.
- * Handles CRUD, legacy data migration, and segment metadata persistence.
+ * WorkspaceRepository implementation backed by browser localStorage. 
  * All operations are wrapped in errorHandlingService for consistent error handling.
  *
  * @category Infrastructure
@@ -239,7 +238,7 @@ export class LocalStorageWorkspaceRepository implements WorkspaceRepository {
 
   /**
    * Update segments for a workspace directly in persistence
-   * This is needed because segments are metadata not in the domain entity
+   * Needed because segments are metadata not in the domain entity
    */
   async updateSegments(workspaceId: string, segments: Segment[] | undefined): Promise<void> {
     return withRepositoryError(
@@ -255,7 +254,7 @@ export class LocalStorageWorkspaceRepository implements WorkspaceRepository {
         if (index >= 0) {
           workspaces[index] = {
             ...workspaces[index],
-            segments: segments !== undefined ? segments : undefined,
+            segments,
           };
           this.writeAll(workspaces);
         }

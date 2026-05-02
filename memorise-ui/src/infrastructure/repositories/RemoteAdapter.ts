@@ -39,7 +39,7 @@ export class RemoteAdapter implements WorkspaceRepository {
       body: JSON.stringify(dto),
     });
     if (response.status === 404) {
-      // New workspace — create
+      // New workspace - create
       const createResponse = await this.fetch('/api/workspaces', {
         method: 'POST',
         body: JSON.stringify(dto),
