@@ -7,10 +7,13 @@ import type { useLayerOperations } from "./useLayerOperations";
 
 type LayerOps = ReturnType<typeof useLayerOperations>;
 
-/** Position and identity of a delimiter-based segment split point in the editor */
+/** Position and identity of a delimiter-based segment split point in the editor. */
 export type SplitAnchor = { top: number; left: number; pos: number; segmentId: string };
 
-/** Handles span click, create, delete, category change, and text selection in the editor */
+/**
+ * Owns span-level gestures in the editor: click, create, edit text, change category, delete. Also detects single-delimiter selections on the original layer and emits them as split candidates.
+ * Converts segment-local coordinates to global before calling workflows.
+ */
 export function useSpanInteractions(
   layers: LayerOps,
   onSplitDetected: (anchor: SplitAnchor) => void,
@@ -37,8 +40,8 @@ export function useSpanInteractions(
     setCmReplaceFn(null);
   }, []);
 
-  // Opens the category/edit menu for a clicked span. Converts local (segment-relative)
-  // coordinates back to global before storing, so service calls use global offsets.
+  // Opens the category/edit menu for a clicked span.
+  // Converts local (segment-relative) coordinates back to global before storing, so service calls use global offsets.
   const handleSpanClick = useCallback((span: NerSpan, element: HTMLElement, replaceFn: (newText: string) => void, localLang: string, vStart: number) => {
     setNewSelection(null);
     const globalizedSpan = { ...span, start: span.start + vStart, end: span.end + vStart };
@@ -66,8 +69,8 @@ export function useSpanInteractions(
     setNewSelection(null);
   }, [newSelection, setActiveSegmentId, session, resolveLayer, applyLayerPatch, markSegmentEdited]);
 
-  // Handles text selection: if a single delimiter character is selected on the original
-  // layer, it triggers a split point detection. Otherwise, stores the selection for span creation.
+  // Handles text selection.
+  // If a single delimiter character is selected on the original layer, it triggers a split point detection. Otherwise, stores the selection for span creation.
   const handleSelectionChange = useCallback((sel: SelectionBox | null, segmentId: string, localLang: string, virtualStart: number) => {
     if (!sel) {
       setNewSelection(null);

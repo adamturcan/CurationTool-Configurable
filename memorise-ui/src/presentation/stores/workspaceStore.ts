@@ -1,7 +1,7 @@
 /**
  * Workspace metadata list for sidebar navigation.
- * Lightweight — only id, name, owner, updatedAt. Full workspace
- * data is loaded into sessionStore when a workspace is opened.
+ * Lightweight - only id, name, owner, updatedAt.
+ * Full workspace data is loaded into sessionStore when a workspace is opened.
  *
  * @category Stores
  */

@@ -15,7 +15,10 @@ import type { useLayerOperations } from "./useLayerOperations";
 
 type LayerOps = ReturnType<typeof useLayerOperations>;
 
-/** Coordinates API calls for NER, segmentation, translation, tagging, and save */
+/**
+ * Editor controller hook. Each handler maps to a UI action (Run NER,Run Sem-Tag, Translate, Save, and so on) and delegates to the matching workflow service.
+ * Handles the processing-state overlay and the shared conflict-resolution prompt.
+ */
 export function useEditorOperations(layers: LayerOps) {
   const { resolveLayer, applyLayerPatch } = layers;
 
@@ -53,7 +56,7 @@ export function useEditorOperations(layers: LayerOps) {
     notify({ ...notice, retryAction });
   }, [notify]);
 
-  // --- Translation operations ---
+  //Translation operations
 
   const handleRunGlobalTranslate = useCallback(async (targetLang: string) => {
     if (!session) return;
@@ -141,7 +144,7 @@ export function useEditorOperations(layers: LayerOps) {
     }
   }, [session, updateTranslations, notify, handleError]);
 
-  // --- Per-segment NER / SemTag ---
+  // Per-segment NER / SemTag
 
   const handleRunSegmentNer = useCallback(async (segmentId: string, lang: string) => {
     setProcessingMessage(`Running NER on segment (${lang})...`);
@@ -172,7 +175,7 @@ export function useEditorOperations(layers: LayerOps) {
     setProcessingMessage(null);
   }, [notify, setActiveSegmentId, session, draftText, updateSession]);
 
-  // --- Text change ---
+  // Text change
 
   const handleTextChange = useCallback((segmentId: string, text: string, liveCoords: SpanCoordMap | undefined, deadIds?: string[], localLang?: string) => {
     const lang = localLang || "original";
@@ -189,7 +192,7 @@ export function useEditorOperations(layers: LayerOps) {
     applyLayerPatch(result.lang, result.layerPatch);
   }, [session, draftText, setDraftText, resolveLayer, applyLayerPatch]);
 
-  // --- Global operations ---
+  // Global operations
 
   const handleRunGlobalNer = useCallback(async () => {
     setProcessingMessage("Running NER analysis...");
@@ -200,7 +203,7 @@ export function useEditorOperations(layers: LayerOps) {
       let lastFailureNotice: Notice | null = null;
 
       if (segments.length <= 1) {
-        // Unsegmented or single segment — run on full text per layer
+        // Unsegmented or single segment - run on full text per layer
         let originalOk = false;
         const originalLayer = resolveLayer("original");
         if (originalLayer) {

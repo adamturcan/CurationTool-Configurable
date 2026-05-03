@@ -57,9 +57,7 @@ function findSegmentTranslations(
 
 /**
  * Finds untranslated segments within a set across all translation layers.
- * Only flags a language when SOME of the affected segments have translations
- * but others don't (inconsistency). If none of the affected segments have
- * translations in a layer, that layer is skipped entirely.
+ * Only flags a language when SOME of the affected segments have translations but others don't (inconsistency). If none of the affected segments have translations in a layer, that layer is skipped entirely.
  */
 function detectUntranslated(
   segmentIds: string[],
@@ -74,7 +72,7 @@ function detectUntranslated(
     const someHave = hasList.some(Boolean);
     const allHave = hasList.every(Boolean);
 
-    // Only flag when there's an inconsistency — some have, some don't
+    // Only flag when there's an inconsistency - some have, some don't
     if (someHave && !allHave) {
       for (let i = 0; i < segmentIds.length; i++) {
         if (!hasList[i]) {
@@ -91,13 +89,12 @@ function detectUntranslated(
   return gaps;
 }
 
-// Hook
 
 /** Callbacks injected by the consumer to keep the hook decoupled from services */
 export interface ActionGuardActions {
-  /** Translate a single segment — injected by the consumer so the hook stays decoupled from services. */
+  /** Translate a single segment - injected by the consumer so the hook stays decoupled from services. */
   translateSegment: (segmentId: string, lang: string) => Promise<void>;
-  /** Delete a single segment's translation — injected by consumer. */
+  /** Delete a single segment's translation - injected by consumer. */
   deleteSegmentTranslation: (lang: string, segmentId: string) => void;
 }
 
@@ -172,7 +169,7 @@ export function useActionGuard(actions: ActionGuardActions): UseActionGuardRetur
         open: true,
         onClose: closeDialog,
         mode: "resolution",
-        title: "Cannot Join — Missing Translations",
+        title: "Cannot Join - Missing Translations",
         description:
           "These segments have inconsistent translations across languages. " +
           "Some languages are missing translations for one of the segments. " +
@@ -213,7 +210,7 @@ export function useActionGuard(actions: ActionGuardActions): UseActionGuardRetur
         open: true,
         onClose: closeDialog,
         mode: "resolution",
-        title: "Cannot Split — Translation Exists",
+        title: "Cannot Split - Translation Exists",
         description:
           `${segLabel.charAt(0).toUpperCase() + segLabel.slice(1)} has translations in: ${langs.map(l => l.toUpperCase()).join(", ")}. ` +
           "Splitting a segment with existing translations would break text alignment. " +
@@ -273,7 +270,7 @@ export function useActionGuard(actions: ActionGuardActions): UseActionGuardRetur
         open: true,
         onClose: closeDialog,
         mode: "resolution",
-        title: "Cannot Shift — Untranslated Segments in Path",
+        title: "Cannot Shift - Untranslated Segments in Path",
         description:
           `Shifting this boundary affects ${affectedIds.length} segment(s). ` +
           "Some are missing translations. The shift will merge content, " +

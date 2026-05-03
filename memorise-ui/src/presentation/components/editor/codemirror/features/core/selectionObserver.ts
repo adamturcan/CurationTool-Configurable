@@ -14,7 +14,7 @@ export const createSelectionObserver = (
     if (update.selectionSet || update.docChanged) {
       if (timeoutRef?.current) clearTimeout(timeoutRef.current);
 
-      // Document changed (split/join/shift) — old selection is invalid
+      // Document changed (split/join/shift) - old selection is invalid
       if (update.docChanged) {
         onSelectionChange(null);
         return;

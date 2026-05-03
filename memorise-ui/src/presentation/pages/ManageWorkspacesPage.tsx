@@ -295,7 +295,7 @@ const ManageWorkspacesPage: React.FC = () => {
                   <TableCell sx={{ width: "20%", color: "text.secondary" }}>
                     {ws.updatedAt
                       ? new Date(ws.updatedAt).toLocaleString()
-                      : "—"}
+                      : "-"}
                   </TableCell>
 
                   <TableCell align="right">

@@ -8,7 +8,7 @@ import { SegmentLogic } from "../../core/entities/SegmentLogic";
 import { SpanLogic } from "../../core/entities/SpanLogic";
 import type { SplitAnchor } from "./useSpanInteractions";
 
-/** Promotes segment-level tags to document-level and shows a toast if any were affected */
+/** Promotes tags from the given segments to document level so they survive a split/join/shift. */
 function promoteTagsForSegments(segmentIds: string[]) {
   const store = useSessionStore.getState();
   const tags = store.session?.tags || [];
@@ -26,7 +26,9 @@ function promoteTagsForSegments(segmentIds: string[]) {
   });
 }
 
-/** Manages segment split, join, and boundary-shift operations with translation guards */
+/**
+ * Handles the three structural segment edits, split, join-up and boundary shift, and routes each through `useActionGuard` so the user is warned before changes that invalidate existing translations.
+ */
 export function useSegmentSplitMerge() {
   const session = useSessionStore((s) => s.session);
   const notify = useNotificationStore.getState().enqueue;

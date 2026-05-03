@@ -3,14 +3,15 @@ import { useSessionStore } from "../stores";
 import type { AnnotationResult } from "../../application/workflows/AnnotationWorkflowService";
 import type { AnnotationLayer } from "../../types";
 
-/** Resolves, patches, and tracks edit state for original and translation annotation layers */
+/**
+ * Helpers for reading and patching annotation layers (the original document and its translations) through a uniform interface, so call sites do not branch on `lang === "original"`.
+ */
 export function useLayerOperations() {
   const session = useSessionStore((s) => s.session);
   const draftText = useSessionStore((s) => s.draftText);
   const updateSession = useSessionStore((s) => s.updateSession);
 
-  // Builds an AnnotationLayer snapshot for the given language tab —
-  // either from the workspace root (original) or from a translation entry.
+  /** Builds an `AnnotationLayer` snapshot for the given language, or `null` if the layer does not exist. */
   const resolveLayer = useCallback(
     (lang: string): AnnotationLayer | null => {
       if (!session) return null;
@@ -34,8 +35,7 @@ export function useLayerOperations() {
     [session, draftText]
   );
 
-  // Writes span/text patches back to the correct layer in the session store.
-  // For "original" patches go directly; for translations, the matching entry is updated.
+  /** Merges a layer patch into the session store, into either the root or the matching translation entry. */
   const applyLayerPatch = useCallback(
     (lang: string, patch: AnnotationResult["layerPatch"]) => {
       if (!patch) return;
@@ -52,6 +52,7 @@ export function useLayerOperations() {
     [updateSession]
   );
 
+  /** Marks a segment as edited so re-running NER or translation keeps the user's changes. */
   const markSegmentEdited = useCallback(
     (segmentId: string | undefined, lang: string) => {
       const currentSession = useSessionStore.getState().session;

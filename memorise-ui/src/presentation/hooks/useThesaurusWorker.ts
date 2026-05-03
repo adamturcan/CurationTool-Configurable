@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import type { ThesaurusIndexItem } from '../../types';
 
-/** Spawns and manages the thesaurus Web Worker, exposing a search function and readiness state */
+/**
+ * Wraps the thesaurus Web Worker. Owns its lifetime and exposes a `search` function with `ready` and `error` flags.
+ * Each search times out after 5 seconds.
+ */
 export function useThesaurusWorker() {
   const workerRef = useRef<Worker | null>(null);
   const [ready, setReady] = useState(false);

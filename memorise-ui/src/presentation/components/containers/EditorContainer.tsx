@@ -10,6 +10,7 @@ import { EditorGlobalMenu, CategoryMenu } from "../editor/menus";
 import { SegmentBlock } from "../editor/SegmentBlock";
 import type { SegmentHandlers, SegmentTranslationHandlers } from "../editor/SegmentBlock";
 import { SegmentDragProvider } from "../editor/context/SegmentDragContext";
+import { TranslationLogic } from "../../../core/entities/TranslationLogic";
 import { ENTITY_COLORS } from "../../../shared/constants/notationEditor";
 import { shadows } from "../../../shared/theme";
 import { sx as sxUtil } from "../../../shared/styles";
@@ -29,16 +30,11 @@ const EditorContainer: React.FC = () => {
   const { languageOptions, isLanguageListLoading } = useLanguageOptions();
 
   const globalLanguageOptions = useMemo(() => {
-    const translations = session?.translations ?? [];
-    const segments = session?.segments ?? [];
-    const fullyTranslated = new Set(
-      translations
-        .filter(t => segments.length === 0
-          ? !!t.text
-          : segments.every(s => t.segmentTranslations?.[s.id] !== undefined))
-        .map(t => t.language)
+    const fullyTranslated = TranslationLogic.getFullyTranslatedLanguages(
+      session?.translations ?? [],
+      session?.segments ?? []
     );
-    return languageOptions.filter(o => !fullyTranslated.has(o.code));
+    return languageOptions.filter((o) => !fullyTranslated.has(o.code));
   }, [languageOptions, session?.translations, session?.segments]);
 
   const layers = useLayerOperations();
@@ -64,7 +60,7 @@ const EditorContainer: React.FC = () => {
     onSelectionChange: (sel, id, lang, start) => spansRef.current.handleSelectionChange(sel, id, lang, start),
     onTextChange: (id, text, coords, deadIds, lang) => opsRef.current.handleTextChange(id, text, coords, deadIds, lang),
     onShiftBoundary: (srcId, pos) => splitsRef.current.handleShiftBoundary(srcId, pos),
-    onInvalidDrop: () => notify({ message: "Cannot drop boundary here — target is above the source or showing a translation view.", tone: "warning" }),
+    onInvalidDrop: () => notify({ message: "Cannot drop boundary here - target is above the source or showing a translation view.", tone: "warning" }),
   }), [setActiveSegmentId, notify]);
 
   const translationHandlers = useMemo<SegmentTranslationHandlers>(() => ({

@@ -137,7 +137,7 @@ const BubbleSidebar: React.FC<Props> = ({
           <Zoom in unmountOnExit>
             <Box>
               <Bubble
-                label={`${workspaces.length - 3} more — Manage Workspaces`}
+                label={`${workspaces.length - 3} more - Manage Workspaces`}
                 icon={
                   <Box component="span" sx={{ fontSize: "0.95rem", fontWeight: 800, lineHeight: 1 }}>
                     {`+${workspaces.length - 3}`}

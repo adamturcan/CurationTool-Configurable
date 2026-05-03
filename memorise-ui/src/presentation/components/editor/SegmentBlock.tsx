@@ -20,8 +20,9 @@ import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 
 import { CodeMirrorWrapper } from "./codemirror/CodeMirrorWrapper";
 import { SegmentLogic } from "../../../core/entities/SegmentLogic";
+import { SpanLogic } from "../../../core/entities/SpanLogic";
+import { TranslationLogic } from "../../../core/entities/TranslationLogic";
 import type { NerSpan, SelectionBox, SpanCoordMap, Segment, TranslationDTO } from "../../../types";
-import { getSpanId } from "./utils/editorUtils";
 import { ENTITY_COLORS } from "../../../shared/constants/notationEditor";
 import { shadows } from "../../../shared/theme";
 import { sx as sxUtil } from "../../../shared/styles";
@@ -106,13 +107,15 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
     return () => registerNode(index, null);
   }, [index, registerNode]);
 
-  const availableLangs = useMemo(() => (translations || []).filter((t: TranslationDTO) => t.segmentTranslations?.[segment.id] !== undefined).map((t: TranslationDTO) => t.language), [translations, segment.id]);
+  const availableLangs = useMemo(
+    () => TranslationLogic.getLanguagesWithSegmentTranslation(translations || [], segment.id),
+    [translations, segment.id]
+  );
 
-  const isSegmentEdited = useMemo(() => {
-    if (localLang === "original") return !!segment.isEdited;
-    const tLayer = translations?.find((t: TranslationDTO) => t.language === localLang);
-    return !!tLayer?.editedSegmentTranslations?.[segment.id];
-  }, [localLang, segment.isEdited, segment.id, translations]);
+  const isSegmentEdited = useMemo(
+    () => TranslationLogic.isSegmentEdited(segment, translations || [], localLang),
+    [localLang, segment, translations]
+  );
 
   useEffect(() => { if (localLang !== "original" && !availableLangs.includes(localLang)) setLocalLang("original"); }, [localLang, availableLangs]);
 
@@ -137,29 +140,18 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
     return SegmentLogic.calculateVirtualBoundaries(allSegments || [], tLayer?.segmentTranslations || {}).find((b: Segment) => b.id === segment.id) || segment;
   }, [localLang, segment, translations, allSegments]);
 
-  // Extract spans that overlap this segment's range, convert from global to local
   const localSpans = useMemo(() => {
     if (!isActive) return [];
-
-    let rawSpans: NerSpan[] = [];
-    const bannedKeys = new Set(deletedApiKeys || []);
-    if (localLang === "original") {
-      const api = (apiSpans || []).filter((s: NerSpan) => !bannedKeys.has(`${s.start}:${s.end}:${s.entity}`));
-      rawSpans = [...api, ...(userSpans || [])];
-    } else {
-      const tLayer = translations?.find((t: TranslationDTO) => t.language === localLang);
-      const api = (tLayer?.apiSpans || []).filter((s: NerSpan) => !bannedKeys.has(`${s.start}:${s.end}:${s.entity}`));
-      rawSpans = [...api, ...(tLayer?.userSpans || [])];
-    }
-
-    return rawSpans
-      .filter(s => Math.max(s.start, virtualSegment.start) < Math.min(s.end, virtualSegment.end))
-      .map(s => ({
-        ...s,
-        id: getSpanId(s),
-        start: Math.max(0, s.start - virtualSegment.start),
-        end: Math.min(virtualSegment.end - virtualSegment.start, s.end - virtualSegment.start)
-      }));
+    const layer = localLang === "original"
+      ? { apiSpans, userSpans }
+      : translations?.find((t: TranslationDTO) => t.language === localLang);
+    return SpanLogic.getVisibleSpansForSegment(
+      layer?.apiSpans,
+      layer?.userSpans,
+      deletedApiKeys,
+      virtualSegment.start,
+      virtualSegment.end,
+    );
   }, [localLang, translations, deletedApiKeys, apiSpans, userSpans, virtualSegment, isActive]);
 
   const filteredLanguageOptions = useMemo(() => {
@@ -183,7 +175,7 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
     onSelectionChange(sel, segment.id, localLang, virtualSegment.start);
   }, [onSelectionChange, segment.id, localLang, virtualSegment.start]);
 
-  // Disable drops on translation tabs — segment boundary shifts only work on original text
+  // Disable drops on translation tabs - segment boundary shifts only work on original text
   const effectiveDropDisabled = dropDisabled || (isDragging && localLang !== "original");
 
   // Handles drag-to-reorder: converts local drop offset to global position for boundary shift
