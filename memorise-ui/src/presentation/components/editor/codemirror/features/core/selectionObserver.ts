@@ -28,7 +28,7 @@ export const createSelectionObserver = (
       }
 
       const overlapsSpan = spans.some(
-        (s) => Math.max(Number(s.start), range.from) < Math.min(Number(s.end), range.to)
+        (s) => Math.max(s.start, range.from) < Math.min(s.end, range.to)
       );
 
       if (overlapsSpan) {

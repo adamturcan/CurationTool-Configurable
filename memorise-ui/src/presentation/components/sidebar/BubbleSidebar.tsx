@@ -15,6 +15,71 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { useSessionStore, useNotificationStore } from "../../stores";
 import type { WorkspaceMetadata } from "../../../core/entities/Workspace";
 
+interface BubbleProps {
+  label: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  selected?: boolean;
+  color?: string;
+  ariaLabel?: string;
+}
+
+const Bubble: React.FC<BubbleProps> = ({
+  label,
+  icon,
+  onClick,
+  selected,
+  color,
+  ariaLabel,
+}) => {
+  const accent = color || sidebarColors.accent;
+  const bg = selected ? accent : sidebarColors.bg;
+  const fg = selected ? sidebarColors.bg : accent;
+
+  return (
+    <Tooltip title={label} placement="right">
+      <span style={{ display: "inline-flex", overflow: "visible" }}>
+        <Fab
+          aria-label={ariaLabel || label}
+          onClick={onClick}
+          disableRipple
+          sx={{
+            bgcolor: bg,
+            color: fg,
+            "&:hover": { bgcolor: accent, color: sidebarColors.bg },
+            border: "1px solid rgba(255,255,255,0.08)",
+            boxShadow: shadows.sm,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            width: 56,
+            height: 56,
+            minHeight: 56,
+            borderRadius: "50%",
+            outline: "none",
+            "&:focus-visible": {
+              boxShadow:
+                "0 0 0 3px rgba(160,184,221,0.65), 0 4px 10px rgba(12,24,38,0.18)",
+            },
+            WebkitTapHighlightColor: "transparent",
+          }}
+        >
+          <Box
+            component="span"
+            sx={{
+              display: "inline-flex",
+              alignItems: "center",
+              "& svg": { fontSize: "1.45rem" },
+            }}
+          >
+            {icon}
+          </Box>
+        </Fab>
+      </span>
+    </Tooltip>
+  );
+};
+
 interface Props {
   onLogout: () => void;
   workspaces: WorkspaceMetadata[];
@@ -34,73 +99,14 @@ const BubbleSidebar: React.FC<Props> = ({
 
   const isSelected = (path: string) => location.pathname === path;
 
-  const guardedNavigate = (path: string) => {
-    if (isSelected(path)) return;
-    if (isDirty) { showGuard(() => navigate(path)); return; }
-    navigate(path);
+  const runGuarded = (action: () => void) => {
+    if (isDirty) { showGuard(action); return; }
+    action();
   };
 
-  const Bubble = ({
-    label,
-    icon,
-    onClick,
-    selected,
-    color,
-    ariaLabel,
-  }: {
-    label: string;
-    icon: React.ReactNode;
-    onClick: () => void;
-    selected?: boolean;
-    color?: string;
-    ariaLabel?: string;
-  }) => {
-    const accent = color || sidebarColors.accent;
-    const bg = selected ? accent : sidebarColors.bg;
-    const fg = selected ? sidebarColors.bg : accent;
-
-    return (
-      <Tooltip title={label} placement="right">
-        <span style={{ display: "inline-flex", overflow: "visible" }}>
-          <Fab
-            aria-label={ariaLabel || label}
-            onClick={onClick}
-            disableRipple
-            sx={{
-              bgcolor: bg,
-              color: fg,
-              "&:hover": { bgcolor: accent, color: sidebarColors.bg },
-              border: "1px solid rgba(255,255,255,0.08)",
-              boxShadow: shadows.sm,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 56,
-              height: 56,
-              minHeight: 56,
-              borderRadius: "50%",
-              outline: "none",
-              "&:focus-visible": {
-                boxShadow:
-                  "0 0 0 3px rgba(160,184,221,0.65), 0 4px 10px rgba(12,24,38,0.18)",
-              },
-              WebkitTapHighlightColor: "transparent",
-            }}
-          >
-            <Box
-              component="span"
-              sx={{
-                display: "inline-flex",
-                alignItems: "center",
-                "& svg": { fontSize: "1.45rem" },
-              }}
-            >
-              {icon}
-            </Box>
-          </Fab>
-        </span>
-      </Tooltip>
-    );
+  const guardedNavigate = (path: string) => {
+    if (isSelected(path)) return;
+    runGuarded(() => navigate(path));
   };
 
   return (
@@ -154,10 +160,7 @@ const BubbleSidebar: React.FC<Props> = ({
         <Bubble
           label="New Workspace"
           icon={<AddIcon />}
-          onClick={() => {
-            if (isDirty) { showGuard(() => onNewWorkspace()); return; }
-            onNewWorkspace();
-          }}
+          onClick={() => runGuarded(onNewWorkspace)}
           ariaLabel="Create new workspace"
         />
       </Box>
@@ -184,10 +187,7 @@ const BubbleSidebar: React.FC<Props> = ({
         <Bubble
           label="Logout"
           icon={<LogoutIcon />}
-          onClick={() => {
-            if (isDirty) { showGuard(() => onLogout()); return; }
-            onLogout();
-          }}
+          onClick={() => runGuarded(onLogout)}
           color={sidebarColors.account}
           ariaLabel="Logout"
         />

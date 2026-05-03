@@ -62,21 +62,22 @@ let isReady = false;
 })();
 
 /**
- * Message handler: Process search requests
+ * Message handler: Process search requests. Echoes the caller's `requestId`
+ * back on the RESULTS message so concurrent searches resolve in the right order.
  */
 self.onmessage = (e: MessageEvent) => {
-  const { type, query, limit = 20 } = e.data;
+  const { type, requestId, query, limit = 20 } = e.data;
 
   if (type === 'SEARCH') {
     // Not ready yet
     if (!isReady || !fuse) {
-      self.postMessage({ type: 'RESULTS', results: [] });
+      self.postMessage({ type: 'RESULTS', requestId, results: [] });
       return;
     }
 
     // Empty or too short query
     if (!query || query.trim().length < 2) {
-      self.postMessage({ type: 'RESULTS', results: [] });
+      self.postMessage({ type: 'RESULTS', requestId, results: [] });
       return;
     }
 
@@ -87,7 +88,7 @@ self.onmessage = (e: MessageEvent) => {
     const results = searchResults.map(r => r.item);
 
     // Send results back to main thread
-    self.postMessage({ type: 'RESULTS', results });
+    self.postMessage({ type: 'RESULTS', requestId, results });
   }
 };
 

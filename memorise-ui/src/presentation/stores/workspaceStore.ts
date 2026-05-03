@@ -38,8 +38,8 @@ export const useWorkspaceStore = create<WorkspaceStore>()(
 
       updateWorkspaceMetadata: (id, updates) => {
         set((state) => ({
-          workspaces: state.workspaces.map((w) => 
-            w.id === id ? { ...w, ...updates, updatedAt: Date.now() } : w
+          workspaces: state.workspaces.map((w) =>
+            w.id === id ? { ...w, updatedAt: Date.now(), ...updates } : w
           ),
         }));
       },
