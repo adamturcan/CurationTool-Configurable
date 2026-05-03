@@ -9,9 +9,8 @@ import type { WorkspaceMetadata } from "./Workspace";
 export const WorkspaceLogic = {
 
   /**
-   * True when another workspace already uses `candidate` as its name (case-insensitive,
-   * after trimming). The workspace identified by `id` is excluded from the comparison
-   * so that a no-op rename of an existing workspace is not flagged as a duplicate.
+   * True when another workspace already uses `candidate` as its name (case-insensitive, after trimming).
+   * The workspace identified by `id` is excluded from the comparison so that a no-op rename of an existing workspace is not flagged as a duplicate.
    * Empty/whitespace-only candidates return false — those are rejected separately.
    */
   isRenameDuplicate(

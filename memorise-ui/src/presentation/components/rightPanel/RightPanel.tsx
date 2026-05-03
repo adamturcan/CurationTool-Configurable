@@ -3,11 +3,8 @@ import { Box, Fade } from "@mui/material";
 import { shadows } from "../../../shared/theme";
 import { sx as sxUtil } from "../../../shared/styles";
 
-import TagTable, { type TagRow } from "./tags/TagTable";
-import type { ThesaurusItem } from "./inputs/TagThesaurusInput";
-import type { ThesaurusIndexItem } from "../../../types";
-
-export type { TagRow };
+import TagTable from "./tags/TagTable";
+import type { TagRow, ThesaurusIndexItem, ThesaurusItem } from "../../../types";
 
 interface Props {
   tags: TagRow[];

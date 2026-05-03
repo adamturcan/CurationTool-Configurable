@@ -1,9 +1,8 @@
 import type { NerSpan, SpanCoordMap } from "../../types";
 
 /**
- * Pure functions for NER span coordinate math. Handles offset translations
- * between global (full text) and local (per-segment) coordinate spaces,
- * and span shifting/removal when text is edited.
+ * Pure functions for NER span coordinate math.
+ * Handles offset translations between global (full text) and local (per-segment) coordinate spaces,and span shifting/removal when text is edited.
  *
  * @category Entities
  */
@@ -92,8 +91,7 @@ export const SpanLogic = {
 
   /**
    * Returns spans visible inside a segment for one annotation layer:
-   * combines API spans (minus banned keys) with user spans, filters by overlap
-   * against the segment range, and clips to segment-local coordinates.
+   * combines API spans (minus banned keys) with user spans, filters by overlap against the segment range, and clips to segment-local coordinates.
    * Banned-key format is `${start}:${end}:${entity}` (set by AnnotationWorkflowService).
    */
   getVisibleSpansForSegment: (

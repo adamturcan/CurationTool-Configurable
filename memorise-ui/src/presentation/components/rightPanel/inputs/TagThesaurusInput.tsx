@@ -5,16 +5,7 @@ import AddIcon from "@mui/icons-material/Add";
 import { shadows } from "../../../../shared/theme";
 import { ENTITY_COLORS } from "../../../../shared/constants/notationEditor";
 import { sx as sxUtil } from "../../../../shared/styles";
-
-export type ThesaurusItem = {
-  name: string;
-  path?: string[];
-  synonyms?: string[];
-  keywordId?: number;
-  parentId?: number;
-  isPreferred?: boolean;
-  depth?: number;
-};
+import type { ThesaurusItem } from "../../../../types";
 
 interface Props {
   onAdd: (name: string, keywordId?: number, parentId?: number) => void;

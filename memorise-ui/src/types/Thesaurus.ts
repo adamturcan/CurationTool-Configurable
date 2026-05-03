@@ -16,7 +16,9 @@ export type ThesaurusIndexItem = {
 export type ThesaurusItem = {
   name: string;
   path?: string[];               // Hierarchical path for display
+  synonyms?: string[];           // Alternate labels shown alongside the option
   keywordId?: number;            // Reference to original keyword
+  parentId?: number;             // Disambiguates entries with the same KeywordID
   isPreferred?: boolean;         // Show badge if not preferred
   depth?: number;                // For visual indentation
 };

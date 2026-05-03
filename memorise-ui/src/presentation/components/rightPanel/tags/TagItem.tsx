@@ -4,15 +4,7 @@ import ClearIcon from "@mui/icons-material/Clear";
 import { alpha } from "@mui/material/styles";
 import { ENTITY_COLORS } from "../../../../shared/constants/notationEditor";
 import { sx as sxUtil } from "../../../../shared/styles";
-
-export type TagRow = {
-  name: string;
-  source: "api" | "user";
-  keywordId?: number;
-  parentId?: number;
-  hierarchicalPath?: string[];
-  isCategory?: boolean;
-};
+import type { TagRow } from "../../../../types";
 
 interface TagItemProps {
   row: TagRow;

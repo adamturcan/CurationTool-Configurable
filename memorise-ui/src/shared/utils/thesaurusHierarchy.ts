@@ -1,5 +1,4 @@
-import type { ThesaurusIndexItem } from '../../types';
-import type { TagRow } from '../../presentation/components/rightPanel/RightPanel';
+import type { TagRow, ThesaurusIndexItem } from '../../types';
 import { findInThesaurus } from './thesaurusSearch';
 
 /** Hierarchy node for tree structure. */

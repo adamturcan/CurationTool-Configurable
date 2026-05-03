@@ -9,13 +9,11 @@ import CloseIcon from '@mui/icons-material/Close';
 import { alpha } from "@mui/material/styles";
 import { ENTITY_COLORS } from "../../../../shared/constants/notationEditor";
 
-import TagThesaurusInput, { type ThesaurusItem } from "../inputs/TagThesaurusInput";
-import type { ThesaurusIndexItem } from "../../../../types";
+import TagThesaurusInput from "../inputs/TagThesaurusInput";
+import type { TagRow, ThesaurusIndexItem, ThesaurusItem } from "../../../../types";
 import { buildTagHierarchy } from "../../../../shared/utils/thesaurusHierarchy";
-import TagItem, { type TagRow } from "./TagItem";
+import TagItem from "./TagItem";
 import HierarchyGroup from "./HierarchyGroup";
-
-export type { TagRow };
 
 interface Props {
   data: TagRow[];

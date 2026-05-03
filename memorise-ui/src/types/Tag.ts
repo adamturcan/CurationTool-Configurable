@@ -9,3 +9,13 @@ export interface TagItem {
   parentId?: number;  // ParentID to disambiguate entries with same KeywordID
   segmentId?: string; // Optional segment ID - if undefined, tag applies to whole document
 }
+
+/** Row shape used by the right-panel tag table after grouping/aggregation. */
+export type TagRow = {
+  name: string;
+  source: TagSource;
+  keywordId?: number;
+  parentId?: number;
+  hierarchicalPath?: string[];
+  isCategory?: boolean;
+};

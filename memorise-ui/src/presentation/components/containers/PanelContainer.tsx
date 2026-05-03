@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import RightPanel, { type TagRow } from "../rightPanel/RightPanel";
-import type { ThesaurusItem } from "../rightPanel/inputs/TagThesaurusInput";
+import RightPanel from "../rightPanel/RightPanel";
+import type { TagRow, ThesaurusItem } from "../../../types";
 import { useSessionStore, useNotificationStore } from "../../stores";
 import { useThesaurusDisplay, useThesaurusWorker } from "../../hooks";
 import { taggingWorkflowService } from "../../../application/workflows/TaggingWorkflowService";

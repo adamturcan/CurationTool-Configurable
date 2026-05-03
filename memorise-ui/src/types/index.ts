@@ -4,7 +4,7 @@ export type { Notice, NoticeTone, NoticeOptions, WorkflowResult } from "./Notice
 export type { Segment } from "./Segment";
 export { populateSegmentText } from "./Segment";
 export type { SessionPatch } from "./SessionPatch";
-export type { TagItem, TagSource } from "./Tag";
+export type { TagItem, TagSource, TagRow } from "./Tag";
 export type { ThesaurusIndexItem, ThesaurusItem } from "./Thesaurus";
 export type { TranslationRequest, TranslationResponse, SupportedLanguage } from "./Translation";
 export type { WorkspaceDTO, TranslationDTO, WorkspaceCounters, NerBreakdown, SegmentBreakdown } from "./Workspace";
