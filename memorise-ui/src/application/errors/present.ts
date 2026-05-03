@@ -1,7 +1,6 @@
 /**
  * Converts AppError instances into user-facing Notice values for the snackbar.
- * Uses a domain-aware catalog, falls back to code-suffix heuristics, then to
- * severity-to-tone mapping.
+ * Uses a domain-aware catalog, falls back to code-suffix heuristics, then to severity-to-tone mapping.
  *
  * @category Application
  */

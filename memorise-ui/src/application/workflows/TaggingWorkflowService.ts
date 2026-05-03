@@ -2,7 +2,7 @@ import { getApiService } from "../../infrastructure/providers/apiProvider";
 import { logAppError } from "../../shared/errors";
 import { catchApiError } from "../errors";
 import { loadThesaurusIndex } from "../../shared/utils/thesaurusLoader";
-import type { ThesaurusIndexItem, TagItem, Segment, TranslationDTO, WorkflowResult } from "../../types";
+import type { ThesaurusIndexItem, TagItem, Segment, TranslationDTO, Notice, WorkflowResult } from "../../types";
 
 
 type ClassificationResult = WorkflowResult & {
@@ -101,6 +101,58 @@ export class TaggingWorkflowService {
     } catch (error) {
       return catchApiError(error, "classify text");
     }
+  }
+
+  /**
+   * Runs classification across the whole workspace: once on the full text when unsegmented, or per-segment with progress when segmented.
+   * Tags accumulate across iterations so each segment's run sees the prior segments' results.
+   */
+  async runGlobalClassify(
+    session: { segments: Segment[]; draftText: string; translations: TranslationDTO[]; text: string; tags: TagItem[] },
+    onProgress?: (current: number, total: number) => void
+  ): Promise<ClassificationResult> {
+    const { segments, draftText, translations, text, tags } = session;
+
+    if (segments.length === 0) {
+      return await this.runClassify(true, {
+        activeSegmentId: undefined, segments: [], draftText, translations, text, activeTab: "original", tags,
+      });
+    }
+
+    let currentTags = tags;
+    let successCount = 0;
+    let lastFailureNotice: Notice | null = null;
+
+    for (let i = 0; i < segments.length; i++) {
+      onProgress?.(i, segments.length);
+      const seg = segments[i];
+      const result = await this.runClassify(false, {
+        activeSegmentId: seg.id,
+        segments,
+        draftText,
+        translations,
+        text,
+        activeTab: "original",
+        tags: currentTags,
+      });
+      if (result.ok && result.tags) {
+        currentTags = result.tags;
+        successCount++;
+      } else if (!result.ok) {
+        lastFailureNotice = result.notice;
+      }
+    }
+
+    let notice: Notice;
+    if (successCount === 0) {
+      notice = lastFailureNotice ?? { message: "No text to classify.", tone: "error" };
+    } else if (successCount < segments.length) {
+      notice = { message: `Tagged ${successCount} of ${segments.length} segment(s).`, tone: "warning" };
+    } else {
+      notice = { message: `Tagged ${segments.length} segment(s).`, tone: "success" };
+    }
+
+    return { ok: successCount > 0, notice, tags: currentTags };
   }
 
   async addCustomTag(name: string, options?: { keywordId?: number; parentId?: number; segmentId?: string | null }, tags?: TagItem[]): Promise<ClassificationResult> {

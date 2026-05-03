@@ -12,8 +12,7 @@ type ExportResult = WorkflowResult & {
 
 /**
  * Generates JSON and PDF exports of a workspace.
- * Fetches the full workspace, delegates to the appropriate generator,
- * and returns a blob + filename for the presentation layer to download.
+ * Fetches the full workspace, delegates to the appropriate generator, and returns a blob + filename for the presentation layer to download.
  *
  * @category Application
  */

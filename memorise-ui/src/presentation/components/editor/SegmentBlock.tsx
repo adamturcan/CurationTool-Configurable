@@ -93,10 +93,12 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
     return () => registerNode(index, null);
   }, [index, registerNode]);
 
-  const availableLangs = useMemo(
-    () => TranslationLogic.getLanguagesWithSegmentTranslation(translations || [], segment.id),
-    [translations, segment.id]
-  );
+  const availableLangs = useMemo(() => {
+    if (!allSegments || allSegments.length === 0) {
+      return (translations || []).filter(t => !!t.text?.trim()).map(t => t.language);
+    }
+    return TranslationLogic.getLanguagesWithSegmentTranslation(translations || [], segment.id);
+  }, [translations, segment.id, allSegments]);
 
   const isSegmentEdited = useMemo(
     () => TranslationLogic.isSegmentEdited(segment, translations || [], localLang),
@@ -125,7 +127,12 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
   const virtualSegment = useMemo(() => {
     if (localLang === "original") return segment;
     const tLayer = translations?.find((t: TranslationDTO) => t.language === localLang);
-    return SegmentLogic.calculateVirtualBoundaries(allSegments || [], tLayer?.segmentTranslations || {}).find((b: Segment) => b.id === segment.id) || segment;
+    if (!tLayer) return segment;
+    if (!allSegments || allSegments.length === 0) {
+      const text = tLayer.text ?? "";
+      return { ...segment, text, end: text.length };
+    }
+    return SegmentLogic.calculateVirtualBoundaries(allSegments, tLayer.segmentTranslations || {}).find((b: Segment) => b.id === segment.id) || segment;
   }, [localLang, segment, translations, allSegments]);
 
   const localSpans = useMemo(() => {

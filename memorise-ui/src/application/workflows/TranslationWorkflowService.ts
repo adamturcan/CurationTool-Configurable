@@ -11,9 +11,8 @@ type TranslationResult = WorkflowResult & {
 };
 
 /**
- * Translation operations: add a full translation page, translate/update/delete
- * individual segments. All methods return TranslationResult with a translations
- * patch for the session store.
+ * Translation operations: add a full translation page, translate/update/delete individual segments.
+ * All methods return TranslationResult with a translations patch for the session store.
  *
  * @category Application
  */

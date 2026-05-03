@@ -11,9 +11,8 @@ type SegmentationResult = WorkflowResult & {
 
 
 /**
- * Segment operations: auto-segmentation via API, split, join, and
- * boundary drag. Each method updates both master segments and all
- * translation layers (span coordinates, segment translations, full text).
+ * Segment operations: auto-segmentation via API, split, join, and boundary drag.
+ * Each method updates both master segments and all translation layers (span coordinates, segment translations, full text).
  *
  * @category Application
  */

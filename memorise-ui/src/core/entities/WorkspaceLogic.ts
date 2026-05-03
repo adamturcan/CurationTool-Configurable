@@ -1,8 +1,7 @@
 import type { WorkspaceMetadata } from "./Workspace";
 
 /**
- * Pure functions for workspace-list rules that aren't tied to a single Workspace
- * instance (e.g. uniqueness across the user's workspaces).
+ * Pure functions for workspace-list rules that aren't tied to a single Workspace instance (e.g. uniqueness across the user's workspaces).
  *
  * @category Entities
  */

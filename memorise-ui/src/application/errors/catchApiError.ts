@@ -1,7 +1,5 @@
 /**
- * One-liner for workflow `catch` blocks: normalize the raw error, log it,
- * and return a failed WorkflowResult whose notice is produced by the
- * presenter (so users see catalog messages, not raw API strings).
+ * One-liner for workflow `catch` blocks: normalize the raw error, log it, and return a failed WorkflowResult whose notice is produced by the presenter (so users see catalog messages, not raw API strings).
  *
  * @category Application
  */

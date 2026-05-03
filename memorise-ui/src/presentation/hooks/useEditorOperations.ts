@@ -10,7 +10,7 @@ import { editorWorkflowService } from "../../application/workflows/EditorWorkflo
 import { taggingWorkflowService } from "../../application/workflows/TaggingWorkflowService";
 import { translationWorkflowService } from "../../application/workflows/TranslationWorkflowService";
 
-import type { AnnotationLayer, Notice, SpanCoordMap } from "../../types";
+import type { SpanCoordMap } from "../../types";
 import type { useLayerOperations } from "./useLayerOperations";
 
 type LayerOps = ReturnType<typeof useLayerOperations>;
@@ -71,10 +71,6 @@ export function useEditorOperations(layers: LayerOps) {
       if (result.ok) {
         if (result.translationsPatch) updateTranslations(result.translationsPatch);
         if (result.newActiveTab) setActiveTab(result.newActiveTab);
-        if (result.newActiveTab && result.translationsPatch) {
-          const newText = result.translationsPatch.find(t => t.language === result.newActiveTab)?.text || "";
-          setDraftText(newText);
-        }
       }
       if (!result.ok) notify({ ...result.notice, retryAction: () => handleRunGlobalTranslate(targetLang) });
       else notify(result.notice);
@@ -83,7 +79,7 @@ export function useEditorOperations(layers: LayerOps) {
     } finally {
       setProcessingMessage(null);
     }
-  }, [session, draftText, updateTranslations, setActiveTab, setDraftText, notify, handleError]);
+  }, [session, draftText, updateTranslations, setActiveTab, notify, handleError]);
 
   const handleTranslateSegment = useCallback(async (segmentId: string, lang: string) => {
     if (!session) return;
@@ -98,10 +94,6 @@ export function useEditorOperations(layers: LayerOps) {
       if (result.ok) {
         if (result.translationsPatch) updateTranslations(result.translationsPatch);
         if (result.newActiveTab) setActiveTab(result.newActiveTab);
-        if (segmentId === "root" && result.newActiveTab && result.translationsPatch) {
-          const newText = result.translationsPatch.find(t => t.language === result.newActiveTab)?.text || "";
-          if (newText) setDraftText(newText);
-        }
       }
       if (!result.ok) notify({ ...result.notice, retryAction: () => handleTranslateSegment(segmentId, lang) });
       else notify(result.notice);
@@ -110,7 +102,7 @@ export function useEditorOperations(layers: LayerOps) {
     } finally {
       setProcessingMessage(null);
     }
-  }, [session, draftText, setDraftText, updateTranslations, setActiveTab, notify, handleError]);
+  }, [session, draftText, updateTranslations, setActiveTab, notify, handleError]);
 
   const handleDeleteSegmentTranslation = useCallback((lang: string, segmentId: string) => {
     if (!session) return;
@@ -195,184 +187,48 @@ export function useEditorOperations(layers: LayerOps) {
   // Global operations
 
   const handleRunGlobalNer = useCallback(async () => {
+    if (!session) return;
     setProcessingMessage("Running NER analysis...");
     setActiveSegmentId(undefined);
     try {
-      const segments = session?.segments || [];
-
-      let lastFailureNotice: Notice | null = null;
-
-      if (segments.length <= 1) {
-        // Unsegmented or single segment - run on full text per layer
-        let originalOk = false;
-        const originalLayer = resolveLayer("original");
-        if (originalLayer) {
-          const result = await annotationWorkflowService.runNer({ layer: originalLayer, segments, deletedApiKeys: session?.deletedApiKeys ?? [], lang: "original" }, requestConflictResolution);
-          if (result.ok) {
-            applyLayerPatch("original", result.layerPatch);
-            updateSession({ deletedApiKeys: result.deletedApiKeys });
-            originalOk = true;
-          } else {
-            lastFailureNotice = result.notice;
-          }
-        }
-
-        const translations = useSessionStore.getState().session?.translations || [];
-        let translationOkCount = 0;
-        let translationAttempted = 0;
-        for (const t of translations) {
-          const freshSession = useSessionStore.getState().session;
-          const tLayer = freshSession?.translations?.find(tr => tr.language === t.language);
-          if (!tLayer?.text?.trim()) continue;
-          translationAttempted++;
-
-          const layer: AnnotationLayer = {
-            text: tLayer.text || "",
-            userSpans: tLayer.userSpans ?? [],
-            apiSpans: tLayer.apiSpans ?? [],
-            segmentTranslations: tLayer.segmentTranslations,
-            editedSegmentTranslations: tLayer.editedSegmentTranslations,
-          };
-
-          const result = await annotationWorkflowService.runNer({ layer, segments: freshSession?.segments || [], deletedApiKeys: freshSession?.deletedApiKeys ?? [], lang: t.language }, requestConflictResolution);
-          if (result.ok) {
-            applyLayerPatch(t.language, result.layerPatch);
-            if (result.deletedApiKeys) updateSession({ deletedApiKeys: result.deletedApiKeys });
-            translationOkCount++;
-          } else {
-            lastFailureNotice = result.notice;
-          }
-        }
-
-        const anySuccess = originalOk || translationOkCount > 0;
-        if (!anySuccess && lastFailureNotice) {
-          notify(lastFailureNotice);
-        } else if (translationAttempted > 0) {
-          const partial = !originalOk || translationOkCount < translationAttempted;
-          notify({
-            message: `NER completed for ${originalOk ? "original" : "0 original"} + ${translationOkCount} of ${translationAttempted} translation(s).`,
-            tone: partial ? "warning" : "success",
-          });
-        } else if (originalOk) {
-          notify({ message: "NER completed.", tone: "success" });
-        }
-      } else {
-        // Per-segment NER with progress
-        let successCount = 0;
-        for (let i = 0; i < segments.length; i++) {
-          setProgress("Running NER analysis...", i, segments.length);
-          const seg = segments[i];
-
-          // Read fresh session each iteration so previous patches are visible
-          const currentSession = useSessionStore.getState().session;
-          if (!currentSession) break;
-
-          let segmentHadSuccess = false;
-
-          // Original layer for this segment (built from fresh state)
-          const originalLayer: AnnotationLayer = {
-            text: currentSession.text || "",
-            userSpans: currentSession.userSpans ?? [],
-            apiSpans: currentSession.apiSpans ?? [],
-          };
-
-          const result = await annotationWorkflowService.runNer({ layer: originalLayer, activeSegmentId: seg.id, segments, deletedApiKeys: currentSession.deletedApiKeys ?? [], lang: "original" }, requestConflictResolution);
-          if (result.ok) {
-            applyLayerPatch("original", result.layerPatch);
-            updateSession({ deletedApiKeys: result.deletedApiKeys });
-            segmentHadSuccess = true;
-          } else {
-            lastFailureNotice = result.notice;
-          }
-
-          // Translation layers for this segment (counts as same step)
-          const freshSession = useSessionStore.getState().session;
-          const translations = freshSession?.translations || [];
-          for (const t of translations) {
-            const tLayer = freshSession?.translations?.find(tr => tr.language === t.language);
-            if (!tLayer?.segmentTranslations?.[seg.id]?.trim()) continue;
-
-            const layer: AnnotationLayer = {
-              text: tLayer.text || "",
-              userSpans: tLayer.userSpans ?? [],
-              apiSpans: tLayer.apiSpans ?? [],
-              segmentTranslations: tLayer.segmentTranslations,
-              editedSegmentTranslations: tLayer.editedSegmentTranslations,
-            };
-
-            const result = await annotationWorkflowService.runNer({ layer, activeSegmentId: seg.id, segments, deletedApiKeys: freshSession?.deletedApiKeys ?? [], lang: t.language }, requestConflictResolution);
-            if (result.ok) {
-              applyLayerPatch(t.language, result.layerPatch);
-              if (result.deletedApiKeys) updateSession({ deletedApiKeys: result.deletedApiKeys });
-              segmentHadSuccess = true;
-            } else {
-              lastFailureNotice = result.notice;
-            }
-          }
-
-          if (segmentHadSuccess) successCount++;
-        }
-
-        if (successCount === 0 && lastFailureNotice) {
-          notify(lastFailureNotice);
-        } else if (successCount < segments.length) {
-          notify({ message: `NER completed for ${successCount} of ${segments.length} segment(s).`, tone: "warning" });
-        } else {
-          notify({ message: `NER completed for ${segments.length} segment(s).`, tone: "success" });
-        }
+      const result = await annotationWorkflowService.runGlobalNer(
+        {
+          segments: session.segments || [],
+          text: session.text,
+          userSpans: session.userSpans,
+          apiSpans: session.apiSpans,
+          translations: session.translations || [],
+          deletedApiKeys: session.deletedApiKeys ?? [],
+        },
+        requestConflictResolution,
+        (current, total) => setProgress("Running NER analysis...", current, total)
+      );
+      for (const [lang, patch] of Object.entries(result.layerPatches)) {
+        applyLayerPatch(lang, patch);
       }
+      if (result.deletedApiKeys !== undefined) updateSession({ deletedApiKeys: result.deletedApiKeys });
+      notify(result.notice);
     } finally { setProcessingMessage(null); }
-  }, [session, notify, setActiveSegmentId, requestConflictResolution, resolveLayer, applyLayerPatch, updateSession]);
+  }, [session, notify, setActiveSegmentId, requestConflictResolution, applyLayerPatch, updateSession]);
 
   const handleRunGlobalSemTag = useCallback(async () => {
+    if (!session) return;
     setProcessingMessage("Running semantic tagging...");
     setActiveSegmentId(undefined);
     try {
-      const segments = session?.segments || [];
-
-      if (segments.length === 0) {
-        const result = await taggingWorkflowService.runClassify(true, { activeSegmentId: undefined, segments: [], draftText, translations: session?.translations || [], text: session?.text || "", activeTab: "original", tags: session?.tags || [] });
-        if (result.ok && result.tags) {
-          updateSession({ tags: result.tags });
-        }
-        notify(result.notice);
-      } else {
-        let currentTags = session?.tags || [];
-        let successCount = 0;
-        let lastFailureNotice: Notice | null = null;
-
-        for (let i = 0; i < segments.length; i++) {
-          setProgress("Running semantic tagging...", i, segments.length);
-          const seg = segments[i];
-          const result = await taggingWorkflowService.runClassify(false, {
-            activeSegmentId: seg.id,
-            segments,
-            draftText,
-            translations: session?.translations || [],
-            text: session?.text || "",
-            activeTab: "original",
-            tags: currentTags,
-          });
-          if (result.ok && result.tags) {
-            currentTags = result.tags;
-            successCount++;
-          } else if (!result.ok) {
-            lastFailureNotice = result.notice;
-          }
-        }
-
-        updateSession({ tags: currentTags });
-        if (successCount === 0 && lastFailureNotice) {
-          notify(lastFailureNotice);
-        } else if (successCount < segments.length) {
-          notify({ message: `Tagged ${successCount} of ${segments.length} segment(s).`, tone: "warning" });
-        } else {
-          notify({ message: `Tagged ${segments.length} segment(s).`, tone: "success" });
-        }
-      }
-    } finally {
-      setProcessingMessage(null);
-    }
+      const result = await taggingWorkflowService.runGlobalClassify(
+        {
+          segments: session.segments || [],
+          draftText,
+          translations: session.translations || [],
+          text: session.text || "",
+          tags: session.tags || [],
+        },
+        (current, total) => setProgress("Running semantic tagging...", current, total)
+      );
+      if (result.tags) updateSession({ tags: result.tags });
+      notify(result.notice);
+    } finally { setProcessingMessage(null); }
   }, [session, draftText, notify, setActiveSegmentId, updateSession]);
 
   const handleSave = useCallback(async () => {

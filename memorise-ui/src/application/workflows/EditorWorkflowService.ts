@@ -15,8 +15,7 @@ type SaveResult = WorkflowResult & {
 }
 
 /**
- * Text editing workflow: syncs live span coordinates from CodeMirror,
- * updates segment boundaries after edits, and persists via save.
+ * Text editing workflow: syncs live span coordinates from CodeMirror, updates segment boundaries after edits, and persists via save.
  * Handles both original text and translation layer edits.
  *
  * @category Application
