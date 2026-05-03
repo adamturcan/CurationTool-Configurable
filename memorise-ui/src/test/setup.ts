@@ -42,8 +42,7 @@ beforeAll(() => {
     
     // Suppress thesaurus worker messages
     if (message.includes('Thesaurus worker')) return;
-    if (message.includes('✅') || message.includes('❌')) return;
-    
+
     // Let test output through
     originalLog.call(console, ...args);
   });

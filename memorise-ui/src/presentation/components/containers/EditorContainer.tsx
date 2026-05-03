@@ -50,33 +50,33 @@ const EditorContainer: React.FC = () => {
   const spans = useSpanInteractions(layers, splits.setSplitAnchor, () => splits.setSplitAnchor(null));
   const { handleExport } = useExportOperations();
 
-  // Handlers from ops/splits/spans close over `session` and get new references
-  const opsRef = useRef(ops);
-  opsRef.current = ops;
-  const splitsRef = useRef(splits);
-  splitsRef.current = splits;
-  const spansRef = useRef(spans);
-  spansRef.current = spans;
-
   const handlers = useMemo<SegmentHandlers>(() => ({
-    onActivate: (id) => setActiveSegmentId(id),
-    onJoinUp: (id) => splitsRef.current.handleJoinUp(id),
-    onRunNer: (id, lang) => opsRef.current.handleRunSegmentNer(id, lang),
-    onRunSemTag: (id, lang) => opsRef.current.handleRunSegmentSemTag(id, lang),
-    onSpanClick: (span, el, fn, lang, start) => spansRef.current.handleSpanClick(span, el, fn, lang, start),
-    onSelectionChange: (sel, id, lang, start) => spansRef.current.handleSelectionChange(sel, id, lang, start),
-    onTextChange: (id, text, coords, deadIds, lang) => opsRef.current.handleTextChange(id, text, coords, deadIds, lang),
-    onShiftBoundary: (srcId, pos) => splitsRef.current.handleShiftBoundary(srcId, pos),
+    onActivate: setActiveSegmentId,
+    onJoinUp: splits.handleJoinUp,
+    onRunNer: ops.handleRunSegmentNer,
+    onRunSemTag: ops.handleRunSegmentSemTag,
+    onSpanClick: spans.handleSpanClick,
+    onSelectionChange: spans.handleSelectionChange,
+    onTextChange: ops.handleTextChange,
+    onShiftBoundary: splits.handleShiftBoundary,
     onInvalidDrop: () => notify({ message: "Cannot drop boundary here - target is above the source or showing a translation view.", tone: "warning" }),
-  }), [setActiveSegmentId, notify]);
+  }), [
+    setActiveSegmentId, notify,
+    splits.handleJoinUp, splits.handleShiftBoundary,
+    ops.handleRunSegmentNer, ops.handleRunSegmentSemTag, ops.handleTextChange,
+    spans.handleSpanClick, spans.handleSelectionChange,
+  ]);
 
   const translationHandlers = useMemo<SegmentTranslationHandlers>(() => ({
-    onAddTranslation: (id, lang) => opsRef.current.handleTranslateSegment(id, lang),
-    onDeleteTranslation: (lang, id) => opsRef.current.handleDeleteSegmentTranslation(lang, id),
-    onUpdateTranslation: (id, lang) => opsRef.current.handleUpdateSegmentTranslation(id, lang),
+    onAddTranslation: ops.handleTranslateSegment,
+    onDeleteTranslation: ops.handleDeleteSegmentTranslation,
+    onUpdateTranslation: ops.handleUpdateSegmentTranslation,
     languageOptions,
     isLanguageListLoading,
-  }), [languageOptions, isLanguageListLoading]);
+  }), [
+    ops.handleTranslateSegment, ops.handleDeleteSegmentTranslation, ops.handleUpdateSegmentTranslation,
+    languageOptions, isLanguageListLoading,
+  ]);
 
   const segmentListRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);

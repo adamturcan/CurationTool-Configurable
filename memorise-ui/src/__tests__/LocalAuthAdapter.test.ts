@@ -15,7 +15,7 @@ describe('LocalAuthAdapter', () => {
 
   it('login throws on empty username', async () => {
     const adapter = new LocalAuthAdapter();
-    await expect(adapter.login({ username: '', password: '' })).rejects.toThrow('Username is required');
+    await expect(adapter.login({ username: '', password: '' })).rejects.toThrow(/username is required/i);
   });
 
   it('logout removes stored user', async () => {

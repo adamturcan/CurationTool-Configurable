@@ -10,7 +10,7 @@ describe("error normalization", () => {
 
     expect(appError.code).toBe("HTTP_503");
     expect(appError.cause).toBe(response);
-    expect(appError.message).toBe("The service encountered an internal error (HTTP 503). This is a server-side issue — please try again later.");
+    expect(appError.message).toBe("The service encountered an internal error (HTTP 503). This is a server-side issue - please try again later.");
   });
 
   it("detects network failures (Failed to fetch) and tags them as NETWORK_ERROR", () => {

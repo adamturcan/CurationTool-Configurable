@@ -11,7 +11,7 @@ const appError = (overrides: Partial<AppError> = {}): AppError => ({
 
 describe('presentAppError', () => {
   it('prefers the catalog message over the raw AppError message', () => {
-    // If users see "Failed to fetch" we've failed — the presenter must translate.
+    // If users see "Failed to fetch" we've failed - the presenter must translate.
     const notice = presentAppError(appError({ code: 'NETWORK_ERROR', message: 'Failed to fetch' }));
 
     expect(notice.message).toBe('The service appears to be down. Try again in a few minutes.');
