@@ -1,3 +1,7 @@
+/**
+ * Application root.
+ * Sets up the MUI theme, the router and the top-level layout, and lazy-loads the pages.
+ */
 import { useEffect, useMemo, useCallback, useState, lazy, Suspense } from "react";
 import {
   CssBaseline,

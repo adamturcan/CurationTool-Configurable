@@ -6,8 +6,8 @@
  * @category Services
  */
 import type { NerSpan } from "../../types";
+import { SpanLogic } from "../entities/SpanLogic";
 
-const keyOfSpan = (s: NerSpan) => `${s.start}:${s.end}:${s.entity}`;
 const spansOverlap = (a: NerSpan, b: NerSpan) => a.start < b.end && b.start < a.end;
 
 export type ConflictSource = "user" | "api";
@@ -59,7 +59,7 @@ export const resolveApiSpanConflicts = async (params: {
   // Track retained existing API spans by key - removals happen during conflict resolution
   const retainedApiMap = new Map<string, NerSpan>();
   existingApiSpans.forEach((span) => {
-    retainedApiMap.set(keyOfSpan(span), span);
+    retainedApiMap.set(SpanLogic.getBanKey(span), span);
   });
 
   const acceptedNewApiSpans: NerSpan[] = [];
@@ -97,7 +97,7 @@ export const resolveApiSpanConflicts = async (params: {
 
       if (!hasEntityChange) {
         conflictingApiSpans.forEach((span) => {
-          retainedApiMap.delete(keyOfSpan(span));
+          retainedApiMap.delete(SpanLogic.getBanKey(span));
         });
         acceptedNewApiSpans.push(candidate);
         continue;
@@ -139,15 +139,15 @@ export const resolveApiSpanConflicts = async (params: {
     // User chose the new API span - remove all conflicting spans it replaces
     if (choice === "api") {
       if (conflictingUserSpans.length > 0) {
-        const toRemove = new Set(conflictingUserSpans.map((span) => keyOfSpan(span)));
+        const toRemove = new Set(conflictingUserSpans.map((span) => SpanLogic.getBanKey(span)));
         nextUserSpans = nextUserSpans.filter(
-          (existing) => !toRemove.has(keyOfSpan(existing))
+          (existing) => !toRemove.has(SpanLogic.getBanKey(existing))
         );
       }
 
       if (conflictingApiSpans.length > 0) {
         conflictingApiSpans.forEach((span) => {
-          retainedApiMap.delete(keyOfSpan(span));
+          retainedApiMap.delete(SpanLogic.getBanKey(span));
         });
       }
 
@@ -158,7 +158,7 @@ export const resolveApiSpanConflicts = async (params: {
   // Merge retained existing API spans with newly accepted ones, deduped by key
   const finalApiMap = new Map<string, NerSpan>();
   retainedApiMap.forEach((span, key) => finalApiMap.set(key, span));
-  acceptedNewApiSpans.forEach((span) => finalApiMap.set(keyOfSpan(span), span));
+  acceptedNewApiSpans.forEach((span) => finalApiMap.set(SpanLogic.getBanKey(span), span));
 
   return {
     nextUserSpans,

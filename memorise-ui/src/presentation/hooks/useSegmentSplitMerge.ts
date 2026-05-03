@@ -5,7 +5,6 @@ import type { ActionGuardActions } from "./useActionGuard";
 import { segmentWorkflowService } from "../../application/workflows/SegmentWorkflowService";
 import { translationWorkflowService } from "../../application/workflows/TranslationWorkflowService";
 import { SegmentLogic } from "../../core/entities/SegmentLogic";
-import { SpanLogic } from "../../core/entities/SpanLogic";
 import type { SplitAnchor } from "./useSpanInteractions";
 
 /** Promotes tags from the given segments to document level so they survive a split/join/shift. */
@@ -50,26 +49,12 @@ export function useSegmentSplitMerge() {
     },
     deleteSegmentTranslation: (lang: string, segmentId: string) => {
       const fresh = useSessionStore.getState().session;
-      const currentLayer = fresh?.translations?.find(t => t.language === lang);
-      if (currentLayer) {
-        const oldSegTrans = currentLayer.segmentTranslations || {};
-        const deletedText = oldSegTrans[segmentId] || "";
-        const segments = fresh?.segments || [];
-        const deletedStart = SegmentLogic.calculateGlobalOffset(segmentId, segments, oldSegTrans);
-        const deletedEnd = deletedStart + deletedText.length;
-
-        const newSegs = { ...oldSegTrans };
-        delete newSegs[segmentId];
-        const newFullText = segments.map(s => newSegs[s.id] || "").join("");
-
-        const { nextUserSpans, nextApiSpans } = SpanLogic.removeAndShiftBoth(
-          currentLayer.userSpans || [], currentLayer.apiSpans || [], deletedStart, deletedEnd, -deletedText.length
-        );
-
-        const translations = (fresh?.translations || []).map(t =>
-          t.language === lang ? { ...t, segmentTranslations: newSegs, text: newFullText, userSpans: nextUserSpans, apiSpans: nextApiSpans } : t
-        );
-        useSessionStore.getState().updateSession({ translations });
+      const result = translationWorkflowService.deleteSegmentTranslation(lang, segmentId, {
+        segments: fresh?.segments || [],
+        translations: fresh?.translations || [],
+      });
+      if (result.ok && result.translationsPatch) {
+        useSessionStore.getState().updateTranslations(result.translationsPatch);
       }
     },
   }), []);
@@ -130,16 +115,12 @@ export function useSegmentSplitMerge() {
 
     setDraggingFromIndex(null);
 
-    const source = segments.find(s => s.id === sourceSegmentId);
-    const affectedIds = source
-      ? segments
-          .filter(s => {
-            const min = Math.min(source.end, globalTargetPos);
-            const max = Math.max(source.end, globalTargetPos);
-            return s.start < max && s.end > min;
-          })
-          .map(s => s.id)
-      : [sourceSegmentId];
+    const swept = SegmentLogic.getSegmentsAffectedByBoundaryShift(
+      segments,
+      sourceSegmentId,
+      globalTargetPos
+    );
+    const affectedIds = swept.length > 0 ? swept : [sourceSegmentId];
 
     guardShift(sourceSegmentId, globalTargetPos, segments, translations, async () => {
       promoteTagsForSegments(affectedIds);

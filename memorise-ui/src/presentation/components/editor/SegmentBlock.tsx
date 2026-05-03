@@ -1,22 +1,6 @@
 import React, { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import {
-  Box, IconButton, Tooltip, Menu, MenuItem, TextField, CircularProgress,
-  Select, FormControl, Dialog, DialogTitle, DialogContent, DialogContentText, DialogActions, Button, Collapse
-} from "@mui/material";
+import { Box } from "@mui/material";
 import { alpha } from "@mui/material/styles";
-
-import AddIcon from "@mui/icons-material/Add";
-import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
-import TranslateIcon from "@mui/icons-material/Translate";
-import ManageSearchIcon from "@mui/icons-material/ManageSearch";
-import LabelOutlinedIcon from "@mui/icons-material/LabelOutlined";
-import CallMergeIcon from "@mui/icons-material/CallMerge";
-import DragIndicatorIcon from "@mui/icons-material/DragIndicator";
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ExpandLessIcon from '@mui/icons-material/ExpandLess';
-import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
-import SyncIcon from '@mui/icons-material/Sync';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 
 import { CodeMirrorWrapper } from "./codemirror/CodeMirrorWrapper";
 import { SegmentLogic } from "../../../core/entities/SegmentLogic";
@@ -24,11 +8,14 @@ import { SpanLogic } from "../../../core/entities/SpanLogic";
 import { TranslationLogic } from "../../../core/entities/TranslationLogic";
 import type { NerSpan, SelectionBox, SpanCoordMap, Segment, TranslationDTO } from "../../../types";
 import { ENTITY_COLORS } from "../../../shared/constants/notationEditor";
-import { shadows } from "../../../shared/theme";
-import { sx as sxUtil } from "../../../shared/styles";
 import { useSegmentDrag } from "./context/SegmentDragContext";
+import { useSegmentDragTarget } from "../../hooks/useSegmentDragTarget";
 import { useSessionStore } from "../../stores";
 import type { LanguageOption } from "../../hooks";
+import SegmentBoundaryControls from "./SegmentBoundaryControls";
+import SegmentHeader from "./SegmentHeader";
+import { TranslateLanguageMenu } from "./menus";
+import { ClearTranslationDialog, ReTranslateConfirmDialog } from "./dialogs";
 
 // Prop groups
 
@@ -91,8 +78,7 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
   const userSpans = useSessionStore((s) => s.session?.userSpans);
   const isTagPanelOpen = useSessionStore((s) => s.isTagPanelOpen);
 
-  const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
-  const [languageSearch, setLanguageSearch] = useState("");
+  const [translateMenuAnchor, setTranslateMenuAnchor] = useState<HTMLElement | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [reTranslateConfirmOpen, setReTranslateConfirmOpen] = useState(false);
   const [isHeaderOpen, setIsHeaderOpen] = useState(false);
@@ -117,7 +103,9 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
     [localLang, segment, translations]
   );
 
-  useEffect(() => { if (localLang !== "original" && !availableLangs.includes(localLang)) setLocalLang("original"); }, [localLang, availableLangs]);
+  useEffect(() => {
+    if (localLang !== "original" && !availableLangs.includes(localLang)) setLocalLang("original");
+  }, [localLang, availableLangs]);
 
   useEffect(() => {
     if (isActive) {
@@ -154,13 +142,6 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
     );
   }, [localLang, translations, deletedApiKeys, apiSpans, userSpans, virtualSegment, isActive]);
 
-  const filteredLanguageOptions = useMemo(() => {
-    const query = languageSearch.trim().toLowerCase();
-    const base = languageOptions.filter((o: LanguageOption) => !availableLangs.includes(o.code));
-    if (!query) return base;
-    return base.filter(({ code, label }: LanguageOption) => code.toLowerCase().includes(query) || label.toLowerCase().includes(query));
-  }, [languageOptions, languageSearch, availableLangs]);
-
   const handleDelete = () => { onDeleteTranslation(localLang, segment.id); setLocalLang("original"); setDeleteDialogOpen(false); };
 
   const handleCmChange = useCallback((newText: string, liveCoords?: Map<string, { start: number; end: number }>, deadIds?: string[]) => {
@@ -175,8 +156,12 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
     onSelectionChange(sel, segment.id, localLang, virtualSegment.start);
   }, [onSelectionChange, segment.id, localLang, virtualSegment.start]);
 
-  // Disable drops on translation tabs - segment boundary shifts only work on original text
-  const effectiveDropDisabled = dropDisabled || (isDragging && localLang !== "original");
+  const { handlers: dragTargetHandlers, effectiveDropDisabled } = useSegmentDragTarget({
+    dropDisabled,
+    isDragging,
+    isTranslationView: localLang !== "original",
+    onInvalidDrop,
+  });
 
   // Handles drag-to-reorder: converts local drop offset to global position for boundary shift
   const handleDropTextPosition = useCallback((localOffset: number, dataTransfer: DataTransfer) => {
@@ -197,29 +182,7 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
       onClick={() => onActivate(segment.id)}
       onMouseEnter={() => setHoveredIdx(index)}
       onMouseLeave={() => setHoveredIdx(null)}
-      onDragEnter={(e) => {
-        if (e.dataTransfer.types.includes("application/segment-id") && !effectiveDropDisabled) {
-          e.preventDefault();
-        }
-      }}
-      onDragOver={(e) => {
-        if (e.dataTransfer.types.includes("application/segment-id")) {
-          if (effectiveDropDisabled) {
-            e.dataTransfer.dropEffect = "none";
-          } else {
-            e.preventDefault();
-          }
-        }
-      }}
-      onDrop={(e) => {
-        if (e.dataTransfer.types.includes("application/segment-id")) {
-          e.preventDefault();
-          e.stopPropagation();
-          if (effectiveDropDisabled && onInvalidDrop) {
-            onInvalidDrop();
-          }
-        }
-      }}
+      {...dragTargetHandlers}
       sx={{
         position: "relative",
         backgroundColor: effectiveDropDisabled
@@ -247,188 +210,36 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
     >
 
       {index > 0 && (
-        <Box
-          className="boundary-btn-group"
-          onMouseEnter={() => setHoveredIdx(index - 1)}
-          onMouseLeave={() => setHoveredIdx(null)}
-          sx={{ position: "absolute", top: "-14px", left: "50%", transform: "translateX(-50%)", zIndex: 10 }}
-        >
-          <Tooltip title="Merge segments">
-            <IconButton
-              className="join-btn"
-              onClick={(e) => { e.stopPropagation(); onJoinUp(segment.id); }}
-              sx={{
-                transition: "transform 0.2s ease",
-                bgcolor: "background.paper",
-                border: `1px solid ${ENTITY_COLORS.DATE}`,
-                boxShadow: shadows.sm,
-                width: 28, height: 28,
-                "&:hover": { bgcolor: "#f0f7ff", transform: "scale(1.1)" }
-              }}
-            >
-              <CallMergeIcon sx={{ transform: "rotate(180deg)", fontSize: "1.1rem", color: ENTITY_COLORS.DATE }} />
-            </IconButton>
-          </Tooltip>
-          {/* Drag Handle */}
-          <Tooltip title="Drag to shift boundary">
-            <IconButton
-              className="drag-btn"
-              draggable
-              onDragStart={(e) => {
-                e.dataTransfer.setData("application/segment-id", prevSegmentId || segment.id);
-                e.dataTransfer.effectAllowed = "move";
-                if (index > 0) notifyDragStart(index - 1);
-              }}
-              onDragEnd={() => notifyDragEnd()}
-              sx={{
-                cursor: "grab",
-                transition: "transform 0.2s ease",
-                bgcolor: "background.paper",
-                border: `1px solid ${ENTITY_COLORS.DATE}`,
-                boxShadow: shadows.sm,
-                width: 28, height: 28,
-                ml: 1,
-                "&:hover": { bgcolor: "#f0f7ff", transform: "scale(1.1)" },
-                "&:active": { cursor: "grabbing" }
-              }}
-            >
-              <DragIndicatorIcon sx={{ fontSize: "1.1rem", color: ENTITY_COLORS.DATE }} />
-            </IconButton>
-          </Tooltip>
-        </Box>
+        <SegmentBoundaryControls
+          segmentId={segment.id}
+          prevSegmentId={prevSegmentId}
+          index={index}
+          onJoinUp={onJoinUp}
+          onDragStart={notifyDragStart}
+          onDragEnd={notifyDragEnd}
+          setHoveredIdx={setHoveredIdx}
+        />
       )}
 
-      <Box sx={{
-        position: "relative",
-        backgroundColor: isHeaderOpen ? "#f8fafc" : "transparent",
-        borderBottom: (t) => isHeaderOpen ? `1px solid ${t.palette.divider}` : "none",
-        transition: "background-color 0.2s ease"
-      }}>
-        <Box sx={{ position: "absolute", top: isHeaderOpen ? "8px" : "4px", right: "8px", zIndex: 10, ...sxUtil.flexRow, gap: 0.5 }}>
-          {isSegmentEdited && !isHeaderOpen && (
-            <Tooltip title="Segment manually edited">
-              <Box sx={{
-                ...sxUtil.flexRow, gap: 0.5,
-                bgcolor: alpha("#f59e0b", 0.12), color: "#b45309",
-                borderRadius: "12px", px: 1, py: 0.25,
-                fontSize: "11px", fontWeight: 600, lineHeight: 1,
-              }}>
-                <EditOutlinedIcon sx={{ fontSize: "13px" }} />
-                Edited
-              </Box>
-            </Tooltip>
-          )}
-          <IconButton size="small" onClick={(e) => { e.stopPropagation(); onActivate(segment.id); setIsHeaderOpen(!isHeaderOpen); }} sx={{ color: "#94a3b8", width: 28, height: 28 }}>
-            {isHeaderOpen ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
-          </IconButton>
-        </Box>
-
-        {!isHeaderOpen && <Box sx={{ height: "32px", width: "100%" }} />}
-
-        <Collapse in={isHeaderOpen}>
-          <Box sx={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 48px 8px 16px" }}>
-            <Box sx={{ position: "absolute", left: "50%", top: "50%", transform: "translate(-50%, -50%)", fontSize: 12, color: "#64748b", fontWeight: 500 }}>
-              segment-{index + 1}
-            </Box>
-            <Box sx={{ ...sxUtil.flexRow, gap: 1.5 }}>
-              <TranslateIcon sx={{ color: "#94a3b8", fontSize: "18px" }} />
-              <FormControl size="small" sx={{ minWidth: 140 }}>
-                <Select value={localLang} onChange={(e) => setLocalLang(e.target.value)} sx={{ backgroundColor: "transparent", fontWeight: 600, fontSize: "12px", height: "28px", "& fieldset": { border: "none" } }}>
-                  <MenuItem value="original">Original Text</MenuItem>
-                  {availableLangs.map((lang: string) => <MenuItem key={lang} value={lang}>Translation: {lang.toUpperCase()}</MenuItem>)}
-                </Select>
-              </FormControl>
-              <Tooltip title="Translate segment"><IconButton size="small" onClick={(e) => { e.stopPropagation(); setAnchorEl(e.currentTarget); }} sx={{ bgcolor: "gold.main", color: "secondary.main", width: "28px", height: "28px", borderRadius: "6px" }}><AddIcon fontSize="small" /></IconButton></Tooltip>
-              {localLang !== "original" && (
-                <Tooltip title={isSegmentEdited ? "Re-translate from original (will overwrite your edits)" : "Re-translate this segment from the original text"}>
-                  <IconButton
-                    size="small"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (isSegmentEdited) {
-                        setReTranslateConfirmOpen(true);
-                      } else {
-                        onUpdateTranslation(segment.id, localLang);
-                      }
-                    }}
-                    sx={{ bgcolor: alpha(ENTITY_COLORS.DATE, 0.1), color: ENTITY_COLORS.DATE, borderRadius: "6px", width: "28px", height: "28px" }}
-                  >
-                    <SyncIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              )}
-              {localLang !== "original" && <Tooltip title="Clear Translation"><IconButton size="small" onClick={(e) => { e.stopPropagation(); setDeleteDialogOpen(true); }} sx={{ bgcolor: (t) => alpha(t.palette.error.main, 0.1), color: "error.main", width: "28px", height: "28px", borderRadius: "6px" }}><DeleteOutlineIcon fontSize="small" /></IconButton></Tooltip>}
-            </Box>
-            <Box sx={{ ...sxUtil.flexRow, gap: 1 }}>
-              {isSegmentEdited && (
-                <Tooltip title="Segment manually edited">
-                  <Box sx={{
-                    ...sxUtil.flexRow, gap: 0.5,
-                    bgcolor: alpha("#f59e0b", 0.12), color: "#b45309",
-                    border: `1px solid ${alpha("#f59e0b", 0.3)}`,
-                    borderRadius: "12px", px: 1, py: 0.25,
-                    fontSize: "11px", fontWeight: 600, lineHeight: 1,
-                    mr: 0.5,
-                  }}>
-                    <EditOutlinedIcon sx={{ fontSize: "13px" }} />
-                    Edited
-                  </Box>
-                </Tooltip>
-              )}
-              <Tooltip title="Run NER on segment"><IconButton size="small" onClick={(e) => { e.stopPropagation(); onRunNer(segment.id, localLang); }} sx={{ bgcolor: alpha(ENTITY_COLORS.PER, 0.1), color: ENTITY_COLORS.PER, borderRadius: "6px", width: "28px", height: "28px" }}><ManageSearchIcon fontSize="small" /></IconButton></Tooltip>
-              <Tooltip title={showSemTagOptions ? "Close Sem-Tag options" : "Semantic Tags"}>
-                <IconButton
-                  size="small"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    const willOpen = !showSemTagOptions;
-                    setShowSemTagOptions(willOpen);
-                    if (willOpen) {
-                      onActivate(segment.id);
-                      useSessionStore.getState().setTagPanelOpen(true);
-                    } else {
-                      useSessionStore.getState().setTagPanelOpen(false);
-                    }
-                  }}
-                  sx={{
-                    bgcolor: showSemTagOptions ? alpha(ENTITY_COLORS.PER, 0.2) : alpha(ENTITY_COLORS.PER, 0.1),
-                    color: ENTITY_COLORS.PER,
-                    borderRadius: "6px",
-                    width: "28px",
-                    height: "28px",
-                  }}
-                >
-                  <LabelOutlinedIcon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-              <Collapse in={showSemTagOptions} orientation="horizontal" unmountOnExit>
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <Box sx={{ width: "1px", height: "20px", bgcolor: "divider", mx: 0.75 }} />
-                  <Tooltip title="Run Sem-Tag on segment">
-                    <IconButton
-                      size="small"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onRunSemTag(segment.id, localLang);
-                        setShowSemTagOptions(false);
-                      }}
-                      sx={{
-                        bgcolor: alpha(ENTITY_COLORS.PER, 0.1),
-                        color: ENTITY_COLORS.PER,
-                        borderRadius: "6px",
-                        width: "28px",
-                        height: "28px",
-                      }}
-                    >
-                      <AutoFixHighIcon fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              </Collapse>
-            </Box>
-          </Box>
-        </Collapse>
-      </Box>
+      <SegmentHeader
+        segment={segment}
+        index={index}
+        localLang={localLang}
+        setLocalLang={setLocalLang}
+        availableLangs={availableLangs}
+        isHeaderOpen={isHeaderOpen}
+        setIsHeaderOpen={setIsHeaderOpen}
+        isSegmentEdited={isSegmentEdited}
+        showSemTagOptions={showSemTagOptions}
+        setShowSemTagOptions={setShowSemTagOptions}
+        onActivate={onActivate}
+        onTranslateMenuOpen={setTranslateMenuAnchor}
+        onDeleteTranslationClick={() => setDeleteDialogOpen(true)}
+        onUpdateTranslation={onUpdateTranslation}
+        onReTranslateConfirmOpen={() => setReTranslateConfirmOpen(true)}
+        onRunNer={onRunNer}
+        onRunSemTag={onRunSemTag}
+      />
 
       <Box sx={{
         padding: "0 20px 20px 20px",
@@ -456,37 +267,32 @@ const SegmentBlockImpl: React.FC<SegmentBlockProps> = ({
         />
       </Box>
 
-      <Menu anchorEl={anchorEl} open={Boolean(anchorEl)} onClose={() => setAnchorEl(null)} PaperProps={{ sx: { maxHeight: 280, minWidth: 260 } }}>
-        <Box sx={{ px: 2, py: 1.5, borderBottom: '1px solid #eee' }}><TextField fullWidth size="small" placeholder="Search language..." value={languageSearch} autoFocus onChange={(e) => setLanguageSearch(e.target.value)} variant="standard" InputProps={{ disableUnderline: true }} /></Box>
-        <Box sx={{ px: 1, pb: 1, maxHeight: 220, overflowY: "auto" }}>
-          {isLanguageListLoading ? <MenuItem disabled><CircularProgress size={16} sx={{ mr: 1 }} /> Loading…</MenuItem> : filteredLanguageOptions.length > 0 ? filteredLanguageOptions.map(({ code, label }: LanguageOption) => <MenuItem key={code} onClick={(e) => { e.stopPropagation(); onAddTranslation(segment.id, code); setLocalLang(code); setAnchorEl(null); }}><Box sx={{ ...sxUtil.flexColumn }}><span style={{ textTransform: "uppercase", fontWeight: 600 }}>{code}</span><span style={{ fontSize: "0.8rem", opacity: 0.8 }}>{label}</span></Box></MenuItem>) : <MenuItem disabled>No matches</MenuItem>}
-        </Box>
-      </Menu>
+      <TranslateLanguageMenu
+        anchorEl={translateMenuAnchor}
+        onClose={() => setTranslateMenuAnchor(null)}
+        onPick={(code) => {
+          onAddTranslation(segment.id, code);
+          setLocalLang(code);
+          setTranslateMenuAnchor(null);
+        }}
+        availableLangs={availableLangs}
+        languageOptions={languageOptions}
+        isLoading={isLanguageListLoading}
+      />
 
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogTitle>Clear Segment Translation</DialogTitle>
-        <DialogContent><DialogContentText>Are you sure you want to delete the {localLang.toUpperCase()} translation for this specific segment?</DialogContentText></DialogContent>
-        <DialogActions><Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button><Button onClick={handleDelete} color="error" variant="contained">Clear</Button></DialogActions>
-      </Dialog>
+      <ClearTranslationDialog
+        open={deleteDialogOpen}
+        language={localLang}
+        onClose={() => setDeleteDialogOpen(false)}
+        onConfirm={handleDelete}
+      />
 
-      <Dialog open={reTranslateConfirmOpen} onClose={() => setReTranslateConfirmOpen(false)}>
-        <DialogTitle>Re-translate Segment</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            This will re-translate the segment from the original text and overwrite your manual edits to the {localLang.toUpperCase()} translation. Continue?
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button autoFocus onClick={() => setReTranslateConfirmOpen(false)}>Cancel</Button>
-          <Button
-            color="warning"
-            variant="contained"
-            onClick={() => { onUpdateTranslation(segment.id, localLang); setReTranslateConfirmOpen(false); }}
-          >
-            Re-translate
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ReTranslateConfirmDialog
+        open={reTranslateConfirmOpen}
+        language={localLang}
+        onClose={() => setReTranslateConfirmOpen(false)}
+        onConfirm={() => { onUpdateTranslation(segment.id, localLang); setReTranslateConfirmOpen(false); }}
+      />
     </Box>
   );
 };

@@ -3,6 +3,7 @@ import { catchApiError } from "../errors";
 import { resolveApiSpanConflicts, type ConflictPrompt } from "../../core/services/resolveApiSpanConflicts";
 import type { NerSpan, AnnotationLayer, Segment, WorkflowResult } from "../../types";
 import { SegmentLogic } from "../../core/entities/SegmentLogic";
+import { SpanLogic } from "../../core/entities/SpanLogic";
 import { v4 as uuidv4 } from "uuid";
 
 /** Result of an annotation operation - carries span patches and dismissed API keys */
@@ -67,7 +68,7 @@ export class AnnotationWorkflowService {
       const userSpans = (layer.userSpans || []).filter(isValid);
       const apiSpans = (layer.apiSpans || []).filter(isValid);
 
-      const filteredApiSpans = apiSpans.filter((s) => !deletedApiKeys.includes(`${s.start}:${s.end}:${s.entity}`));
+      const filteredApiSpans = apiSpans.filter((s) => !deletedApiKeys.includes(SpanLogic.getBanKey(s)));
 
       const virtualText = layer.segmentTranslations
         ? segments.map(s => layer.segmentTranslations?.[s.id] ?? "").join("")
@@ -120,7 +121,7 @@ export class AnnotationWorkflowService {
 
     const apiSpan = apiSpans.find(s => this.getSpanId(s) === spanId);
     if (apiSpan) {
-      const keyToBan = `${apiSpan.start}:${apiSpan.end}:${apiSpan.entity}`;
+      const keyToBan = SpanLogic.getBanKey(apiSpan);
       if (!deletedApiKeys.includes(keyToBan)) {
         return { ok: true, notice: { message: "Span deleted.", tone: "success" }, layerPatch: { apiSpans: apiSpans.filter((s) => this.getSpanId(s) !== spanId) }, deletedApiKeys: [...deletedApiKeys, keyToBan] };
       }

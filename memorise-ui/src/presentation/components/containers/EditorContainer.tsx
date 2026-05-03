@@ -4,7 +4,7 @@ import { Box, Menu, MenuItem, Typography, CircularProgress } from "@mui/material
 import CallSplitIcon from "@mui/icons-material/CallSplit";
 
 import { useSessionStore, useNotificationStore } from "../../stores";
-import { useLanguageOptions, useLayerOperations, useEditorOperations, useSpanInteractions, useSegmentSplitMerge, useExportOperations } from "../../hooks";
+import { useLanguageOptions, useLayerOperations, useEditorOperations, useSpanInteractions, useSegmentSplitMerge, useExportOperations, useDragAutoScroll, useClickOutsideDeactivation } from "../../hooks";
 import { ConflictResolutionDialog, ActionGuardDialog } from "../editor/dialogs";
 import { EditorGlobalMenu, CategoryMenu } from "../editor/menus";
 import { SegmentBlock } from "../editor/SegmentBlock";
@@ -14,6 +14,13 @@ import { TranslationLogic } from "../../../core/entities/TranslationLogic";
 import { ENTITY_COLORS } from "../../../shared/constants/notationEditor";
 import { shadows } from "../../../shared/theme";
 import { sx as sxUtil } from "../../../shared/styles";
+
+const CLICK_OUTSIDE_EXCLUSIONS = [
+  "button", "input", "textarea",
+  "[role=tab]", "[role=menuitem]", "[role=dialog]", "[role=presentation]",
+  "[role=combobox]", "[role=listbox]", "[role=option]",
+  "[data-tag-panel]",
+];
 
 /** Orchestrates the editor view with segment blocks, menus, and conflict dialogs */
 const EditorContainer: React.FC = () => {
@@ -74,65 +81,7 @@ const EditorContainer: React.FC = () => {
   const segmentListRef = useRef<HTMLDivElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  const scrollSpeedRef = useRef(0);
-  const scrollRafRef = useRef(0);
-
-  useEffect(() => {
-    const container = scrollContainerRef.current;
-    if (!container) return;
-
-    const EDGE_SIZE = 60;
-    const MAX_SPEED = 12;
-
-    const tick = () => {
-      if (scrollSpeedRef.current !== 0) {
-        container.scrollTop += scrollSpeedRef.current;
-        scrollRafRef.current = requestAnimationFrame(tick);
-      }
-    };
-
-    const handleDragOver = (e: DragEvent) => {
-      const types = e.dataTransfer?.types;
-      if (!types) return;
-      const hasDrag = Array.from(types).includes("application/segment-id");
-      if (!hasDrag) return;
-
-      const rect = container.getBoundingClientRect();
-      const y = e.clientY;
-      let speed = 0;
-
-      if (y < rect.top + EDGE_SIZE) {
-        const ratio = Math.max(0, 1 - (y - rect.top) / EDGE_SIZE);
-        speed = -Math.max(1, Math.round(ratio * MAX_SPEED));
-      } else if (y > rect.bottom - EDGE_SIZE) {
-        const ratio = Math.max(0, 1 - (rect.bottom - y) / EDGE_SIZE);
-        speed = Math.max(1, Math.round(ratio * MAX_SPEED));
-      }
-
-      const wasScrolling = scrollSpeedRef.current !== 0;
-      scrollSpeedRef.current = speed;
-      if (speed !== 0 && !wasScrolling) {
-        scrollRafRef.current = requestAnimationFrame(tick);
-      }
-    };
-
-    const stopScroll = () => {
-      scrollSpeedRef.current = 0;
-      cancelAnimationFrame(scrollRafRef.current);
-    };
-
-    container.addEventListener("dragover", handleDragOver);
-    container.addEventListener("dragleave", stopScroll);
-    container.addEventListener("drop", stopScroll);
-    document.addEventListener("dragend", stopScroll);
-    return () => {
-      stopScroll();
-      container.removeEventListener("dragover", handleDragOver);
-      container.removeEventListener("dragleave", stopScroll);
-      container.removeEventListener("drop", stopScroll);
-      document.removeEventListener("dragend", stopScroll);
-    };
-  }, []);
+  useDragAutoScroll(scrollContainerRef, "application/segment-id");
 
   useEffect(() => {
     const dragging = splits.draggingFromIndex !== null;
@@ -150,17 +99,7 @@ const EditorContainer: React.FC = () => {
     requestAnimationFrame(blur);
   }, [setActiveSegmentId]);
 
-  useEffect(() => {
-    const handleMouseDown = (e: MouseEvent) => {
-      const target = e.target as HTMLElement;
-      if (segmentListRef.current?.contains(target)) return;
-      if (target.closest("button, input, textarea, [role=tab], [role=menuitem], [role=dialog], [role=presentation], [role=combobox], [role=listbox], [role=option], [data-tag-panel]")) return;
-      e.preventDefault();
-      deactivate();
-    };
-    document.addEventListener("mousedown", handleMouseDown);
-    return () => document.removeEventListener("mousedown", handleMouseDown);
-  }, [deactivate]);
+  useClickOutsideDeactivation(segmentListRef, deactivate, CLICK_OUTSIDE_EXCLUSIONS);
 
   return (
     <div style={{ height: "100%", width: "100%", ...sxUtil.flexColumn, boxSizing: "border-box", overflow: "hidden", backgroundColor: "transparent", position: "relative" }}>

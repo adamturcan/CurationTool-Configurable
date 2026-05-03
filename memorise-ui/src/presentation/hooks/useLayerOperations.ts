@@ -2,6 +2,7 @@ import { useCallback } from "react";
 import { useSessionStore } from "../stores";
 import type { AnnotationResult } from "../../application/workflows/AnnotationWorkflowService";
 import type { AnnotationLayer } from "../../types";
+import { TranslationLogic } from "../../core/entities/TranslationLogic";
 
 /**
  * Helpers for reading and patching annotation layers (the original document and its translations) through a uniform interface, so call sites do not branch on `lang === "original"`.
@@ -22,15 +23,9 @@ export function useLayerOperations() {
           apiSpans: session.apiSpans ?? [],
         };
       }
-      const t = session.translations?.find((tr) => tr.language === lang);
+      const t = TranslationLogic.findByLanguage(session.translations ?? [], lang);
       if (!t) return null;
-      return {
-        text: t.text || "",
-        userSpans: t.userSpans ?? [],
-        apiSpans: t.apiSpans ?? [],
-        segmentTranslations: t.segmentTranslations,
-        editedSegmentTranslations: t.editedSegmentTranslations,
-      };
+      return TranslationLogic.toAnnotationLayer(t);
     },
     [session, draftText]
   );

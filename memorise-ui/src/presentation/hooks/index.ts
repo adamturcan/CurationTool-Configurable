@@ -7,3 +7,6 @@ export { useEditorOperations } from './useEditorOperations';
 export { useSpanInteractions } from './useSpanInteractions';
 export { useSegmentSplitMerge } from './useSegmentSplitMerge';
 export { useExportOperations } from './useExportOperations';
+export { useDragAutoScroll } from './useDragAutoScroll';
+export { useClickOutsideDeactivation } from './useClickOutsideDeactivation';
+export { useSegmentDragTarget } from './useSegmentDragTarget';

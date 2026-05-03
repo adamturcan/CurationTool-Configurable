@@ -4,6 +4,7 @@ import { annotationWorkflowService } from "../../application/workflows/Annotatio
 import { getSpanId, safeSubstring, normalizeReplacement, SPLIT_DELIMITERS } from "../components/editor/utils/editorUtils";
 import type { NerSpan, SelectionBox } from "../../types";
 import type { useLayerOperations } from "./useLayerOperations";
+import { SpanLogic } from "../../core/entities/SpanLogic";
 
 type LayerOps = ReturnType<typeof useLayerOperations>;
 
@@ -44,7 +45,7 @@ export function useSpanInteractions(
   // Converts local (segment-relative) coordinates back to global before storing, so service calls use global offsets.
   const handleSpanClick = useCallback((span: NerSpan, element: HTMLElement, replaceFn: (newText: string) => void, localLang: string, vStart: number) => {
     setNewSelection(null);
-    const globalizedSpan = { ...span, start: span.start + vStart, end: span.end + vStart };
+    const globalizedSpan = SpanLogic.toGlobal(span, vStart);
     const id = getSpanId(globalizedSpan);
     setActiveSpan({ ...globalizedSpan, id });
     setActionLangContext(localLang);
@@ -94,23 +95,29 @@ export function useSpanInteractions(
     }
   }, [session?.segments, draftText, closeEditMenu, setActiveSegmentId, onSplitDetected, onSplitCleared]);
 
+  // Sends the active span through the delete workflow and applies the resulting patch + counters.
+  const executeDelete = useCallback(() => {
+    if (!activeSpan?.id) return;
+    const layer = resolveLayer(actionLangContext);
+    if (!layer) return;
+
+    const result = annotationWorkflowService.deleteSpan(activeSpan.id, { layer, deletedApiKeys: session?.deletedApiKeys ?? [] });
+    if (result.ok) {
+      applyLayerPatch(actionLangContext, result.layerPatch);
+      if (result.deletedApiKeys) updateSession({ deletedApiKeys: result.deletedApiKeys });
+      markSegmentEdited(activeSegmentId, actionLangContext);
+      const isApi = activeSpan.origin === 'api' || result.layerPatch?.apiSpans !== undefined;
+      useSessionStore.getState().incrementCounter({ group: 'ner', action: isApi ? 'deletedApi' : 'deletedUser' });
+    }
+    notify(result.notice);
+  }, [activeSpan, actionLangContext, activeSegmentId, session, resolveLayer, applyLayerPatch, markSegmentEdited, updateSession, notify]);
+
   // Replaces span text or deletes the span if replacement is empty
   const handleUpdateSpanText = useCallback((newText: string) => {
     if (!activeSpan) return;
     const normalized = normalizeReplacement(newText);
     if (normalized.trim().length === 0) {
-      const layer = resolveLayer(actionLangContext);
-      if (layer && activeSpan.id) {
-        const result = annotationWorkflowService.deleteSpan(activeSpan.id, { layer, deletedApiKeys: session?.deletedApiKeys ?? [] });
-        if (result.ok) {
-          applyLayerPatch(actionLangContext, result.layerPatch);
-          if (result.deletedApiKeys) updateSession({ deletedApiKeys: result.deletedApiKeys });
-          markSegmentEdited(activeSegmentId, actionLangContext);
-          const isApi = activeSpan.origin === 'api' || result.layerPatch?.apiSpans !== undefined;
-          useSessionStore.getState().incrementCounter({ group: 'ner', action: isApi ? 'deletedApi' : 'deletedUser' });
-        }
-        notify(result.notice);
-      }
+      executeDelete();
       closeEditMenu();
       return;
     }
@@ -118,7 +125,7 @@ export function useSpanInteractions(
     markSegmentEdited(activeSegmentId, actionLangContext);
     useSessionStore.getState().incrementCounter({ group: 'ner', action: 'textEdited' });
     closeEditMenu();
-  }, [activeSpan, cmReplaceFn, closeEditMenu, actionLangContext, session, activeSegmentId, resolveLayer, applyLayerPatch, markSegmentEdited, updateSession, notify]);
+  }, [activeSpan, cmReplaceFn, closeEditMenu, actionLangContext, activeSegmentId, markSegmentEdited, executeDelete]);
 
   const handleCategorySelect = useCallback((category: string) => {
     if (activeSpan?.id) {
@@ -137,22 +144,10 @@ export function useSpanInteractions(
   }, [activeSpan, actionLangContext, activeSegmentId, resolveLayer, applyLayerPatch, markSegmentEdited, notify, closeEditMenu]);
 
   const handleDeleteSpan = useCallback(() => {
-    if (activeSpan?.id) {
-      const layer = resolveLayer(actionLangContext);
-      if (layer) {
-        const result = annotationWorkflowService.deleteSpan(activeSpan.id, { layer, deletedApiKeys: session?.deletedApiKeys ?? [] });
-        if (result.ok) {
-          applyLayerPatch(actionLangContext, result.layerPatch);
-          if (result.deletedApiKeys) updateSession({ deletedApiKeys: result.deletedApiKeys });
-          markSegmentEdited(activeSegmentId, actionLangContext);
-          const isApi = activeSpan.origin === 'api' || result.layerPatch?.apiSpans !== undefined;
-          useSessionStore.getState().incrementCounter({ group: 'ner', action: isApi ? 'deletedApi' : 'deletedUser' });
-        }
-        notify(result.notice);
-      }
-      closeEditMenu();
-    }
-  }, [activeSpan, actionLangContext, activeSegmentId, session, resolveLayer, applyLayerPatch, markSegmentEdited, updateSession, notify, closeEditMenu]);
+    if (!activeSpan?.id) return;
+    executeDelete();
+    closeEditMenu();
+  }, [activeSpan, executeDelete, closeEditMenu]);
 
   const virtualElement = newSelection ? ({ getBoundingClientRect: () => ({ top: newSelection.top, left: newSelection.left, bottom: newSelection.top, right: newSelection.left, width: 0, height: 0 }), nodeType: 1 } as unknown as HTMLElement) : null;
 

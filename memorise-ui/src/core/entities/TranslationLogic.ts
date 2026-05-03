@@ -37,13 +37,13 @@ export const TranslationLogic = {
     );
   },
 
-  /** Language codes that have a translation entry for the given segment id. */
+  /** Language codes that have a non-empty (after trim) translation entry for the given segment id. */
   getLanguagesWithSegmentTranslation(
     translations: TranslationDTO[],
     segmentId: string
   ): string[] {
     return translations
-      .filter((t) => t.segmentTranslations?.[segmentId] !== undefined)
+      .filter((t) => TranslationLogic.hasSegmentTranslation(t, segmentId))
       .map((t) => t.language);
   },
 

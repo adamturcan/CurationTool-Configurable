@@ -1,94 +1,8 @@
 import { useState, useCallback } from "react";
 import type { ActionGuardDialogProps, ResolutionStep } from "../components/editor/dialogs";
 import type { TranslationDTO, Segment } from "../../types";
-
-// Gap detection helpers
-
-/** Identifies a missing translation for a specific segment and language */
-type TranslationGap = {
-  lang: string;
-  segmentId: string;
-  segmentOrder: number;
-};
-
-/**
- * Detects segments with irregular translation coverage across languages.
- */
-function detectIrregularTranslations(
-  segmentIds: string[],
-  segments: Segment[],
-  translations: TranslationDTO[]
-): TranslationGap[] {
-  const gaps: TranslationGap[] = [];
-  const orderMap = new Map(segments.map(s => [s.id, s.order]));
-
-  for (const t of translations) {
-    const hasList = segmentIds.map(id => !!t.segmentTranslations?.[id]?.trim());
-    const someHave = hasList.some(Boolean);
-    const allHave = hasList.every(Boolean);
-
-    if (someHave && !allHave) {
-      for (let i = 0; i < segmentIds.length; i++) {
-        if (!hasList[i]) {
-          gaps.push({
-            lang: t.language,
-            segmentId: segmentIds[i],
-            segmentOrder: orderMap.get(segmentIds[i]) ?? i,
-          });
-        }
-      }
-    }
-  }
-
-  return gaps;
-}
-
-/**
- * Finds all segments that have any translation in any language.
- */
-function findSegmentTranslations(
-  segmentId: string,
-  translations: TranslationDTO[]
-): string[] {
-  return translations
-    .filter(t => !!t.segmentTranslations?.[segmentId]?.trim())
-    .map(t => t.language);
-}
-
-/**
- * Finds untranslated segments within a set across all translation layers.
- * Only flags a language when SOME of the affected segments have translations but others don't (inconsistency). If none of the affected segments have translations in a layer, that layer is skipped entirely.
- */
-function detectUntranslated(
-  segmentIds: string[],
-  segments: Segment[],
-  translations: TranslationDTO[]
-): TranslationGap[] {
-  const gaps: TranslationGap[] = [];
-  const orderMap = new Map(segments.map(s => [s.id, s.order]));
-
-  for (const t of translations) {
-    const hasList = segmentIds.map(id => !!t.segmentTranslations?.[id]?.trim());
-    const someHave = hasList.some(Boolean);
-    const allHave = hasList.every(Boolean);
-
-    // Only flag when there's an inconsistency - some have, some don't
-    if (someHave && !allHave) {
-      for (let i = 0; i < segmentIds.length; i++) {
-        if (!hasList[i]) {
-          gaps.push({
-            lang: t.language,
-            segmentId: segmentIds[i],
-            segmentOrder: orderMap.get(segmentIds[i]) ?? 0,
-          });
-        }
-      }
-    }
-  }
-
-  return gaps;
-}
-
+import { TranslationLogic } from "../../core/entities/TranslationLogic";
+import { SegmentLogic } from "../../core/entities/SegmentLogic";
 
 /** Callbacks injected by the consumer to keep the hook decoupled from services */
 export interface ActionGuardActions {
@@ -153,7 +67,7 @@ export function useActionGuard(actions: ActionGuardActions): UseActionGuardRetur
         return;
       }
 
-      const gaps = detectIrregularTranslations([seg1Id, seg2Id], segments, translations);
+      const gaps = TranslationLogic.detectTranslationGaps([seg1Id, seg2Id], segments, translations);
 
       if (gaps.length === 0) {
         onProceed();
@@ -191,7 +105,7 @@ export function useActionGuard(actions: ActionGuardActions): UseActionGuardRetur
       translations: TranslationDTO[],
       onProceed: () => void
     ) => {
-      const langs = findSegmentTranslations(segmentId, translations);
+      const langs = TranslationLogic.getLanguagesWithSegmentTranslation(translations, segmentId);
 
       if (langs.length === 0) {
         onProceed();
@@ -238,23 +152,18 @@ export function useActionGuard(actions: ActionGuardActions): UseActionGuardRetur
         return;
       }
 
-      const source = segments.find(s => s.id === sourceSegId);
-      if (!source) {
+      const affectedIds = SegmentLogic.getSegmentsAffectedByBoundaryShift(
+        segments,
+        sourceSegId,
+        targetPos
+      );
+
+      if (affectedIds.length === 0) {
         onProceed();
         return;
       }
 
-      const sourceBoundary = source.end;
-      const minPos = Math.min(sourceBoundary, targetPos);
-      const maxPos = Math.max(sourceBoundary, targetPos);
-
-      const affectedIds = segments
-        .filter(s => {
-          return s.start < maxPos && s.end > minPos;
-        })
-        .map(s => s.id);
-
-      const gaps = detectUntranslated(affectedIds, segments, translations);
+      const gaps = TranslationLogic.detectTranslationGaps(affectedIds, segments, translations);
 
       if (gaps.length === 0) {
         onProceed();

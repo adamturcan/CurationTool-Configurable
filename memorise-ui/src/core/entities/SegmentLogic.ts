@@ -187,8 +187,10 @@ export const SegmentLogic = {
 
   /**
    * Ids of segments swept by moving the source segment's end boundary to `targetPos`.
-   * A segment is considered affected when its range overlaps the open interval
-   * `(min(sourceEnd, targetPos), max(sourceEnd, targetPos))`.
+   * Includes the source itself (its content is being modified) and every segment whose
+   * range touches the swept interval `[min(sourceEnd, targetPos), max(sourceEnd, targetPos)]`,
+   * inclusive of endpoints — the boundary point sits on the source's end and on the
+   * adjacent segment's start, so strict inequalities would drop both.
    * Returns an empty array when the source id is unknown.
    */
   getSegmentsAffectedByBoundaryShift: (
@@ -204,7 +206,7 @@ export const SegmentLogic = {
     const maxPos = Math.max(sourceBoundary, targetPos);
 
     return segments
-      .filter((s) => s.start < maxPos && s.end > minPos)
+      .filter((s) => s.start <= maxPos && s.end >= minPos)
       .map((s) => s.id);
   },
 
