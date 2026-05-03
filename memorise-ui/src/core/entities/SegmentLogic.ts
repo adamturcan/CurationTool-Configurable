@@ -185,6 +185,29 @@ export const SegmentLogic = {
     });
   },
 
+  /**
+   * Ids of segments swept by moving the source segment's end boundary to `targetPos`.
+   * A segment is considered affected when its range overlaps the open interval
+   * `(min(sourceEnd, targetPos), max(sourceEnd, targetPos))`.
+   * Returns an empty array when the source id is unknown.
+   */
+  getSegmentsAffectedByBoundaryShift: (
+    segments: Segment[],
+    sourceSegId: string,
+    targetPos: number
+  ): string[] => {
+    const source = segments.find((s) => s.id === sourceSegId);
+    if (!source) return [];
+
+    const sourceBoundary = source.end;
+    const minPos = Math.min(sourceBoundary, targetPos);
+    const maxPos = Math.max(sourceBoundary, targetPos);
+
+    return segments
+      .filter((s) => s.start < maxPos && s.end > minPos)
+      .map((s) => s.id);
+  },
+
   /** Moves a segment's boundary to a new position via drag, absorbing or shrinking adjacent segments */
   shiftSegmentBoundary: (
     segments: Segment[],

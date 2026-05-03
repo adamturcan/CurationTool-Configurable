@@ -9,20 +9,16 @@ import type { NerSpan, SpanCoordMap } from "../../types";
  */
 export const SpanLogic = {
 
-  /** Extracts spans within a segment's range and converts to local (0-based) offsets */
-  getLocalSpansForSegment: (
-    allSpans: NerSpan[],
-    globalStart: number,
-    globalEnd: number
-  ): NerSpan[] => {
-    return allSpans
-      .filter((s) => s.start >= globalStart && s.end <= globalEnd)
-      .map((s) => ({
-        ...s,
-        start: s.start - globalStart,
-        end: s.end - globalStart
-      }));
-  },
+  /** Stable key for filtering deleted API spans: `${start}:${end}:${entity}`. */
+  getBanKey: (span: Pick<NerSpan, "start" | "end" | "entity">): string =>
+    `${span.start}:${span.end}:${span.entity}`,
+
+  /** Converts a segment-local span to global coordinates by adding `virtualStart`. */
+  toGlobal: (span: NerSpan, virtualStart: number): NerSpan => ({
+    ...span,
+    start: span.start + virtualStart,
+    end: span.end + virtualStart,
+  }),
 
   /** Updates span positions from CodeMirror's live coordinates, tracking which spans were shifted */
   syncLiveCoords: (
@@ -92,6 +88,35 @@ export const SpanLogic = {
       if (newStart !== s.start || newEnd !== s.end) return { ...s, start: newStart, end: newEnd };
       return s;
     });
+  },
+
+  /**
+   * Returns spans visible inside a segment for one annotation layer:
+   * combines API spans (minus banned keys) with user spans, filters by overlap
+   * against the segment range, and clips to segment-local coordinates.
+   * Banned-key format is `${start}:${end}:${entity}` (set by AnnotationWorkflowService).
+   */
+  getVisibleSpansForSegment: (
+    apiSpans: NerSpan[] | undefined,
+    userSpans: NerSpan[] | undefined,
+    deletedApiKeys: string[] | undefined,
+    globalStart: number,
+    globalEnd: number
+  ): NerSpan[] => {
+    const banned = new Set(deletedApiKeys ?? []);
+    const filteredApi = (apiSpans ?? []).filter(
+      (s) => !banned.has(SpanLogic.getBanKey(s))
+    );
+    const all = [...filteredApi, ...(userSpans ?? [])];
+    const length = globalEnd - globalStart;
+    return all
+      .filter((s) => Math.max(s.start, globalStart) < Math.min(s.end, globalEnd))
+      .map((s) => ({
+        ...s,
+        id: s.id ?? `span-${s.start}-${s.end}-${s.entity}`,
+        start: Math.max(0, s.start - globalStart),
+        end: Math.min(length, s.end - globalStart),
+      }));
   },
 
   /** Removes overlapping spans and shifts remaining spans for both user and API layers at once */
