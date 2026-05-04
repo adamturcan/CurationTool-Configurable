@@ -116,7 +116,7 @@ const App: React.FC = () => {
   const [isNewWorkspaceDialogOpen, setIsNewWorkspaceDialogOpen] = useState(false);
 
   // Create a new workspace with the given name, persist it, and update UI metadata
-  const handleAddWorkspace = useCallback(async (name: string): Promise<WorkspaceDTO | null> => {
+  const handleAddWorkspace = useCallback(async (name: string, text?: string): Promise<WorkspaceDTO | null> => {
     if (!user) return null;
 
     const ws = workspaceApplicationService.createWorkspaceDraft(user.id, name);
@@ -127,6 +127,7 @@ const App: React.FC = () => {
         workspaceId: ws.id,
         name: ws.name,
         isTemporary: ws.isTemporary,
+        text,
       });
 
       addWorkspaceMetadata({
@@ -149,8 +150,8 @@ const App: React.FC = () => {
     return `New Workspace #${newCount + 1}`;
   }, [workspaces]);
 
-  const handleNewWorkspaceSubmit = useCallback(async (name: string) => {
-    const ws = await handleAddWorkspace(name);
+  const handleNewWorkspaceSubmit = useCallback(async (name: string, text?: string) => {
+    const ws = await handleAddWorkspace(name, text);
     setIsNewWorkspaceDialogOpen(false);
     if (ws?.id) {
       navigate(`/workspace/${encodeURIComponent(ws.id)}`);

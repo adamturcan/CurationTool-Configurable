@@ -1,7 +1,8 @@
 /**
- * Singleton provider for ApiService. Supports DI overrides for testing.
- * Picks BrowserApiService (standalone) or BackendProxyApiService (server)
- * based on VITE_BACKEND_URL.
+ * Singleton provider for ApiService — picks BrowserApiService (standalone build) or BackendProxyApiService (server build) based on `VITE_BACKEND_URL`.
+ * Production code calls `getApiService()`; tests can substitute an implementation via `setApiProviderOverrides` and reset back via `resetApiProvider`.
+ * The override path is checked first on every `getApiService()` call, so swapping in a fake mid-test takes effect immediately for the next consumer call.
+ * The non-obvious detail is that setting an override clears the cached singleton — the next default-path call will re-create from environment, not return the previously cached production service.
  *
  * @category Infrastructure
  */
@@ -17,6 +18,24 @@ export interface ApiProviderOverrides {
 let apiServiceSingleton: ApiService | null = null;
 let overrides: ApiProviderOverrides | null = null;
 
+/**
+ * Substitutes the singleton ApiService used by the rest of the app — used in tests to inject a fake without touching real endpoints.
+ *
+ * @example
+ * import { setApiProviderOverrides, resetApiProvider } from '@/infrastructure/providers/apiProvider';
+ * import type { ApiService } from '@/core/interfaces/ApiService';
+ *
+ * const fake: ApiService = {
+ *   segmentText: async () => [],
+ *   classify: async () => [{ name: 'history', label: 1 }],
+ *   ner: async () => [{ start: 0, end: 5, entity: 'PER' }],
+ *   translate: async () => ({ translatedText: 'Hola', sourceLang: 'en' }),
+ *   getSupportedLanguages: async () => [{ code: 'es', name: 'Spanish' }],
+ * };
+ *
+ * beforeEach(() => setApiProviderOverrides({ apiService: fake }));
+ * afterEach(() => resetApiProvider());
+ */
 export function setApiProviderOverrides(next: ApiProviderOverrides): void {
   overrides = next;
   if (next.apiService) {

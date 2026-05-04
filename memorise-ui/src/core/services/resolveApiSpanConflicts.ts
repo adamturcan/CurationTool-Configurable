@@ -1,7 +1,8 @@
 /**
- * Resolves conflicts when new API spans overlap existing user or API spans.
- * Walks each incoming span, detects overlaps, and prompts the user to choose which to keep via an async callback.
- * Non-conflicting spans are auto-accepted.
+ * Resolves conflicts when freshly returned NER spans overlap existing user or API spans on the same layer.
+ * Walks the incoming list, partitions clean adds from overlaps, and resolves each overlap by awaiting an `onConflict` callback that returns "api" or "existing".
+ * Returns merged user/api span arrays plus the count of conflicts handled, so callers can shape the success notice.
+ * The non-obvious detail is that this function never auto-resolves an overlap — clean adds are silent, but every overlap blocks until the caller's promise settles.
  *
  * @category Services
  */

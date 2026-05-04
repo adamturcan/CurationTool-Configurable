@@ -11,8 +11,10 @@ type TranslationResult = WorkflowResult & {
 };
 
 /**
- * Translation operations: add a full translation page, translate/update/delete individual segments.
- * All methods return TranslationResult with a translations patch for the session store.
+ * Translation orchestration: whole-document translate, per-segment translate, update, and delete.
+ * Each method takes a session snapshot, calls the translate endpoint, recomputes spans (shift / remove on length change), and returns a `translationsPatch` in a `WorkflowResult`.
+ * Adding a translation produces a new `TranslationDTO` (with `text` for whole-doc mode, `segmentTranslations` for segmented mode); deleting a per-segment translation also shifts existing user/API spans on that layer to keep coordinates aligned.
+ * The non-obvious detail is forward-shift on segmented translation: it retranslates the merged source via API and overwrites the dictionary entry, so manually edited translation prose is silently lost — the action-guard exists to warn the user before this happens.
  *
  * @category Application
  */

@@ -1,9 +1,8 @@
 /**
- * Singleton provider for WorkspaceApplicationService and its repository.
- * Supports DI overrides for testing. Production code uses getWorkspaceApplicationService().
- *
- * Uses StorageGateway to route between LocalStorageWorkspaceRepository (default) and
- * RemoteAdapter (when VITE_BACKEND_URL is set).
+ * Singleton provider for `WorkspaceApplicationService` and the underlying `WorkspaceRepository`.
+ * Routes through `StorageGateway`, which delegates to `LocalStorageWorkspaceRepository` (default) or `RemoteAdapter` (when `VITE_BACKEND_URL` is set).
+ * Tests can substitute the repository or the application service directly via `setWorkspaceProviderOverrides`; `resetWorkspaceProvider` clears both back to environment defaults.
+ * The non-obvious detail is that overriding the repository invalidates the application-service singleton too — so the next `getWorkspaceApplicationService()` call rebuilds with the new repo, no manual cache busting needed.
  *
  * @category Infrastructure
  */

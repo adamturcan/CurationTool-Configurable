@@ -12,8 +12,10 @@ type ClassificationResult = WorkflowResult & {
 
 
 /**
- * Semantic tagging operations: run API classification, add/delete user tags.
- * Tags are scoped per segment (or whole document if no active segment).
+ * Semantic-tag orchestration: classify a single segment / the whole document, plus add/delete custom user tags.
+ * Each method takes a session snapshot, calls the classify endpoint, deduplicates against the current tag list (case-insensitive name + label + parent), and returns a `TagItem[]` patch in a `WorkflowResult`.
+ * Tags are scoped per segment via `segmentId`; `undefined` means document-level (after promotion or on unsegmented docs).
+ * The non-obvious detail is that `runGlobalClassify` accumulates tags across iterations so each segment's classify sees the prior segments' tags — this is what keeps API tags from being overwritten when iterating.
  *
  * @category Application
  */

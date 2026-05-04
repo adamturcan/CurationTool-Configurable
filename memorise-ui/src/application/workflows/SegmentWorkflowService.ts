@@ -11,8 +11,10 @@ type SegmentationResult = WorkflowResult & {
 
 
 /**
- * Segment operations: auto-segmentation via API, split, join, and boundary drag.
- * Each method updates both master segments and all translation layers (span coordinates, segment translations, full text).
+ * Segment-structure orchestration: auto-segmentation via API, split, join-up, and boundary drag (shift).
+ * Methods take a session snapshot, call SegmentLogic + SpanLogic for the math, and return a `SessionPatch` covering segments, full text, and any translation layers whose dictionaries / spans need updating.
+ * Every structural edit must be funnelled through here so translation `segmentTranslations` and span coordinates stay aligned with the master segment list.
+ * The non-obvious detail is that forward-shift retranslates the merged source through the API (one call) while backward-shift only concatenates existing translation strings — the asymmetry is intentional but documented as pending UX work in the audit.
  *
  * @category Application
  */
