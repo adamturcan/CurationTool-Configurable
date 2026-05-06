@@ -32,13 +32,13 @@ Every reviewer ran through the mandatory steps end-to-end: workspace creation, s
 
 ## 2. Overall UI Experience
 
-The form opened with three high-level Likert questions on satisfaction, cognitive load, and intent to use. Distributions and means are reported below over n=11 responses.
+The form opened with three high-level Likert questions on satisfaction, cognitive load, and intent to use. Distributions and means are reported below over n=11 responses. The Distribution column reports the number of reviewers who selected each rating from 1 to 5, in that order, separated by hyphens; for example, `0-0-1-6-4` means no reviewer picked 1 or 2, one picked 3, six picked 4, and four picked 5. The same convention applies to the per-feature distributions in Section 3.
 
 | Question | Mean | Distribution (1-5) |
 |---|---|---|
-| Overall satisfaction with the curation interface | 4.27 | 3:1, 4:6, 5:4 |
-| Cognitive effort to operate the UI (1=very easy, 5=very hard) | 2.09 | 1:3, 2:6, 4:2 |
-| Likelihood to use for real work (assuming reliable APIs) | 4.45 | 2:1, 4:3, 5:7 |
+| Overall satisfaction with the curation interface | 4.27 | 0-0-1-6-4 |
+| Cognitive effort to operate the UI (1=very easy, 5=very hard) | 2.09 | 3-6-0-2-0 |
+| Likelihood to use for real work (assuming reliable APIs) | 4.45 | 0-1-0-3-7 |
 
 Satisfaction stayed positive across the pool. No reviewer rated below 3, and the distribution leans cleanly toward 4 and 5. Cognitive effort sits at the low end too — nine of eleven reviewers picked 1 or 2, with two outliers at 4 who reported that learning the interaction model took noticeable effort. The likelihood-to-use question gave the cleanest signal: seven reviewers picked 5, three picked 4, and one picked 2.
 
@@ -48,16 +48,16 @@ Section 3 of the form rated the clarity or ease of ten distinct UI surfaces on a
 
 | Feature | n | Mean | Distribution (1-5) |
 |---|---|---|---|
-| Ease of creating a workspace and pasting text | 11 | 4.91 | 4:1, 5:10 |
-| Clarity of the top toolbar | 11 | 4.27 | 4:8, 5:3 |
-| Clarity of the per-segment header | 11 | 4.45 | 4:6, 5:5 |
-| Ease of editing segmentation (merge / split / shift) | 11 | 3.73 | 3:5, 4:4, 5:2 |
-| Ease of correcting NER spans | 10 | 4.20 | 2:1, 3:1, 4:3, 5:5 |
-| Clarity of the NER category colours | 11 | 4.82 | 4:2, 5:9 |
-| Clarity of the semantic tagging panel | 11 | 3.82 | 3:5, 4:3, 5:3 |
-| Clarity of the per-segment translation controls | 11 | 4.09 | 2:1, 3:2, 4:3, 5:5 |
-| Ease of moving between layers (original vs. translation) | 11 | 4.18 | 2:1, 3:2, 4:2, 5:6 |
-| Ease of exporting workspace as JSON | 11 | 4.91 | 4:1, 5:10 |
+| Ease of creating a workspace and pasting text | 11 | 4.91 | 0-0-0-1-10 |
+| Clarity of the top toolbar | 11 | 4.27 | 0-0-0-8-3 |
+| Clarity of the per-segment header | 11 | 4.45 | 0-0-0-6-5 |
+| Ease of editing segmentation (merge / split / shift) | 11 | 3.73 | 0-0-5-4-2 |
+| Ease of correcting NER spans | 10 | 4.20 | 0-1-1-3-5 |
+| Clarity of the NER category colours | 11 | 4.82 | 0-0-0-2-9 |
+| Clarity of the semantic tagging panel | 11 | 3.82 | 0-0-5-3-3 |
+| Clarity of the per-segment translation controls | 11 | 4.09 | 0-1-2-3-5 |
+| Ease of moving between layers (original vs. translation) | 11 | 4.18 | 0-1-2-2-6 |
+| Ease of exporting workspace as JSON | 11 | 4.91 | 0-0-0-1-10 |
 
 Workspace creation and JSON export both averaged 4.91, with ten of eleven reviewers picking 5 in each case; the entity colour palette landed close behind at 4.82. The two weakest surfaces were segmentation editing (3.73) and the semantic tagging panel (3.82) — both with five reviewers parking at 3 rather than the 4-or-5 cluster seen elsewhere. Translation controls (4.09) and layer switching (4.18) sit in the middle but each carries three lower ratings (a 2 and two 3s), which lines up with the parallel-view complaints in Section 5.
 
