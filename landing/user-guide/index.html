@@ -44,7 +44,7 @@ itself is identical in both.</p>
 persists workspaces in the browser's <code>localStorage</code>. The
 login screen offers only a sign-in form, because there is no shared
 backend that would distinguish accounts beyond the device.</p>
-<p><img src="guide/01-login-standalone.png" style="width:85.0%"
+<p><img src="images/01-login-standalone.png" style="width:85.0%"
 alt="Login screen in standalone mode" /></p>
 <p>A first-time user signs in with a chosen local username; the
 application creates the local profile on the fly and treats subsequent
@@ -54,11 +54,11 @@ logins with the same username as the same user on that device.</p>
 login screen exposes both a sign-in and a registration tab, and accounts
 are persisted server-side so the same user can log in from any
 machine.</p>
-<p><img src="guide/02-login-platform.png" style="width:70.0%"
+<p><img src="images/02-login-platform.png" style="width:70.0%"
 alt="Login screen in platform mode" /></p>
 <p>To create a new account, switch to the registration tab and supply a
 username, an optional email, and a password.</p>
-<p><img src="guide/03-register.png" style="width:70.0%"
+<p><img src="images/03-register.png" style="width:70.0%"
 alt="Registration tab" /></p>
 <p>The username must be between 2 and 50 characters, the password
 between 4 and 128 characters, and the email, when provided, must be
@@ -70,7 +70,7 @@ immediately.</p>
 example workspaces are pre-seeded on a fresh install so a new curator
 can explore the editor without first having to import their own
 text.</p>
-<p><img src="guide/04-workspace-list.png" style="width:100.0%"
+<p><img src="images/04-workspace-list.png" style="width:100.0%"
 alt="Workspace list with pre-seeded workspaces" /></p>
 <p>Each row exposes inline actions: a rename pencil next to the name, an
 <strong>Open</strong> button, an export icon, and a delete icon.</p>
@@ -81,7 +81,7 @@ trimming and unique among the curator's workspaces. Attaching a
 <code>.txt</code> file (up to one megabyte) seeds the workspace's source
 text directly; leaving the field empty opens the editor with an empty
 placeholder into which the curator can paste text afterwards.</p>
-<p><img src="guide/05-create-workspace.png" style="width:70.0%"
+<p><img src="images/05-create-workspace.png" style="width:70.0%"
 alt="Create workspace dialog with the optional file-upload field" /></p>
 <p>After confirmation the system creates the workspace, persists it, and
 opens the editor on it.</p>
@@ -90,13 +90,13 @@ opens the editor on it.</p>
 field. While typing, the system checks the candidate name against the
 curator's other workspaces and surfaces a duplicate warning if one
 already uses the same name.</p>
-<p><img src="guide/06-rename-duplicate.png" style="width:100.0%"
+<p><img src="images/06-rename-duplicate.png" style="width:100.0%"
 alt="Inline rename with duplicate warning" /></p>
 <h3 id="23-exporting-a-workspace">2.3 Exporting a workspace</h3>
 <p>The export action opens a dialog where the curator chooses between
 JSON and PDF. Both formats are generated in the browser, so export
 remains available in standalone mode.</p>
-<p><img src="guide/07-export-dialog.png" style="width:60.0%"
+<p><img src="images/07-export-dialog.png" style="width:60.0%"
 alt="Export workspace dialog" /></p>
 <p>A more detailed account of what each format contains appears in
 Section 9.</p>
@@ -105,12 +105,12 @@ Section 9.</p>
 prevent accidents. Deletion is permanent: in platform mode it removes
 the workspace from the server, and in standalone mode it removes it from
 the browser's storage.</p>
-<p><img src="guide/08-delete-confirm.png" style="width:60.0%"
+<p><img src="images/08-delete-confirm.png" style="width:60.0%"
 alt="Delete confirmation" /></p>
 <h2 id="3-the-editor-at-a-glance">3. The Editor at a Glance</h2>
 <p>The editor view is where the curation work happens. It surfaces every
 concern the curator needs to operate on a single document.</p>
-<p><img src="guide/09-editor-overview.png" style="width:100.0%"
+<p><img src="images/09-editor-overview.png" style="width:100.0%"
 alt="The editor view" /></p>
 <p>The view consists of four regions:</p>
 <ol type="1">
@@ -133,7 +133,7 @@ text is supplied at workspace creation. The curator may either attach a
 plain-text file in the new-workspace dialog (Section 2.1) or confirm the
 dialog without a file and paste the text into the empty editor
 placeholder.</p>
-<p><img src="guide/10-paste-text.png" style="width:100.0%"
+<p><img src="images/10-paste-text.png" style="width:100.0%"
 alt="Empty editor region for source text entry" /></p>
 <p>Once text is present, all subsequent NLP actions (segmentation, NER,
 translation, tagging) become applicable to the document.</p>
@@ -152,7 +152,7 @@ boundaries</h3>
 <p>Two controls appear between adjacent segments: a
 <strong>merge</strong> icon on the left and a <strong>drag
 handle</strong> on the right.</p>
-<p><img src="guide/11-segment-icons.png" style="width:35.0%"
+<p><img src="images/11-segment-icons.png" style="width:35.0%"
 alt="Merge icon (left) and drag handle (right) between two segments" /></p>
 <p>The merge icon collapses two adjacent segments into one. The drag
 handle, when dragged, shifts the boundary forward or backward to expand
@@ -163,7 +163,7 @@ or contract the source segment relative to its neighbour.</p>
 floating menu appears next to the selection offering a <em>Split segment
 here</em> action; confirming it splits the segment at that character
 position and generates a fresh identifier for the new segment.</p>
-<p><img src="guide/27-split-menu.png" style="width:60.0%"
+<p><img src="images/27-split-menu.png" style="width:60.0%"
 alt="Floating split menu after selecting a delimiter character" /></p>
 <p>The split action is only offered while viewing the original text
 layer (not on a translation), so that segment-level translation entries
@@ -178,7 +178,7 @@ another without (for instance, shifting a boundary across a segment
 whose English translation is filled in but whose Belarusian translation
 is not), the action guard interrupts the operation and asks the curator
 how to resolve the inconsistency.</p>
-<p><img src="guide/12-action-guard.png" style="width:85.0%"
+<p><img src="images/12-action-guard.png" style="width:85.0%"
 alt="Action guard dialog when shifting across an untranslated segment" /></p>
 <p>The dialog enumerates each affected segment and offers to translate
 the missing one in place before continuing the shift, so the curator
@@ -189,11 +189,11 @@ never silently loses content.</p>
 controls: the language tab on the left, and the per-segment NER and Tag
 buttons on the right. The same header also displays inline entity
 highlights inside the segment body.</p>
-<p><img src="guide/13-segment-toolbar.png" style="width:100.0%"
+<p><img src="images/13-segment-toolbar.png" style="width:100.0%"
 alt="Segment with highlighted entities and per-segment header" /></p>
 <p>The two coloured buttons on the right are, in order, the per-segment
 NER trigger and the per-segment Tag trigger.</p>
-<p><img src="guide/14-ner-tag-buttons.png" style="width:20.0%"
+<p><img src="images/14-ner-tag-buttons.png" style="width:20.0%"
 alt="Per-segment NER and Tag buttons" /></p>
 <h3 id="62-running-ner">6.2 Running NER</h3>
 <p>NER analysis can be requested per segment from the buttons above, or
@@ -208,7 +208,7 @@ entity-type picker. The picker lists the entity categories supported by
 the active layer, each marked with the bullet colour used for inline
 highlights. Choosing a category creates a user-curated annotation at the
 selected coordinates, distinct from API-generated annotations.</p>
-<p><img src="guide/28-entity-picker.png" style="width:50.0%"
+<p><img src="images/28-entity-picker.png" style="width:50.0%"
 alt="Entity-type picker after selecting a fresh range of text" /></p>
 <h3 id="64-editing-or-deleting-an-entity">6.4 Editing or deleting an
 entity</h3>
@@ -218,7 +218,7 @@ correct the span's surface form (for instance, extending
 <em>Auschwitz</em> to <em>Auschwitz-Birkenau</em>); the category list
 lets the curator change the entity type; and a <strong>Delete</strong>
 action at the bottom of the menu removes the span entirely.</p>
-<p><img src="guide/29-entity-edit-menu.png" style="width:50.0%"
+<p><img src="images/29-entity-edit-menu.png" style="width:50.0%"
 alt="Edit menu after clicking an existing entity highlight" /></p>
 <p>Deleting a span records its <code>start:end:entity</code> triple in a
 deleted-set, so re-running NER will not resurrect the same span at the
@@ -228,7 +228,7 @@ same position and entity type.</p>
 user-curated annotation, or an existing API annotation with a different
 entity type, the system pauses the operation and asks the curator which
 version to keep.</p>
-<p><img src="guide/19-conflict.png" style="width:90.0%"
+<p><img src="images/19-conflict.png" style="width:90.0%"
 alt="Conflict resolution dialog" /></p>
 <p>API-vs-API overlaps where both annotations agree on the entity type
 are resolved silently in favour of the newer span. All other overlaps
@@ -238,17 +238,17 @@ require an explicit decision.</p>
 <p>The language tab on the left of the segment header exposes the active
 layer (initially <strong>Original Text</strong>). The plus button beside
 it opens a language picker for adding a new target language.</p>
-<p><img src="guide/15-language-tab.png" style="width:30.0%"
+<p><img src="images/15-language-tab.png" style="width:30.0%"
 alt="Language tab and add-language control" /></p>
 <p>The picker is a searchable list of supported target languages,
 populated from the configured translate service.</p>
-<p><img src="guide/16-language-search.png" style="width:40.0%"
+<p><img src="images/16-language-search.png" style="width:40.0%"
 alt="Adding a new target language" /></p>
 <h3 id="72-switching-between-layers">7.2 Switching between layers</h3>
 <p>Once a translation exists, the language tab becomes a dropdown that
 switches the segment view between the original text and any of its
 translations.</p>
-<p><img src="guide/17-language-switcher.png" style="width:35.0%"
+<p><img src="images/17-language-switcher.png" style="width:35.0%"
 alt="Switching between Original and existing translations" /></p>
 <h3 id="73-post-editing-a-translation">7.3 Post-editing a
 translation</h3>
@@ -256,7 +256,7 @@ translation</h3>
 segment translation as user-edited; the indicator next to the segment
 header shows that the curator's prose, not the API response, is
 currently in effect.</p>
-<p><img src="guide/18-edited-indicator.png" style="width:30.0%"
+<p><img src="images/18-edited-indicator.png" style="width:30.0%"
 alt="Edited indicator on a translated segment" /></p>
 <h3 id="74-re-translating-over-edited-content">7.4 Re-translating over
 edited content</h3>
@@ -267,7 +267,7 @@ naming the language and warning that the manual edit will be
 overwritten. Cancelling the dialog leaves the existing translation
 untouched; confirming runs the API call, replaces the segment
 translation, and clears the edit flag.</p>
-<p><img src="guide/20-retranslate-warning.png" style="width:85.0%"
+<p><img src="images/20-retranslate-warning.png" style="width:85.0%"
 alt="Re-translation warning for an edited segment" /></p>
 <p>The document-level <em>Translate</em> action on the global toolbar
 behaves differently. It only fills in segments that do not yet carry a
@@ -288,7 +288,7 @@ Tags</strong> for the workspace. The search field at the top of the
 panel queries the historical thesaurus; matched entries appear in a
 dropdown with their hierarchical path, and <code>alias</code> markers
 indicate alternative names that resolve to the same canonical entry.</p>
-<p><img src="guide/21-tag-search.png" style="width:45.0%"
+<p><img src="images/21-tag-search.png" style="width:45.0%"
 alt="Tag panel with thesaurus search active" /></p>
 <p>The thesaurus search runs in a Web Worker, so the editor remains
 responsive even on a large thesaurus.</p>
@@ -296,14 +296,15 @@ responsive even on a large thesaurus.</p>
 <p>Selected tags are grouped by their parent category in the panel, with
 a count next to each group. Custom (free-text) tags are visually
 distinct from thesaurus entries.</p>
-<p><img src="guide/22-tag-panel.png" style="width:50.0%"
+<p><img src="images/22-tag-panel.png" style="width:50.0%"
 alt="Segment tags panel populated with selected entries" /></p>
 <h3 id="83-adding-a-free-text-tag">8.3 Adding a free-text tag</h3>
-<p>Toggling the <strong>Free Text</strong> switch at the top of the
+<p>Toggling the <strong>Free Text</strong> button at the top of the
 panel changes the input from thesaurus search to a literal-tag input, so
 the curator can attach an ad-hoc label that is not present in the
-thesaurus.</p>
-<p><img src="guide/23-free-text-tag.png" style="width:50.0%"
+thesaurus. The button alternates between <strong>Thesaurus</strong> and
+<strong>Free Text</strong> modes on each click.</p>
+<p><img src="images/23-free-text-tag.png" style="width:50.0%"
 alt="Free-text tag mode toggle" /></p>
 <h3 id="84-removing-a-tag">8.4 Removing a tag</h3>
 <p>Hovering over a tag chip in the panel reveals a small
@@ -322,7 +323,7 @@ workspace.</p>
 <p>The export action is available both from the workspace list (Section
 2.3) and from the global toolbar inside the editor. The toolbar exposes
 the export controls as a small icon group next to the save action.</p>
-<p><img src="guide/24-export-icons.png" style="width:20.0%"
+<p><img src="images/24-export-icons.png" style="width:20.0%"
 alt="Export controls on the global toolbar" /></p>
 <p>The format chooser (Section 2.3) offers JSON and PDF. The JSON format
 mirrors the internal workspace structure, including the deleted-API-key
@@ -337,7 +338,7 @@ Configuring NLP Endpoints</h2>
 from the sidebar. The panel lists every NLP service type with its
 current endpoint URL, the selected adapter, the latest health-probe
 result, and the round-trip latency of the last probe.</p>
-<p><img src="guide/25-admin-panel.png" style="width:100.0%"
+<p><img src="images/25-admin-panel.png" style="width:100.0%"
 alt="Admin Services panel with endpoint table" /></p>
 <p>The <strong>Refresh</strong> control above the table re-runs every
 health probe without modifying any configuration, which is useful when
@@ -348,7 +349,7 @@ the adapter cell becomes a dropdown of adapters registered for that
 service type. The dropdown lists, for example, the SDU service and the
 Mock Medical (Comprehend-style) adapter used for the medical-domain
 reproduction described in the thesis.</p>
-<p><img src="guide/26-admin-edit.png" style="width:100.0%"
+<p><img src="images/26-admin-edit.png" style="width:100.0%"
 alt="Endpoint table in edit mode with the adapter dropdown open" /></p>
 <p>Saving a change writes the updated configuration through the
 configuration service. The administrator then triggers the Refresh
@@ -368,9 +369,9 @@ recorded by the session store, such as span creation, tag attachment,
 segment merge, or translation edit, and replay them on demand.</p>
 <p>If the curator attempts to navigate away or close a workspace with
 unsaved changes still in flight, the application interposes an
-unsaved-changes dialog with <strong>Save</strong>,
-<strong>Discard</strong>, and <strong>Cancel</strong> options, so that
-no work is lost to an accidental click.</p>
+unsaved-changes dialog with <strong>Save &amp; Leave</strong>,
+<strong>Leave without saving</strong>, and <strong>Cancel</strong>
+options, so that no work is lost to an accidental click.</p>
 <p>When an external NLP service is unreachable the corresponding action
 surfaces an error notice rather than failing silently. The curator's
 existing data is never modified by a failed request, so retrying once

@@ -103,11 +103,12 @@ render \
 
 # Image directories alongside the rendered pages.
 
-# user_guide.md references images as `guide/<file>.png` (the prefix matches what the LaTeX render expected). We mirror the source filesystem layout so the rendered HTML's image paths resolve.
-mkdir -p "${LANDING}/user-guide/guide"
-copy_clean "${REPO_ROOT}/thesis_additions/guide/images/" "${LANDING}/user-guide/guide/"
+# Both source markdown files reference their images as `images/<file>.png`,
+# matching the actual on-disk layout (thesis_additions/<doc>/images/).
+# Mirror that layout under each rendered page.
+mkdir -p "${LANDING}/user-guide/images"
+copy_clean "${REPO_ROOT}/thesis_additions/guide/images/" "${LANDING}/user-guide/images/"
 
-# mock_gallery.md references images relative to its source folder.
 if [ -d "${REPO_ROOT}/thesis_additions/configurability_testing/images" ]; then
   mkdir -p "${LANDING}/configurability/images"
   copy_clean "${REPO_ROOT}/thesis_additions/configurability_testing/images/" "${LANDING}/configurability/images/"
