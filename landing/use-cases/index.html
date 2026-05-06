@@ -605,10 +605,10 @@ logic in UC-15).</li>
 <h3 id="uc-15-re-translation-edit-preservation">UC-15: Re-translation
 Edit Preservation</h3>
 <blockquote>
-<p><strong>US-15:</strong> As a curator, I want workspace-level
-re-translation to preserve my manually edited translations so that I do
-not lose my edits when I retranslate the document into a target language
-that already has partial coverage.</p>
+<p><strong>US-15:</strong> As a curator, I want to be warned before
+re-translation overwrites my manually edited translations so that I can
+decide whether to discard my edits or cancel the re-translation
+request.</p>
 </blockquote>
 <p><strong>Title:</strong> Re-translation Edit Preservation
 <strong>Actor:</strong> Curator</p>
@@ -621,38 +621,52 @@ manually edited or otherwise.</li>
 </ul>
 <p><strong>Basic Flow:</strong></p>
 <ol type="1">
-<li>The curator triggers translation of the entire workspace into a
-target language that already has partial coverage.</li>
-<li>The system iterates segments and skips any that already carry a
-translation in that language, regardless of whether the per-segment edit
-flag is set; only untranslated segments are dispatched to the API.</li>
-<li>The system attaches new segment translations for the dispatched
-segments and leaves existing entries (including edited ones) and their
-edit flags untouched.</li>
+<li>The curator triggers per-segment re-translation (the Sync action in
+the segment header) on a segment that carries the <em>Edited</em>
+badge.</li>
+<li>The system presents a confirmation dialog naming the target language
+and warning that the manual edit will be overwritten.</li>
+<li>The curator confirms the dialog.</li>
+<li>The system fetches a fresh translation from the API, overwrites the
+existing segment translation entry, and clears the per-segment edit
+flag.</li>
 </ol>
 <p><strong>Alternative Flows:</strong></p>
 <ul>
-<li><strong>1a. Per-segment re-translation:</strong> When the curator
-triggers re-translation of a single segment through the per-segment
-translate action, the system fetches a fresh translation, overwrites the
-existing segment translation entry, and clears the edit flag. No
-confirmation dialog is presented and the curator's prior edits are not
-preserved at this granularity.</li>
-<li><strong>2a. API failure on a single iteration:</strong> The system
-records the failure, continues with remaining segments, and presents a
-partial-success notice with the count of succeeded and failed
-segments.</li>
-<li><strong>2b. Total failure:</strong> The system displays an error
+<li><strong>2a. Cancel:</strong> The curator dismisses the dialog. The
+existing translation and its edit flag remain unchanged; no API call is
+issued.</li>
+<li><strong>1a. Per-segment re-translation of an unedited
+segment:</strong> When the targeted segment does not carry the
+<em>Edited</em> badge, the system skips the confirmation step, fetches a
+fresh translation, and overwrites the existing entry. No prior manual
+edits are at risk at this granularity.</li>
+<li><strong>1b. Workspace-level re-translation over partial
+coverage:</strong> When the curator triggers translation of the entire
+workspace into a target language that already has partial coverage, the
+system iterates segments and skips any that already carry a translation
+in that language, regardless of whether the per-segment edit flag is
+set; only untranslated segments are dispatched to the API. Existing
+entries (including edited ones) and their edit flags remain untouched.
+No confirmation dialog is presented at this granularity since no edits
+are at risk of being overwritten.</li>
+<li><strong>4a. API failure on a single iteration
+(workspace-level):</strong> The system records the failure, continues
+with remaining segments, and presents a partial-success notice with the
+count of succeeded and failed segments.</li>
+<li><strong>4b. Total API failure:</strong> The system displays an error
 notice with a retry action; the existing translation state is
 unchanged.</li>
 </ul>
 <p><strong>Postconditions:</strong></p>
 <ul>
-<li>Workspace-level translation: existing segment translations and their
-edit flags are preserved; only previously untranslated segments receive
-new content.</li>
-<li>Per-segment re-translation: the targeted entry reflects the fresh
-API response and its edit flag is cleared.</li>
+<li>Per-segment re-translation (confirmed): the targeted entry reflects
+the fresh API response and its edit flag is cleared.</li>
+<li>Per-segment re-translation (cancelled): the targeted entry and its
+edit flag remain unchanged.</li>
+<li>Workspace-level re-translation: existing segment translations and
+their edit flags are preserved; only previously untranslated segments
+receive new content.</li>
 </ul>
 <h2 id="thesaurus-tagging">Thesaurus Tagging</h2>
 <h3 id="uc-16-automatic-thesaurus-tagging">UC-16: Automatic Thesaurus

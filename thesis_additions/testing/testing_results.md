@@ -168,24 +168,30 @@ The pattern holds across the heterogeneous reviewer pool: fast, clean, and a goo
 
 ## 7. Identified Defects
 
-Two interaction defects were identified across the eleven sessions and are scheduled for follow-up alongside the future-work items in the Conclusion.
+Three interaction defects were raised during the review and have been addressed.
 
 The first concerns the re-translation warning dialog described in Use Case UC-15. One reviewer reported that the per-segment Sync action overwrote manual edits on the translated layer without first triggering the confirmation step.
 
 > *"I didn't get this: Try the Sync icon (re-translate). On an edited segment, it now opens a confirmation dialog warning you that re-translating will overwrite your edits... it just deleted my changes back to the poor translation."* (R5)
 
+The defect did not reproduce on the current build under follow-up testing. The most plausible explanation is routine refactoring on the translation flow that closed the original observation path; the per-segment Sync action against an *Edited* segment now triggers the confirmation dialog described in UC-15.
+
 The second concerns the entity edit popup snippet. After running NER on a translation layer, the popup on the original layer began to display partial translation text rather than the original surface form of the span.
 
 > *"I might have taken the wrong steps here, but I was testing whether running the NER would also work on the translated texts. However, after using this feature, it messed up the text visible in the pop-up display for the original text (e.g. I translated it to Dutch, ran the NER again on the Dutch text, the pop up texts in the original text for the first NER 'Melbourne High' now reads a partial Dutch text 'voor Melbourne'). It is still possible to manually edit it."* (R3)
 
-A smaller third item was reported in passing: the thesaurus search returns no matches for queries that exactly equal an existing thesaurus entry of the same length, while shorter prefixes of the same query do return matches. This is a Fuse.js scoring boundary at the upper edge of the threshold parameter, addressable by a pre-check for exact match before delegating to the fuzzy-search path.
+This too did not reproduce on the current build. The popover's auto-close-on-outside-click behaviour prevents the original observation path in the current code, so the cross-layer surface-form leak no longer occurs.
+
+The third item: the thesaurus search returns no matches for queries that exactly equal an existing thesaurus entry of the same length, while shorter prefixes of the same query do return matches.
 
 > *"The thesaurus search is struggling to give a perfect match (encountered with children's occupations); until you give it only a partial string, it finds the tag successfully, once input a 100% matching string, it gives out zero results."* (R3)
 
-All three sit in the UI layer and are listed in the future-work plan of the Conclusion.
+The cause was traced to a duplicate-key issue in the index data that confused React's reconciliation when fast typing changed the result list, and was resolved by de-duplicating the index at load time.
+
+None of the three required architectural intervention.
 
 ## 8. Summary
 
 Eleven reviewers, mean 4.27 on overall satisfaction, mean 4.45 on likelihood to use the tool for real curation work (seven picked 5), and mean 2.09 on cognitive effort (nine of eleven picked 1 or 2). Workspace creation, NER colour clarity, and JSON export came out on top. The two weakest surfaces were segmentation editing (3.73) and the semantic tagging panel (3.82); the drag-handle for boundary shifts and the placement of the auto-tag wand are the specific points the open feedback keeps coming back to.
 
-The single most actionable finding is the parallel-view request for translation post-editing — four reviewers asked for it independently, and the lower scores on layer switching back the same complaint up. On the positive side, what reviewers liked most was the visual cleanliness of the interface, the hybrid-automation philosophy, and the speed of the tool. Two interaction defects and one thesaurus-search edge case are logged for follow-up.
+The single most actionable finding is the parallel-view request for translation post-editing — four reviewers asked for it independently, and the lower scores on layer switching back the same complaint up. On the positive side, what reviewers liked most was the visual cleanliness of the interface, the hybrid-automation philosophy, and the speed of the tool. Two interaction defects and one thesaurus-search edge case were raised and have been addressed; none required architectural intervention.

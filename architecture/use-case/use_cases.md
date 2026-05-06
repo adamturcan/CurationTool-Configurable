@@ -408,7 +408,7 @@ This document lists the nineteen formalized use cases for the data curation plat
 
 ### UC-15: Re-translation Edit Preservation
 
-> **US-15:** As a curator, I want workspace-level re-translation to preserve my manually edited translations so that I do not lose my edits when I retranslate the document into a target language that already has partial coverage.
+> **US-15:** As a curator, I want to be warned before re-translation overwrites my manually edited translations so that I can decide whether to discard my edits or cancel the re-translation request.
 
 **Title:** Re-translation Edit Preservation **Actor:** Curator
 
@@ -419,20 +419,24 @@ This document lists the nineteen formalized use cases for the data curation plat
 
 **Basic Flow:**
 
-1. The curator triggers translation of the entire workspace into a target language that already has partial coverage.
-2. The system iterates segments and skips any that already carry a translation in that language, regardless of whether the per-segment edit flag is set; only untranslated segments are dispatched to the API.
-3. The system attaches new segment translations for the dispatched segments and leaves existing entries (including edited ones) and their edit flags untouched.
+1. The curator triggers per-segment re-translation (the Sync action in the segment header) on a segment that carries the *Edited* badge.
+2. The system presents a confirmation dialog naming the target language and warning that the manual edit will be overwritten.
+3. The curator confirms the dialog.
+4. The system fetches a fresh translation from the API, overwrites the existing segment translation entry, and clears the per-segment edit flag.
 
 **Alternative Flows:**
 
-- **1a. Per-segment re-translation:** When the curator triggers re-translation of a single segment through the per-segment translate action, the system fetches a fresh translation, overwrites the existing segment translation entry, and clears the edit flag. No confirmation dialog is presented and the curator's prior edits are not preserved at this granularity.
-- **2a. API failure on a single iteration:** The system records the failure, continues with remaining segments, and presents a partial-success notice with the count of succeeded and failed segments.
-- **2b. Total failure:** The system displays an error notice with a retry action; the existing translation state is unchanged.
+- **2a. Cancel:** The curator dismisses the dialog. The existing translation and its edit flag remain unchanged; no API call is issued.
+- **1a. Per-segment re-translation of an unedited segment:** When the targeted segment does not carry the *Edited* badge, the system skips the confirmation step, fetches a fresh translation, and overwrites the existing entry. No prior manual edits are at risk at this granularity.
+- **1b. Workspace-level re-translation over partial coverage:** When the curator triggers translation of the entire workspace into a target language that already has partial coverage, the system iterates segments and skips any that already carry a translation in that language, regardless of whether the per-segment edit flag is set; only untranslated segments are dispatched to the API. Existing entries (including edited ones) and their edit flags remain untouched. No confirmation dialog is presented at this granularity since no edits are at risk of being overwritten.
+- **4a. API failure on a single iteration (workspace-level):** The system records the failure, continues with remaining segments, and presents a partial-success notice with the count of succeeded and failed segments.
+- **4b. Total API failure:** The system displays an error notice with a retry action; the existing translation state is unchanged.
 
 **Postconditions:**
 
-- Workspace-level translation: existing segment translations and their edit flags are preserved; only previously untranslated segments receive new content.
-- Per-segment re-translation: the targeted entry reflects the fresh API response and its edit flag is cleared.
+- Per-segment re-translation (confirmed): the targeted entry reflects the fresh API response and its edit flag is cleared.
+- Per-segment re-translation (cancelled): the targeted entry and its edit flag remain unchanged.
+- Workspace-level re-translation: existing segment translations and their edit flags are preserved; only previously untranslated segments receive new content.
 
 ## Thesaurus Tagging
 

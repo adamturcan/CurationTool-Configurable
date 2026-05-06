@@ -427,9 +427,8 @@ amazing."</em> (R7)</p>
 clean, and a good fit for the partial-automation workflow the consortium
 uses in real curation.</p>
 <h2 id="7-identified-defects">7. Identified Defects</h2>
-<p>Two interaction defects were identified across the eleven sessions
-and are scheduled for follow-up alongside the future-work items in the
-Conclusion.</p>
+<p>Three interaction defects were raised during the review and have been
+addressed.</p>
 <p>The first concerns the re-translation warning dialog described in Use
 Case UC-15. One reviewer reported that the per-segment Sync action
 overwrote manual edits on the translated layer without first triggering
@@ -440,6 +439,11 @@ edited segment, it now opens a confirmation dialog warning you that
 re-translating will overwrite your edits... it just deleted my changes
 back to the poor translation."</em> (R5)</p>
 </blockquote>
+<p>The defect did not reproduce on the current build under follow-up
+testing. The most plausible explanation is routine refactoring on the
+translation flow that closed the original observation path; the
+per-segment Sync action against an <em>Edited</em> segment now triggers
+the confirmation dialog described in UC-15.</p>
 <p>The second concerns the entity edit popup snippet. After running NER
 on a translation layer, the popup on the original layer began to display
 partial translation text rather than the original surface form of the
@@ -453,20 +457,23 @@ the NER again on the Dutch text, the pop up texts in the original text
 for the first NER 'Melbourne High' now reads a partial Dutch text 'voor
 Melbourne'). It is still possible to manually edit it."</em> (R3)</p>
 </blockquote>
-<p>A smaller third item was reported in passing: the thesaurus search
-returns no matches for queries that exactly equal an existing thesaurus
-entry of the same length, while shorter prefixes of the same query do
-return matches. This is a Fuse.js scoring boundary at the upper edge of
-the threshold parameter, addressable by a pre-check for exact match
-before delegating to the fuzzy-search path.</p>
+<p>This too did not reproduce on the current build. The popover's
+auto-close-on-outside-click behaviour prevents the original observation
+path in the current code, so the cross-layer surface-form leak no longer
+occurs.</p>
+<p>The third item: the thesaurus search returns no matches for queries
+that exactly equal an existing thesaurus entry of the same length, while
+shorter prefixes of the same query do return matches.</p>
 <blockquote>
 <p><em>"The thesaurus search is struggling to give a perfect match
 (encountered with children's occupations); until you give it only a
 partial string, it finds the tag successfully, once input a 100%
 matching string, it gives out zero results."</em> (R3)</p>
 </blockquote>
-<p>All three sit in the UI layer and are listed in the future-work plan
-of the Conclusion.</p>
+<p>The cause was traced to a duplicate-key issue in the index data that
+confused React's reconciliation when fast typing changed the result
+list, and was resolved by de-duplicating the index at load time.</p>
+<p>None of the three required architectural intervention.</p>
 <h2 id="8-summary">8. Summary</h2>
 <p>Eleven reviewers, mean 4.27 on overall satisfaction, mean 4.45 on
 likelihood to use the tool for real curation work (seven picked 5), and
@@ -481,7 +488,8 @@ translation post-editing — four reviewers asked for it independently,
 and the lower scores on layer switching back the same complaint up. On
 the positive side, what reviewers liked most was the visual cleanliness
 of the interface, the hybrid-automation philosophy, and the speed of the
-tool. Two interaction defects and one thesaurus-search edge case are
-logged for follow-up.</p>
+tool. Two interaction defects and one thesaurus-search edge case were
+raised and have been addressed; none required architectural
+intervention.</p>
 </body>
 </html>
