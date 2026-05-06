@@ -6,7 +6,7 @@ import { Transaction } from "@codemirror/state";
 import type { NerSpan, SelectionBox, SpanCoordMap } from "../../../../types";
 import { getSpanId } from "../utils/editorUtils";
 
-import { editorTheme } from "./theme/theme";
+import { buildEditorTheme } from "./theme/theme";
 import { spansFacet, spanDecorationField } from "./features/spans/spanDecorations";
 import { createSpanProtectionFilter, intentionalTextReplace } from "./features/spans/spanProtection";
 import { handleSpanClickEvent } from "./features/spans/spanInteractions";
@@ -32,7 +32,7 @@ export const CodeMirrorWrapper: React.FC<Props> = ({
   const extensions = useMemo(() => {
     return [
       EditorView.lineWrapping,
-      editorTheme,
+      buildEditorTheme(),
       spansFacet.of(spans),
       spanDecorationField,
       createSpanProtectionFilter(),

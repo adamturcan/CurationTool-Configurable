@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import type { DbAdapter } from './DbAdapter.js';
-import type { User, CreateUserInput, WorkspaceDTO, Segment, ApiEndpointConfig } from '../types.js';
+import type { User, CreateUserInput, WorkspaceDTO, Segment, ApiEndpointConfig, EntityColor } from '../types.js';
 
 /**
  * File-backed `DbAdapter` that stores each collection as a JSON file in a data directory.
@@ -116,5 +116,15 @@ export class JsonFileAdapter implements DbAdapter {
 
   async saveEndpointConfig(config: ApiEndpointConfig[]): Promise<void> {
     await this.writeJson('config.json', config);
+  }
+
+  // Entity palette
+
+  async getEntityPalette(): Promise<EntityColor[]> {
+    return this.readJson<EntityColor[]>('palette.json', []);
+  }
+
+  async saveEntityPalette(palette: EntityColor[]): Promise<void> {
+    await this.writeJson('palette.json', palette);
   }
 }

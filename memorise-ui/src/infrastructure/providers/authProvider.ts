@@ -1,8 +1,9 @@
 /**
- * Singleton provider for AuthService — picks LocalAuthAdapter (standalone, localStorage-backed) or RemoteAuthAdapter (server, JWT-backed) based on `VITE_BACKEND_URL`.
- * Production code calls `getAuthService()`; tests can substitute an implementation via `setAuthProviderOverrides` and reset via `resetAuthProvider`.
- * Other providers (apiProvider, workspaceProvider, configProvider) read tokens from this provider, so overriding here is enough to feed credentials into all of them at once.
- * The non-obvious detail is that token reads happen lazily through closures (`() => getAuthService().getToken()`) — so the provider override must be installed *before* a request fires, not just before the consuming service is constructed.
+ * Singleton provider for AuthService. Picks LocalAuthAdapter (standalone, localStorage-backed) or RemoteAuthAdapter (server, JWT-backed) based on `VITE_BACKEND_URL`.
+ *
+ * Production code calls `getAuthService()`. Tests can substitute an implementation via `setAuthProviderOverrides` and reset via `resetAuthProvider`. Other providers (apiProvider, workspaceProvider, configProvider) read tokens from this provider, so overriding here is enough to feed credentials into all of them at once.
+ *
+ * Token reads happen lazily through closures (`() => getAuthService().getToken()`), so the provider override has to be installed *before* a request fires, not just before the consuming service is constructed.
  *
  * @category Infrastructure
  */

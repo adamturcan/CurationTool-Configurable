@@ -1,0 +1,89 @@
+@startuml
+skinparam ActivityBackgroundColor #EEF4FF
+skinparam ActivityBorderColor #336699
+skinparam ActivityDiamondBackgroundColor #FFFDE7
+skinparam ActivityDiamondBorderColor #336699
+skinparam ArrowColor #333333
+skinparam RoundCorner 10
+
+start
+:Curator opens new workspace;
+:Curator imports raw text;
+:Curator clicks "Segment" button;
+:System auto-segments document into logical units;
+:Workspace displays segments separated by delimiter;
+note right
+  Toolbar: NER · Tag · Translate · Segment
+  Segment is now disabled (one-time only)
+end note
+
+while (Session complete?) is (no)
+
+  partition "NER Analysis" {
+    if (Run NER?) then (yes)
+      if (Scope?) then (whole text)
+        :Curator clicks "NER" button\nfrom the global toolbar;
+        :System processes each segment sequentially;
+      else (specific segment)
+        :Curator clicks target segment;
+        :Curator opens segment menu;
+        :Curator clicks "NER" button;
+      endif
+      :NLP Service returns named entity suggestions;
+      :System auto-accepts non-conflicting tags;
+      if (Conflicts detected?) then (yes)
+        repeat
+          :System opens conflict resolution dialog;
+          if (Resolution?) then (keep mine)
+            :System retains curator's annotation;
+          else (accept API)
+            :System removes curator's annotation;
+            :System adds API suggestion;
+          endif
+        repeat while (More conflicts?) is (yes)
+        -> no;
+      else (no)
+      endif
+      :System displays named entities;
+    else (skip)
+    endif
+  }
+
+  partition "Translation" {
+    if (Translate?) then (yes)
+      if (Scope?) then (whole text)
+        :Curator clicks "Translation" button\nfrom the global toolbar;
+      else (specific segment)
+        :Curator clicks target segment;
+        :Curator opens segment menu;
+      endif
+      :Curator selects desired language from the menu;
+      :Curator clicks "Translate" button;
+      :NLP Service returns machine translation;
+      :Curator post-edits translation inline;
+    else (skip)
+    endif
+  }
+
+  partition "Thesaurus Tagging" {
+    if (Tag?) then (yes)
+      if (Scope?) then (whole text)
+        :Curator clicks "Tagging" button\nfrom the global toolbar;
+        :System tags all segments sequentially;
+      else (specific segment)
+        :Curator clicks target segment;
+        :Curator opens segment menu;
+        :Curator clicks "Tagging" button;
+      endif
+      :NLP Service returns thesaurus term matches;
+      :System displays matched terms;
+    else (skip)
+    endif
+  }
+
+endwhile (yes)
+
+:Save application state;
+stop
+
+@enduml

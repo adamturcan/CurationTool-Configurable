@@ -102,6 +102,13 @@ export interface ApiEndpointConfig {
   adapter?: string;
 }
 
+/** A single entry of the entity color palette used by the editor.
+ * `key` is the entity tag (e.g. PER, LOC) and `color` is a hex CSS color (#RRGGBB). */
+export interface EntityColor {
+  key: string;
+  color: string;
+}
+
 /** A registered user.
 * `passwordHash` is a bcrypt hash. */
 export interface User {

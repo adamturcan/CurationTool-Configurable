@@ -20,6 +20,7 @@ import BubbleSidebar from "./presentation/components/sidebar/BubbleSidebar";
 import { useWorkspaceStore, useNotificationStore, useAuthStore } from "./presentation/stores";
 import { getWorkspaceApplicationService } from "./infrastructure/providers/workspaceProvider";
 import { getAuthService } from "./infrastructure/providers/authProvider";
+import { hydrateAppConfig } from "./infrastructure/bootstrap/hydrateAppConfig";
 import type { WorkspaceDTO } from "./types";
 import { NotificationSnackbar } from "./presentation/components/shared/NotificationSnackbar";
 import { StateSynchronizer } from "./presentation/components/shared/StateSynchronizer";
@@ -62,8 +63,9 @@ const App: React.FC = () => {
     []
   );
 
-  // Hydrate auth state on mount
+  // Hydrate auth state and runtime app config on mount
   useEffect(() => {
+    void hydrateAppConfig();
     void (async () => {
       try {
         const authService = getAuthService();
@@ -259,6 +261,8 @@ const App: React.FC = () => {
         <Box
           sx={{
             flexGrow: 1,
+            height: "100%",
+            minHeight: 0,
             px: { xs: 0, sm: 4 },
             ml: { xs: 10, sm: 5 },
             pt: { xs: 0, sm: 5 },

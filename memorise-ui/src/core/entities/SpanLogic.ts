@@ -1,10 +1,11 @@
 import type { NerSpan, SpanCoordMap } from "../../types";
 
 /**
- * Pure functions for NER span coordinate math.
- * Handles offset translation between global (full-text) and local (per-segment) spaces, plus span shifting and removal when text is edited.
- * Inputs are NerSpan arrays; outputs are new arrays — nothing mutates in place.
- * The non-obvious detail is `getBanKey`: deleted-span identity is `start:end:entity`, NOT `span.id`, so re-running NER cannot resurrect a span the user deleted before edits change its position.
+ * Pure functions for NER span coordinate math. Handles offset translation between global (full-text) and local (per-segment) spaces, plus span shifting and removal when text is edited.
+ *
+ * Inputs are NerSpan arrays. Outputs are new arrays; nothing mutates in place.
+ *
+ * One thing worth knowing about `getBanKey`: deleted-span identity is `start:end:entity`, NOT `span.id`. That way, re-running NER cannot resurrect a span the user deleted before edits change its position.
  *
  * @category Entities
  */

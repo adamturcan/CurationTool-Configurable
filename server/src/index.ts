@@ -18,6 +18,7 @@ import { authRoutes } from './routes/authRoutes.js';
 import { configRoutes } from './routes/configRoutes.js';
 import { nlpRoutes } from './routes/nlpRoutes.js';
 import { workspaceRoutes } from './routes/workspaceRoutes.js';
+import { DEFAULT_ENTITY_PALETTE } from './defaults/entityPalette.js';
 
 const app = express();
 const port = parseInt(process.env.PORT ?? '3001', 10);
@@ -57,6 +58,13 @@ async function seedConfig() {
       { name: 'Supported Languages', key: 'translate-languages', url: process.env.TRANSLATE_LANGUAGES_URL ?? 'https://mt-api.dev.memorise.sdu.dk/supported_languages' },
     ]);
     console.log('[server] Seeded default endpoint config');
+  }
+
+  // Seed entity palette on first run
+  const existingPalette = await db.getEntityPalette();
+  if (existingPalette.length === 0) {
+    await db.saveEntityPalette(DEFAULT_ENTITY_PALETTE);
+    console.log('[server] Seeded default entity palette');
   }
 
   // Seed admin user if no users exist

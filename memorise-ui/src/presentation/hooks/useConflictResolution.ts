@@ -2,10 +2,13 @@ import { useCallback, useRef, useState } from "react";
 import { type ConflictPrompt } from "../../core/services/resolveApiSpanConflicts";
 
 /**
- * Bridges the synchronous-looking async API `requestConflictResolution(prompt) → Promise<choice>` with React state for the dialog UI.
- * `requestConflictResolution` stores the resolver in a ref and shows the dialog; `resolveConflictPrompt(choice)` settles the promise and clears state.
+ * Bridges an async-promise API for conflict resolution with React state for the dialog UI.
+ *
+ * `requestConflictResolution(prompt)` returns a `Promise<"api" | "existing">`: it stores the resolver in a ref and shows the dialog. `resolveConflictPrompt(choice)` settles the promise and clears state.
+ *
  * Workflow services can therefore `await onConflict(prompt)` and pause mid-iteration without leaking React-specific state into the application layer.
- * The non-obvious detail is that the resolver is held in a ref, not state — calling it doesn't trigger a re-render, only the subsequent `setConflictPrompt(null)` does.
+ *
+ * The resolver is held in a ref, not state. Calling it does not trigger a re-render; only the subsequent `setConflictPrompt(null)` does.
  */
 export function useConflictResolution() {
   const [conflictPrompt, setConflictPrompt] = useState<ConflictPrompt | null>(null);

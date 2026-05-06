@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CurationTool-Configurable: project landing page</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<main>
+
+<h1>CurationTool-Configurable</h1>
+
+<p class="subtitle">A configurable data-curation platform for archival document annotation. This page aggregates the live application, programmer documentation, stakeholder testing materials, and the supporting design artefacts referenced across the thesis.</p>
+
+<h2>Live application</h2>
+
+<dl class="links">
+  <dt><a href="app/">Open the application</a></dt>
+  <dd>Standalone-mode build hosted on GitHub Pages. Runs entirely in the browser and persists workspaces in <code>localStorage</code>; no backend required.</dd>
+</dl>
+
+<h2>Programmer documentation</h2>
+
+<dl class="links">
+  <dt><a href="docs/">TypeDoc API reference</a></dt>
+  <dd>Generated from JSDoc/TSDoc comments on the React frontend. Rebuilt by the CI pipeline on every push to <code>main</code>.</dd>
+
+  <dt><a href="https://github.com/adamturcan/CurationTool-Configurable">Source repository</a></dt>
+  <dd>Frontend, backend, Docker Compose configurations, GitHub Actions workflow, mock NLP services, and supporting design artefacts.</dd>
+</dl>
+
+<h2>Stakeholder testing materials</h2>
+
+<dl class="links">
+  <dt><a href="testing/guide/">Testing guide</a></dt>
+  <dd>The companion document supplied to consortium reviewers. Step-by-step instructions and the example source text used during the evaluation.</dd>
+
+  <dt><a href="testing/results/">Aggregate results</a></dt>
+  <dd>Summary of stakeholder responses across the form questions, surfaced from the eleven returned forms.</dd>
+</dl>
+
+<h2>End-user documentation</h2>
+
+<dl class="links">
+  <dt><a href="user-guide/">User guide</a></dt>
+  <dd>Walkthrough of the curation workflow with screenshots, covering workspaces, segmentation, NER, translation post-editing, and tagging.</dd>
+</dl>
+
+<h2>Architecture and design</h2>
+
+<dl class="links">
+  <dt><a href="architecture/">Architecture overview</a></dt>
+  <dd>C4 model views (system landscape, containers, frontend, backend), domain model, wireframes, and activity diagrams.</dd>
+
+  <dt><a href="use-cases/">Use-case specifications</a></dt>
+  <dd>Nineteen formalised use cases with user stories, basic flows, alternative flows, and postconditions.</dd>
+</dl>
+
+<h2>Configurability validation</h2>
+
+<dl class="links">
+  <dt><a href="configurability/">Mock-adapter gallery</a></dt>
+  <dd>Screenshots of the platform running against the bundled medical and legal mock NLP services, demonstrating the four configurable dimensions.</dd>
+</dl>
+
+<h2>Downloads</h2>
+
+<p>Self-contained PDF copies of every long-form artefact, mirrored here for archival.</p>
+
+<ul>
+  <li><a href="downloads/use_cases.pdf">Use-case specifications (PDF)</a></li>
+  <li><a href="downloads/user_guide.pdf">User guide (PDF)</a></li>
+  <li><a href="downloads/testing_results.pdf">Stakeholder testing results (PDF)</a></li>
+  <li><a href="downloads/mock_gallery.pdf">Mock-adapter gallery (PDF)</a></li>
+</ul>
+
+<h3>Source artefacts</h3>
+
+<ul>
+  <li><a href="downloads/c4.dsl">C4 model (Structurizr DSL source)</a></li>
+  <li><a href="downloads/domain.uml">UML domain model (PlantUML source)</a></li>
+  <li><a href="downloads/use-case.uml">Use-case diagram (PlantUML source)</a></li>
+  <li><a href="downloads/activity-edit.uml">Activity diagram, editing (PlantUML source)</a></li>
+  <li><a href="downloads/activity_nlp.uml">Activity diagram, NLP pipeline (PlantUML source)</a></li>
+</ul>
+
+<hr />
+
+<p class="muted">Bachelor's thesis by <strong>Adam Turčan</strong> at Charles University in Prague, Faculty of Mathematics and Physics (MFF UK). Built within the <a href="https://memorise.sdu.dk/about-memorise/">Memorise</a> project. This page and all linked artefacts are rebuilt automatically by the project's CI pipeline.</p>
+
+</main>
+</body>
+</html>

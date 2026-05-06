@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CurationTool-Configurable: architecture and design</title>
+<link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+<main>
+
+<p><a href="../">Back to project landing</a></p>
+
+<h1>Architecture and design</h1>
+
+<p class="subtitle">Visual artefacts produced during the design of the platform: C4 model views of the runtime topology, the UML domain model, activity and use-case diagrams, and the wireframes used during stakeholder review.</p>
+
+<h2>C4 model</h2>
+
+<p>The system is described at three levels of zoom following the C4 model. Source: <a href="../downloads/c4.dsl"><code>c4.dsl</code></a> (Structurizr DSL).</p>
+
+<h3>System landscape</h3>
+<p>The platform sits between the curators and the consortium's external NLP services. The frontend and the optional backend together constitute the system under design; the upstream NLP services are external dependencies abstracted behind adapters.</p>
+<img src="images/c4-landscape.png" alt="C4 system landscape diagram" />
+
+<h3>Containers</h3>
+<p>Two containers ship with the platform: the React single-page application and the optional Node/Express server. The server's persistence dimension is configurable: a JSON file adapter for development, a Postgres adapter for production.</p>
+<img src="images/c4-containers.png" alt="C4 container diagram" />
+
+<h3>Frontend components</h3>
+<img src="images/c4-client.png" alt="C4 frontend component diagram" />
+
+<h3>Backend components</h3>
+<img src="images/c4-backend.png" alt="C4 backend component diagram" />
+
+<h2>Domain model</h2>
+
+<p>UML model of the curation entities (Workspace, Segment, NerSpan, TranslationDTO, TagItem) and their relationships. Source: <a href="../downloads/domain.uml"><code>domain.uml</code></a> (PlantUML).</p>
+<img src="images/domain-model.png" alt="UML domain model" />
+
+<h2>Use-case diagram</h2>
+
+<p>Top-level overview of the nineteen use cases grouped by functional area. The detailed specifications are in the <a href="../use-cases/">use-case specifications</a> page. Source: <a href="../downloads/use-case.uml"><code>use-case.uml</code></a> (PlantUML).</p>
+<img src="images/use-case-diagram.png" alt="UML use-case diagram" />
+
+<h2>Activity diagrams</h2>
+
+<h3>Editing flow</h3>
+<p>Curator-driven actions: importing text, segmentation review, NER edits, tagging. Source: <a href="../downloads/activity-edit.uml"><code>activity-edit.uml</code></a>.</p>
+<img src="images/activity-editing.png" alt="Activity diagram for the editing flow" />
+
+<h3>NLP pipeline</h3>
+<p>System-driven flow: dispatching to the configured NLP service, normalisation through the adapter, conflict resolution against existing spans. Source: <a href="../downloads/activity_nlp.uml"><code>activity_nlp.uml</code></a>.</p>
+<img src="images/activity-nlp.png" alt="Activity diagram for the NLP pipeline" />
+
+<h2>Wireframes</h2>
+
+<p>Low-fidelity sketches used to align with consortium reviewers before implementation.</p>
+
+<h3>Workspace list</h3>
+<img src="images/wf-workspaces.png" alt="Wireframe of the workspace list" />
+
+<h3>Editor (main view)</h3>
+<img src="images/wf-main.png" alt="Wireframe of the editor main view" />
+
+<h3>Segment-level editing</h3>
+<img src="images/wf-segment.png" alt="Wireframe of segment-level editing" />
+
+<h3>Conflict resolution dialog</h3>
+<img src="images/wf-conflict.png" alt="Wireframe of the conflict resolution dialog" />
+
+<h3>Admin services panel</h3>
+<img src="images/wf-admin.png" alt="Wireframe of the admin services panel" />
+
+<hr />
+
+<p class="muted"><a href="../">Back to project landing</a></p>
+
+</main>
+</body>
+</html>

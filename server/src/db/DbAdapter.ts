@@ -1,4 +1,4 @@
-import type { User, CreateUserInput, WorkspaceDTO, Segment, ApiEndpointConfig } from '../types.js';
+import type { User, CreateUserInput, WorkspaceDTO, Segment, ApiEndpointConfig, EntityColor } from '../types.js';
 
 /**
  * Persistence contract used by the server
@@ -20,4 +20,9 @@ export interface DbAdapter {
 
   getEndpointConfig(): Promise<ApiEndpointConfig[]>;
   saveEndpointConfig(config: ApiEndpointConfig[]): Promise<void>;
+
+  /** Returns the persisted entity color palette in insertion order. */
+  getEntityPalette(): Promise<EntityColor[]>;
+  /** Replaces the entity color palette atomically. */
+  saveEntityPalette(palette: EntityColor[]): Promise<void>;
 }

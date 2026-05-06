@@ -4,9 +4,10 @@ import type { Segment } from '../../types';
 
 /**
  * Routes WorkspaceRepository operations to whichever adapter (LocalStorageWorkspaceRepository or RemoteAdapter) is active for this build.
- * Implements WorkspaceRepository itself so consumers can depend on the gateway and never branch on local-vs-remote at the call site.
- * Adapter selection happens once in `workspaceProvider` based on `VITE_BACKEND_URL`; this class only forwards calls.
- * The non-obvious detail is that the optional methods (`getRawPersistenceForOwner`, `updateSegments`) are forwarded with optional chaining, so a remote adapter that omits them simply yields `undefined` / no-op without throwing.
+ *
+ * Implements WorkspaceRepository itself, so consumers depend on the gateway and never branch on local-vs-remote at the call site. Adapter selection happens once in `workspaceProvider` based on `VITE_BACKEND_URL`; this class only forwards calls.
+ *
+ * The optional methods (`getRawPersistenceForOwner`, `updateSegments`) are forwarded with optional chaining, so a remote adapter that omits them simply yields `undefined` or a no-op without throwing.
  *
  * @category Infrastructure
  */

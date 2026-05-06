@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { DbAdapter } from '../db/DbAdapter.js';
 import { authMiddleware } from '../middleware/authMiddleware.js';
 import type { WorkspaceDTO } from '../types.js';
+import { validateWorkspaceDto } from './validateWorkspaceDto.js';
 
 /**
  * Workspace CRUD routes mounted under `/api`.
@@ -38,6 +39,11 @@ export function workspaceRoutes(db: DbAdapter): Router {
 
   /** `POST /api/workspaces` - creates a workspace. */
   router.post('/workspaces', authMiddleware, async (req, res) => {
+    const error = validateWorkspaceDto(req.body);
+    if (error) {
+      res.status(400).json({ error });
+      return;
+    }
     const dto = req.body as WorkspaceDTO;
     dto.owner = req.user!.id;
     await db.saveWorkspace(dto);
@@ -50,6 +56,11 @@ export function workspaceRoutes(db: DbAdapter): Router {
     const existing = await db.findWorkspaceById(id);
     if (existing && existing.owner !== req.user!.id && req.user!.role !== 'admin') {
       res.status(403).json({ error: 'Access denied' });
+      return;
+    }
+    const error = validateWorkspaceDto(req.body);
+    if (error) {
+      res.status(400).json({ error });
       return;
     }
     const dto = req.body as WorkspaceDTO;
@@ -85,6 +96,11 @@ export function workspaceRoutes(db: DbAdapter): Router {
     }
     if (existing.owner !== req.user!.id && req.user!.role !== 'admin') {
       res.status(403).json({ error: 'Access denied' });
+      return;
+    }
+    const error = validateWorkspaceDto(req.body, { partial: true });
+    if (error) {
+      res.status(400).json({ error });
       return;
     }
     await db.updateSegments(id, req.body.segments ?? []);

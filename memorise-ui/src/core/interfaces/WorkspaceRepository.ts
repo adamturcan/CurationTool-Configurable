@@ -3,9 +3,14 @@ import type { Segment } from '../../types';
 
 /**
  * Storage contract for workspace persistence.
- * Implemented by LocalStorageWorkspaceRepository (browser localStorage), RemoteAdapter (REST against the optional server), and StorageGateway (a transparent router that delegates to whichever of the above is active).
- * Consumers depend only on this interface; the concrete pick is decided in `workspaceProvider` based on `VITE_BACKEND_URL`.
- * The non-obvious detail is that `getRawPersistenceForOwner` and `updateSegments` are optional — LocalStorageWorkspaceRepository implements them, RemoteAdapter does not, so callers must guard with `?.` and tolerate absence.
+ *
+ * Implemented by LocalStorageWorkspaceRepository (browser localStorage), RemoteAdapter (REST against the optional server), and StorageGateway (a router that delegates to whichever of the above is active).
+ *
+ * StorageGateway implements this interface as a routing wrapper rather than a real backend, dispatching to either LocalStorageWorkspaceRepository or RemoteAdapter based on the deployment mode.
+ *
+ * Consumers depend only on this interface. The concrete pick is decided in `workspaceProvider` based on `VITE_BACKEND_URL`.
+ *
+ * `getRawPersistenceForOwner` and `updateSegments` are optional. LocalStorageWorkspaceRepository implements them; RemoteAdapter does not. Callers must guard with `?.` and tolerate absence.
  *
  * @category Interfaces
  */

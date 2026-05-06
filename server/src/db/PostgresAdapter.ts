@@ -2,7 +2,7 @@ import { Pool } from 'pg';
 import { randomUUID } from 'node:crypto';
 import bcrypt from 'bcryptjs';
 import type { DbAdapter } from './DbAdapter.js';
-import type { User, CreateUserInput, WorkspaceDTO, Segment, ApiEndpointConfig } from '../types.js';
+import type { User, CreateUserInput, WorkspaceDTO, Segment, ApiEndpointConfig, EntityColor } from '../types.js';
 
 interface WorkspaceRow {
   id: string;
@@ -47,6 +47,11 @@ export class PostgresAdapter implements DbAdapter {
         name TEXT NOT NULL,
         url TEXT NOT NULL,
         adapter TEXT
+      );
+      CREATE TABLE IF NOT EXISTS entity_palette (
+        key TEXT PRIMARY KEY,
+        color TEXT NOT NULL,
+        position INTEGER NOT NULL DEFAULT 0
       );
     `);
   }
@@ -196,6 +201,38 @@ export class PostgresAdapter implements DbAdapter {
           `INSERT INTO endpoint_config (key, name, url, adapter)
            VALUES ($1, $2, $3, $4)`,
           [c.key, c.name, c.url, c.adapter ?? null],
+        );
+      }
+      await client.query('COMMIT');
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  // Entity palette
+
+  async getEntityPalette(): Promise<EntityColor[]> {
+    await this.ready();
+    const r = await this.pool.query<{ key: string; color: string }>(
+      `SELECT key, color FROM entity_palette ORDER BY position, key`,
+    );
+    return r.rows.map(row => ({ key: row.key, color: row.color }));
+  }
+
+  async saveEntityPalette(palette: EntityColor[]): Promise<void> {
+    await this.ready();
+    const client = await this.pool.connect();
+    try {
+      await client.query('BEGIN');
+      await client.query('DELETE FROM entity_palette');
+      for (let i = 0; i < palette.length; i++) {
+        const { key, color } = palette[i];
+        await client.query(
+          `INSERT INTO entity_palette (key, color, position) VALUES ($1, $2, $3)`,
+          [key, color, i],
         );
       }
       await client.query('COMMIT');

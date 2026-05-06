@@ -1,8 +1,9 @@
 /**
- * Singleton provider for ConfigService — picks BrowserConfigService (env-var defaults) or RemoteConfigService (server-fetched config) based on `VITE_BACKEND_URL`.
- * Production code calls `getConfigService()`; tests can substitute an implementation via `setConfigProviderOverrides` and reset via `resetConfigProvider`.
- * RemoteConfigService falls back to env-var defaults on fetch failure (HTTP 500, network error, malformed payload), so the consumer never sees an exception during config read.
- * The non-obvious detail is that the same singleton is reused across the session — server-side config changes after first load are not picked up unless `resetConfigProvider` is called.
+ * Singleton provider for ConfigService. Picks BrowserConfigService (env-var defaults) or RemoteConfigService (server-fetched config) based on `VITE_BACKEND_URL`.
+ *
+ * Production code calls `getConfigService()`. Tests can substitute an implementation via `setConfigProviderOverrides` and reset via `resetConfigProvider`. RemoteConfigService falls back to env-var defaults on fetch failure (HTTP 500, network error, malformed payload), so the consumer never sees an exception during config read.
+ *
+ * The same singleton is reused across the session, so server-side config changes after first load are not picked up unless `resetConfigProvider` is called.
  *
  * @category Infrastructure
  */

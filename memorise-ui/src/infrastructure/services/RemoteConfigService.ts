@@ -1,4 +1,4 @@
-import type { ConfigService, ApiEndpointConfig, AppConfig } from '../../core/interfaces/ConfigService';
+import type { ConfigService, ApiEndpointConfig, AppConfig, EntityColor } from '../../core/interfaces/ConfigService';
 import { BrowserConfigService } from './BrowserConfigService';
 
 /**
@@ -17,6 +17,7 @@ export class RemoteConfigService implements ConfigService {
   private readonly fallback: BrowserConfigService;
 
   private cachedEndpoints: ApiEndpointConfig[] | null = null;
+  private cachedPalette: EntityColor[] | null = null;
   private ready = false;
   private fetchPromise: Promise<AppConfig> | null = null;
 
@@ -37,6 +38,12 @@ export class RemoteConfigService implements ConfigService {
     return endpoints.find((ep) => ep.key === key) ?? null;
   }
 
+  getPalette(): EntityColor[] {
+    return this.cachedPalette
+      ? this.cachedPalette.map((entry) => ({ ...entry }))
+      : this.fallback.getPalette();
+  }
+
   async fetchConfig(): Promise<AppConfig> {
     // Dedup concurrent calls
     if (this.fetchPromise) return this.fetchPromise;
@@ -50,17 +57,21 @@ export class RemoteConfigService implements ConfigService {
     }
   }
 
-  async saveConfig(config: AppConfig): Promise<void> {
+  async saveConfig(config: Partial<AppConfig>): Promise<void> {
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     const token = this.getAuthToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    const body: Partial<AppConfig> = {};
+    if (config.endpoints !== undefined) body.endpoints = config.endpoints;
+    if (config.palette !== undefined) body.palette = config.palette;
+
     const response = await fetch(`${this.backendUrl}/api/config`, {
       method: 'PUT',
       headers,
-      body: JSON.stringify(config),
+      body: JSON.stringify(body),
     });
 
     if (!response.ok) {
@@ -69,11 +80,16 @@ export class RemoteConfigService implements ConfigService {
     }
 
     // Update local cache with what the server accepted
-    const data = (await response.json()) as { endpoints?: unknown };
+    const data = (await response.json()) as { endpoints?: unknown; palette?: unknown };
     if (Array.isArray(data.endpoints)) {
       this.cachedEndpoints = data.endpoints as ApiEndpointConfig[];
-    } else {
+    } else if (config.endpoints !== undefined) {
       this.cachedEndpoints = config.endpoints;
+    }
+    if (Array.isArray(data.palette)) {
+      this.cachedPalette = data.palette as EntityColor[];
+    } else if (config.palette !== undefined) {
+      this.cachedPalette = config.palette;
     }
   }
 
@@ -96,7 +112,7 @@ export class RemoteConfigService implements ConfigService {
         return this.useFallback();
       }
 
-      const data = (await response.json()) as { endpoints?: unknown };
+      const data = (await response.json()) as { endpoints?: unknown; palette?: unknown };
 
       if (!Array.isArray(data.endpoints)) {
         console.warn('Config response malformed (missing endpoints array), using env var fallback');
@@ -104,8 +120,14 @@ export class RemoteConfigService implements ConfigService {
       }
 
       this.cachedEndpoints = data.endpoints as ApiEndpointConfig[];
+      this.cachedPalette = Array.isArray(data.palette)
+        ? (data.palette as EntityColor[])
+        : this.fallback.getPalette();
       this.ready = true;
-      return { endpoints: [...this.cachedEndpoints] };
+      return {
+        endpoints: [...this.cachedEndpoints],
+        palette: this.cachedPalette.map((entry) => ({ ...entry })),
+      };
     } catch (error) {
       console.warn('Config fetch error, using env var fallback:', error);
       return this.useFallback();
@@ -114,7 +136,9 @@ export class RemoteConfigService implements ConfigService {
 
   private useFallback(): AppConfig {
     this.ready = true;
-    const config = { endpoints: this.fallback.getEndpoints() };
-    return config;
+    return {
+      endpoints: this.fallback.getEndpoints(),
+      palette: this.fallback.getPalette(),
+    };
   }
 }

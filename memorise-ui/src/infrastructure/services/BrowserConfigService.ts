@@ -1,4 +1,5 @@
-import type { ConfigService, ApiEndpointConfig, AppConfig } from '../../core/interfaces/ConfigService';
+import type { ConfigService, ApiEndpointConfig, AppConfig, EntityColor } from '../../core/interfaces/ConfigService';
+import { DEFAULT_ENTITY_PALETTE } from '../../shared/constants/notationEditor';
 
 /**
  * Reads API endpoint configuration from Vite env vars (import.meta.env).
@@ -8,8 +9,10 @@ import type { ConfigService, ApiEndpointConfig, AppConfig } from '../../core/int
  */
 export class BrowserConfigService implements ConfigService {
   private readonly endpoints: ApiEndpointConfig[];
+  private readonly palette: EntityColor[];
 
   constructor() {
+    this.palette = Object.entries(DEFAULT_ENTITY_PALETTE).map(([key, color]) => ({ key, color }));
     this.endpoints = [
       {
         name: "Named Entity Recognition",
@@ -52,12 +55,16 @@ export class BrowserConfigService implements ConfigService {
     return this.endpoints.find((ep) => ep.key === key) ?? null;
   }
 
+  getPalette(): EntityColor[] {
+    return this.palette.map((entry) => ({ ...entry }));
+  }
+
   async fetchConfig(): Promise<AppConfig> {
-    return { endpoints: this.getEndpoints() };
+    return { endpoints: this.getEndpoints(), palette: this.getPalette() };
   }
 
   async saveConfig(): Promise<void> {
-    // No-op in standalone mode - endpoints come from env vars
+    // No-op in standalone mode - config comes from env vars and frozen defaults
   }
 
   isReady(): boolean {

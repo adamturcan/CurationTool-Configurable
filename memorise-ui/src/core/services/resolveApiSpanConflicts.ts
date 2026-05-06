@@ -1,8 +1,13 @@
 /**
- * Resolves conflicts when freshly returned NER spans overlap existing user or API spans on the same layer.
- * Walks the incoming list, partitions clean adds from overlaps, and resolves each overlap by awaiting an `onConflict` callback that returns "api" or "existing".
- * Returns merged user/api span arrays plus the count of conflicts handled, so callers can shape the success notice.
- * The non-obvious detail is that this function never auto-resolves an overlap — clean adds are silent, but every overlap blocks until the caller's promise settles.
+ * Reconciles freshly returned NER spans against the spans already present on a layer (user spans + previously accepted API spans).
+ *
+ * Each incoming span falls into one of three categories:
+ *
+ * 1. No overlap with anything existing. Auto-accepted, no user interaction.
+ * 2. Overlap with an existing API span of the same entity type, and no overlap with any user span. Treated as a silent replacement: the older API span is dropped and the new one takes its place without prompting.
+ * 3. Genuine conflict: overlap with a user span, or overlap with an API span of a different entity type. Resolution is suspended on the `onConflict` callback, which awaits the user's choice ("api" or "existing") before the loop continues.
+ *
+ * The function returns merged user/api span arrays plus the number of category-3 conflicts handled, so callers can shape the success notice.
  *
  * @category Services
  */
@@ -37,6 +42,13 @@ export interface ConflictPrompt {
   language?: string;
 }
 
+/**
+ * Iterates `incomingSpans` and reconciles each one against `userSpans` and `existingApiSpans` using the three-category rule documented in the file header.
+ *
+ * Genuine conflicts are surfaced through the `onConflict` callback (the `requestConflictResolution` / `useConflictResolution` pattern on the presentation side): the loop awaits the returned promise, so the caller controls the dialog flow while this function stays purely promise-based and UI-agnostic.
+ *
+ * Returned arrays are new (no in-place mutation of the inputs); `conflictsHandled` counts only category-3 prompts so the caller can shape the success notice without double-counting silent replacements.
+ */
 export const resolveApiSpanConflicts = async (params: {
   text: string;
   incomingSpans: NerSpan[];

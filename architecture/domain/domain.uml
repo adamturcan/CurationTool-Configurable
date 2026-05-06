@@ -1,0 +1,101 @@
+@startuml                                                                
+  skinparam ClassBackgroundColor #EEF4FF                                 
+  skinparam ClassBorderColor #5577AA
+  skinparam ArrowColor #334466                                             
+  skinparam ClassFontSize 11
+  skinparam Padding 5                                                      
+                                                                         
+  class User {
+    id
+    username
+    email
+    role : admin | user
+  }                                                                        
+  
+  class Workspace <<aggregate root>> {                                     
+    id                                                                   
+    name
+    owner : User.id
+    text  : source text
+    isTemporary
+    createdAt                                                              
+    updatedAt
+    deletedApiKeys : dismissed API span IDs                                
+  }                                                                      
+
+  class Segment {
+    id
+    start : char offset
+    end   : char offset (exclusive)
+    text  : cached substring                                               
+    order
+    isEdited                                                               
+  }                                                                      
+
+  class NerSpan {
+    id
+    origin : api | user
+    start  : char offset
+    end    : char offset
+    entity : PER | LOC | ORG | DATE | CAMP | GHETTO | MISC
+    score  : confidence (api only)                                         
+  }
+                                                                           
+  class TagItem {                                                        
+    name
+    source    : api | user
+    label     : KeywordID (thesaurus)                                      
+    parentId  : disambiguation
+    segmentId : nullable; if null applies to whole workspace               
+  }                                                                        
+  
+  class Translation {                                                      
+    language                                                             
+    sourceLang
+    text : full translated text
+    createdAt
+    updatedAt
+    segmentTranslations       : map<segmentId, text>
+    editedSegmentTranslations : map<segmentId, bool>                       
+  }
+                                                                           
+  class WorkspaceCounters {                                              
+    nerEdits
+    tagAdds
+    segmentEdits
+    tagRemovals
+    nerBreakdown                                                           
+    segmentBreakdown
+  }                                                                        
+                                                                         
+  class ApiEndpointConfig <<global, per-deployment>> {                     
+    name
+    key     : ner | segment | classify | translate                         
+    url                                                                  
+    adapter : adapter key
+  }
+
+  User "1" -- "0..*" Workspace : owns                                      
+  
+  Workspace "1" *-- "0..*" Segment       : has                             
+  Workspace "1" *-- "0..*" NerSpan       : has (userSpans + apiSpans)    
+  Workspace "1" *-- "0..*" TagItem       : has                             
+  Workspace "1" *-- "0..*" Translation   : has
+  Workspace "1" *-- "1"   WorkspaceCounters                                
+                                                                           
+  TagItem "0..*" --> "0..1" Segment : segmentId (optional scope)           
+  Translation "1" *-- "0..*" NerSpan : has own spans per language          
+  Translation ..> Segment : keys segmentTranslations                       
+                                                                         
+  note right of NerSpan
+    Stored on Workspace (and Translation),
+    bound to the text by character offsets.
+    Segment has no structural ownership.
+  end note
+                                                                         
+  note right of ApiEndpointConfig                                          
+    Global per-deployment config persisted                               
+    by the backend. Not per-workspace.                                     
+  end note                                                               
+
+  @enduml

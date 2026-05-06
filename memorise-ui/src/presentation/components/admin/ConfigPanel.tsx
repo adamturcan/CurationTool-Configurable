@@ -20,6 +20,7 @@ import CancelIcon from "@mui/icons-material/Close";
 import { shadows } from "../../../shared/theme";
 import EndpointRow from "./EndpointRow";
 import AdapterSchemaDialog from "./AdapterSchemaDialog";
+import PaletteEditor from "./PaletteEditor";
 import { useEndpointConfig } from "./useEndpointConfig";
 import type { SchemaDialogState } from "./types";
 
@@ -240,6 +241,8 @@ const ConfigPanel: React.FC = () => {
             ))}
         </Paper>
       )}
+
+      <PaletteEditor />
 
       <AdapterSchemaDialog dialog={schemaDialog} onClose={() => setSchemaDialog(null)} />
     </Box>

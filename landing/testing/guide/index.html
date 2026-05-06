@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Memorise Data Curation Tool: User Test Guide</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<main>
+
+<p><a href="../../">Back to project landing</a></p>
+
+<h1>Memorise Data Curation Tool: User Test Guide</h1>
+
+<p><strong>What we're testing:</strong> The <strong>user interface (UI)</strong> of this data curation tool. The NLP models themselves (segmentation, NER, translation) are external APIs and <strong>not</strong> part of what we're evaluating. Please don't rate the models. We want to know how well the UI lets you <strong>correct and curate</strong> what the models produce: are the controls discoverable, do the interactions feel natural, can you reach a satisfying result without getting stuck?</p>
+
+<p><strong>What we need from you:</strong> Do the tasks below on the transcript example provided right here on this page, then export your workspace as JSON and fill out the short feedback form.</p>
+
+<p><strong>About the transcript.</strong> You'll be working with a short example from a Holocaust survivor testimony. It contains the material needed to exercise all features.</p>
+
+<hr />
+
+<h2 id="sample-transcript">Sample transcript</h2>
+
+<p>Use the text below as your input for Step 1. <strong>Copy it from the box</strong> (or click <em>Copy</em>), or <strong>download</strong> it as a <code>.txt</code> file and paste its contents into the workspace editor.</p>
+
+<div class="sample-actions">
+ <button type="button" id="copy-btn" class="btn">Copy text</button>
+ <a class="btn" href="TEXT_EXAMPLE.txt" download>Download .txt</a>
+</div>
+
+<pre id="sample-text" class="sample"></pre>
+
+<hr />
+
+<h2>TL;DR. The 7 steps</h2>
+
+<p>Skim this checklist first to get a sense of the whole flow, then scroll down for detailed instructions on each step.</p>
+
+<ol>
+ <li><strong>Sign in and create a workspace.</strong> Paste the transcript excerpt from the box above.</li>
+ <li><strong>Auto-segment</strong> the document with one click.</li>
+ <li><strong>Fix the segmentation</strong>, merge, split, or shift boundaries until it feels right.</li>
+ <li><strong>Run NER and semantic tagging</strong> on the whole document.</li>
+ <li><strong>Review entities and semantic tags</strong> segment by segment; correct what the model got wrong.</li>
+ <li><strong>Translate one segment</strong> into a language you read; try editing the translation.</li>
+ <li><strong>Export your workspace as JSON</strong>, then fill out the short feedback form.</li>
+</ol>
+
+<hr />
+
+<h2>Before you start</h2>
+
+<ol>
+ <li>Open the app in a modern browser (Chrome, Firefox or Safari is recommended). URL will be shared with the invitation.</li>
+ <li>When you first sign in, you'll see <strong>3 empty pre-seeded workspaces</strong> in the sidebar. You're welcome to poke around them, but for the actual test <strong>please create a new workspace of your own</strong>, this keeps everyone's test session cleanly separated in what you send us. The sidebar shows up to 3 workspaces directly; once you have more than 3, a <strong>+N</strong> bubble appears that opens the <strong>Manage Workspaces</strong> page where you can find the rest.</li>
+ <li><strong>You do not need to start a timer.</strong> The tool records when your workspace was created and when you exported it, so session duration is computed automatically from the JSON. Just work at a comfortable pace.</li>
+ <li><strong>You do not need to count your edits by hand.</strong> The tool automatically tracks how many times you merge, split, or shift segments, and how many NER spans you create, delete, re-categorize, or edit. These numbers are included in the JSON export at the end.</li>
+ <li><strong>You do not need to save manually.</strong> The tool <strong>autosaves</strong> your workspace to your browser's local storage as you work, so a crash or accidental tab close won't cost you progress. You can still click the <strong>Save</strong> icon in the top toolbar if you want to force a save, but it isn't required during normal use.</li>
+ <li><strong>Undo/redo is available</strong> if you make a mistake; use the top toolbar to undo or redo your steps.</li>
+ <li>If anything <strong>in the interface</strong> breaks, confuses you, is hard to find, or behaves unexpectedly, note it down. That's the most valuable feedback.</li>
+</ol>
+
+<blockquote><strong>Privacy note.</strong> The transcript stays in your browser (<code>localStorage</code>). You can clear it at any time by deleting the workspace. Nothing is uploaded to a shared database.</blockquote>
+
+<hr />
+
+<h2>Step 1. Sign in and create a workspace</h2>
+
+<ol>
+ <li>On the login screen, enter any username (e.g. your first name) and click <strong>Sign in</strong>. There's no password. This is a UI affordance, not a security boundary.</li>
+ <li>You'll land on the app with 3 pre-seeded empty workspaces in the sidebar. <strong>Create your own</strong> by clicking the <strong>+</strong> (New Workspace) bubble in the left sidebar.</li>
+ <li>Give the workspace a name like <code>Test-&lt;yourname&gt;</code>.</li>
+ <li>Load the sample transcript into your workspace using <strong>either</strong> of these options:
+ <ul>
+ <li><strong>Import the file directly in the New Workspace modal</strong>, <a href="TEXT_EXAMPLE.txt" download>download the <code>.txt</code> file</a> from the <a href="#sample-transcript">sample transcript</a> section above, then in the create-workspace modal use the file-import field to attach it before confirming. The transcript will be loaded into the new workspace automatically.</li>
+ <li><strong>Or paste it into the editor after creating the workspace</strong>, confirm the modal with an empty workspace, then copy the <a href="#sample-transcript">sample transcript</a> from the top of this page and paste it into the editor placeholder ("Insert your document text here…").</li>
+</ul>
+</li>
+</ol>
+
+<p><strong>Checkpoint:</strong> You should see one large block of text, with a single segment containing everything you pasted.</p>
+
+<hr />
+
+<h2>Step 2. Auto-segment</h2>
+
+<ol>
+ <li>In the top toolbar, click the <strong>Auto-Segment</strong> icon (looks like a forked arrow, blue).</li>
+ <li>Wait for the API to return. The text should split into many numbered sentence-like segments.</li>
+ <li>Take a quick look at the segmentation to get a feel for how it turned out.</li>
+</ol>
+
+<p><strong>What to expect:</strong> The transcript will split into roughly <strong>25 segments</strong>. Don't let the number overwhelm you. Most segments are short because the speaker talks in fragments. Your job in Step 3 is to merge back the ones that clearly belong together.</p>
+
+<p><strong>Note:</strong> The "Auto-Segment" button will be greyed out after a successful run. This is expected, you can only auto-segment a document once.</p>
+
+<hr />
+
+<h2>Step 3. Fix segmentation in the UI</h2>
+
+<p>Go through the document and correct segmentation you disagree with. <strong>The point is to exercise the UI's segmentation-editing tools</strong>, merging, splitting, shifting boundaries, and see whether they feel natural to use.</p>
+
+<p>Available actions (hover between two segments to reveal):</p>
+
+<ul>
+ <li><strong>Merge two segments</strong> click the small merge icon (double-sided arrow) that appears at the boundary between them. This joins the current segment with the one above it.</li>
+ <li><strong>Shift the boundary between two segments</strong> grab the drag handle (six dots) at the boundary and drop it inside either segment at the new boundary position.</li>
+ <li><strong>Split a segment</strong> select a delimiter (<code>! ? . - , :</code>) position inside the segment (highlight with a mouse); a floating menu will show (this action is only allowed in the original text view of a segment, to prevent misalignments and context loss); choose <strong>"Split segment here"</strong>.</li>
+</ul>
+
+<hr />
+
+<h2>Step 4. Run NER (Named Entity Recognition) and semantic tagging on the whole document</h2>
+
+<h3>4a. Named entity recognition</h3>
+
+<ol>
+ <li>Click the <strong>Run NER</strong> icon in the top toolbar (right next to the grayed-out "run segmentation" button).</li>
+ <li>Wait for the API to finish. A <strong>toast notification</strong> will pop up confirming the NER run completed across the whole document.</li>
+ <li>The coloured highlights themselves only render inside the <strong>currently active segment</strong>, click on a segment to activate it and see its entities highlighted. Switch between segments to browse the recognised entities:
+ <ul>
+ <li><strong>Pink</strong>, PER (Person)</li>
+ <li><strong>Blue</strong>, DATE</li>
+ <li><strong>Green</strong>, LOC (Location)</li>
+ <li><strong>Orange</strong>, ORG (Organisation)</li>
+ <li><strong>Purple</strong>, CAMP</li>
+ <li><strong>Brown</strong>, GHETTO</li>
+ <li><strong>Blue-grey</strong>, MISC</li>
+</ul>
+</li>
+</ol>
+
+<p><strong>What to expect from NER:</strong> You'll notice NER misses many obvious entities. That's expected, and correcting those in Step 5 is exactly the curation work this tool is built for.</p>
+
+<p>If the API finds spans that conflict with anything you created, a <strong>conflict dialog</strong> will ask you to choose which to keep. Pick whichever is correct and continue.</p>
+
+<h3>4b. Semantic tagging</h3>
+
+<ol>
+ <li>Click the <strong>semantic tags / label</strong> icon in the top toolbar (second to last icon) to open the tags panel on the right.</li>
+ <li>In the top toolbar a new sparkle wand icon button will appear (<strong>Auto-Tag Document</strong>); click it to run semantic tagging. The API will assign hierarchical topic tags to segments based on their content.</li>
+ <li>Wait for the toast notification confirming the run completed.</li>
+ <li>The right-hand panel lists all assigned tags; activating individual segments will filter out its corresponding semantic tags.</li>
+</ol>
+
+<p><strong>What to expect from semantic tagging:</strong> The model typically assigns a handful of topic tags drawn from a MEMORISE thesaurus (e.g. <em>migration</em>, <em>family</em>, <em>persecution</em>, <em>displacement</em>, <em>post-war experience</em>). Don't worry about tag accuracy at this stage. You'll have the option to correct or add tags in Step 5 as you browse the segments.</p>
+
+<hr />
+
+<h2>Step 5. Review and correct NER spans and semantic tags</h2>
+
+<p>Work through every segment and make both the entities and the semantic tags look right. The goal here is to <strong>exercise the span- and tag-editing UI</strong>, clicking existing spans, selecting text to create new ones, picking categories from the popup menu, editing span text in the input, adding/removing semantic tags. Please do this for <strong>every</strong> segment, not only a few. That's what gives us comparable data across testers.</p>
+
+<h3>NER actions</h3>
+
+<ul>
+ <li><strong>Delete a wrong span</strong> click the highlighted span, then click the red trash icon in the popup menu.</li>
+ <li><strong>Change a span's category</strong> (e.g. CAMP LOC) click the span, choose the correct category from the popup.</li>
+ <li><strong>Edit the text of a span</strong> (e.g. API caught "Auschwitz" but missed the "-Birkenau" suffix) click the span and edit the text in the popup input.</li>
+ <li><strong>Add a new span</strong> select the text with your mouse, release, then pick a category from the floating menu that appears.</li>
+</ul>
+
+<h3>Semantic tags</h3>
+
+<p>While you're moving through segments doing NER review, also review the semantic tags that were assigned in Step 4b.</p>
+
+<ul>
+ <li><strong>Add a tag to a segment</strong> open the tags panel by clicking the sem-tag icon in the toolbar or in the segment header, search the thesaurus for a relevant term, and assign it to the currently active segment. The input searches the <strong>MEMORISE thesaurus by default</strong>; if the term you want isn't in the thesaurus, toggle to <strong>Free Text</strong> mode using the button in the tag panel header to add your own tag.</li>
+ <li><strong>Remove a misassigned tag</strong> click the small <strong>x</strong> on the tag chip in the segment panel to remove it from the tags list.</li>
+</ul>
+
+<blockquote><strong>Note.</strong> The right-hand tag panel switches scope based on what's active. With a segment active, it shows <strong>Segment Tags</strong> for that segment; with no segment active (click outside any segment to deactivate), it shows <strong>Document Tags</strong>, so make sure you're tagging the segment you intend to.</blockquote>
+
+<hr />
+
+<h2>Step 6. Translate a segment</h2>
+
+<p><strong>Focus in this step is the translation UI flow</strong>, adding a translation layer, switching between layers, editing translations, and the re-translate confirmation flow. Don't worry about how good the translation itself is.</p>
+
+<ol>
+ <li>Pick the segment with the <strong>most NER spans or semantic tags</strong> (or one of them if there are several). Activating a segment now opens its translation toolbar automatically. You can still use the chevron <strong>v</strong> on the top-right of the segment header to collapse or re-open it manually.</li>
+ <li>Click the <strong>+</strong> button in the segment header. A language list opens.</li>
+ <li>Pick a target language you read fluently (the source is in English, so pick something else you can judge).</li>
+ <li>Wait for the translation to appear.</li>
+ <li>Use the language dropdown in the segment header to switch between <strong>Original Text</strong> and <strong>Translation: [LANG]</strong>.</li>
+ <li>Click directly into the translated text and <strong>fix any translation errors</strong> you can spot. Automatic translations of historical testimonies often miss filler words, mistranslate proper nouns, or include editor in-line notes. A small <strong>"Edited"</strong> badge appears once you make a change. Note this UI affordance.</li>
+ <li>Try the <strong>Sync</strong> icon (re-translate). On an edited segment, it now opens a <strong>confirmation dialog</strong> warning you that re-translating will overwrite your edits. Check whether the wording feels clear; cancel to keep your edits, confirm to overwrite.</li>
+ <li><strong>Translate the whole document</strong> click the <strong>Translate Document</strong> icon in the top toolbar (translate icon, orange), pick a language different from the one in step 3, wait for it to finish (this might take a while), then switch between layers in a segment to confirm both translations coexist cleanly.</li>
+ <li><strong>Run NER on a translated segment</strong> with a segment switched to its translation, click the <strong>Run NER on segment</strong> icon in the segment header. Switch back and forth between languages and check the entity layers coexist cleanly. This tests the <strong>layered-annotation UI</strong>.</li>
+</ol>
+
+<blockquote><strong>Note.</strong> <strong>Translate segment</strong> (the <strong>+</strong> button) always translates the <strong>original</strong> text. Not the currently open translation. So if you switch the dropdown to a translation and click <strong>+</strong> to add another language, the new translation is still produced from the English source.</blockquote>
+
+<hr />
+
+<h2>Step 7. Export your workspace</h2>
+
+<p>Your workspace has been autosaved throughout the session, so you can export directly without needing to save first.</p>
+
+<ol>
+ <li>From the workspace itself, click the <strong>export</strong> action in the top toolbar and choose <strong>JSON (&lt;&gt;)</strong>.</li>
+ <li>Save the file somewhere you can find it. You'll attach it to the feedback form in Step 8.</li>
+ <li>Also try exporting as <strong>PDF</strong> from the same menu. Check whether it looks like something you'd hand to a colleague.</li>
+</ol>
+
+<p>The JSON contains everything needed for us to analyse the session: your final segments, entities, translations, and the automatic edit counters (how many segments you joined/split/shifted, and how many NER spans you created/deleted/re-categorised). No manual reporting needed.</p>
+
+<hr />
+
+<h2>Step 8. Send us the results</h2>
+
+<p>Please send us two things:</p>
+
+<ol>
+ <li><strong>The exported JSON file</strong> from Step 7. Attach it to the feedback form (or email it to <a href="mailto:adam.turcan@drake.sk">adam.turcan@drake.sk</a>).</li>
+ <li><strong>The feedback form</strong>, link in the invitation email.</li>
+</ol>
+
+<hr />
+
+<h2>Additional checks</h2>
+
+<p>Please also run through these to exercise the tool's resilience and workspace-management features, and note what surprised you:</p>
+
+<ul>
+ <li><strong>Try undo/redo mid-task</strong>, make a few merges or NER edits, then mash the undo/redo buttons in the top toolbar and see whether the UI keeps up.</li>
+ <li><strong>Refresh the browser</strong> mid-session. Everything should still be there thanks to <strong>autosave</strong> (workspace state lives in <code>localStorage</code>). Confirm this.</li>
+ <li><strong>Rename your workspace</strong> from the <strong>Manage Workspaces</strong> page. There's an edit (pencil) button next to each workspace name.</li>
+ <li><strong>Open the same workspace in a second browser tab</strong>, does it behave sanely? (real-time syncing between tabs isn't implemented yet, so the two tabs may diverge until you refresh. We're aware of this and are working on a fix.)</li>
+</ul>
+
+<hr />
+
+<h2>FAQ / troubleshooting</h2>
+
+<ul>
+ <li><strong>An action did nothing and I don't see an error.</strong> Open the browser DevTools (F12) Console tab. If you see red errors mentioning CORS or <code>Failed to fetch</code>, screenshot it and include it in the feedback form.</li>
+ <li><strong>The document is segmented and "Auto-Segment" is greyed out.</strong> That's correct. Auto-segment only works on a single-segment document. Merge everything back or start a new workspace to re-run.</li>
+ <li><strong>Re-translation overwrites my edits.</strong> When you click <strong>Sync</strong> on a segment that shows the orange "Edited" badge, you'll get a confirmation dialog warning you that re-translating will overwrite your manual edits. Cancel to keep your edits, confirm to replace them with a fresh API translation.</li>
+ <li><strong>I lost my work.</strong> The tool <strong>autosaves</strong> your workspace to your browser's <code>localStorage</code> as you work, so normal refreshes, crashes, and accidental tab closes should be recoverable. However, clearing cookies/site data, using a private/incognito window, or opening the app in a different browser profile will still wipe it. Those aren't covered by autosave.</li>
+</ul>
+
+<p>Thanks for testing :).</p>
+
+</main>
+
+<script>
+ fetch('TEXT_EXAMPLE.txt')
+ .then(r => r.text())
+ .then(t => { document.getElementById('sample-text').textContent = t; })
+ .catch(() => { document.getElementById('sample-text').textContent = 'Could not load sample text. Use the Download button instead.'; });
+
+ document.getElementById('copy-btn').addEventListener('click', async () => {
+ const btn = document.getElementById('copy-btn');
+ const text = document.getElementById('sample-text').textContent;
+ try {
+ await navigator.clipboard.writeText(text);
+ btn.textContent = 'Copied!';
+ setTimeout(() => { btn.textContent = 'Copy text'; }, 1500);
+ } catch {
+ btn.textContent = 'Copy failed. Select manually';
+ }
+ });
+</script>
+
+</body>
+</html>

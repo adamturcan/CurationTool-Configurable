@@ -24,10 +24,13 @@ export type GlobalNerResult = WorkflowResult & {
 
 
 /**
- * NER orchestration: single-segment runs, single-span create/delete/update, and workspace-wide runs over original + translation layers.
- * Each method takes a session snapshot (no store reads), calls the configured ApiService, optionally invokes the conflict-resolution callback, and returns a WorkflowResult patch the presentation layer can apply via `applyLayerPatch`.
- * Span coordinates are kept in global (full-text) space throughout — segment-local conversion is done at the boundaries by SegmentLogic / SpanLogic.
- * The non-obvious detail is `runGlobalNer`: per-segment iterations carry their own running layer state inside the service so each iteration sees the previous iteration's spans — without that, the next call's full-array `layerPatch` would clobber the prior segment's spans.
+ * NER orchestration. Covers single-segment runs, single-span create/delete/update, and workspace-wide runs that iterate over the original layer and every translation layer.
+ *
+ * Each method takes a session snapshot (no store reads), calls the configured ApiService, optionally invokes the conflict-resolution callback, and returns a WorkflowResult patch the presentation layer applies via `applyLayerPatch`.
+ *
+ * Span coordinates stay in global (full-text) space throughout. Segment-local conversion happens at the boundaries via SegmentLogic / SpanLogic.
+ *
+ * Note for `runGlobalNer`: per-segment iterations carry their own running layer state inside the service so each iteration sees the previous iteration's spans. Otherwise the next call's full-array `layerPatch` would clobber the prior segment's spans.
  *
  * @category Application
  */
@@ -114,7 +117,7 @@ export class AnnotationWorkflowService {
 
   /**
    * Runs NER across the whole workspace: original layer + every translation layer, either once each (unsegmented mode) or per-segment with progress (segmented mode).
-   * Carries the running per-language layer state forward across iterations so successive `runNer`calls see prior results — without this the next call's full-array `layerPatch` would clobber spans from the previous segment.
+   * Carries the running per-language layer state forward across iterations so successive `runNer` calls see prior results. Without this, the next call's full-array `layerPatch` would clobber spans from the previous segment.
    */
   async runGlobalNer(
     session: {

@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>Stakeholder testing: aggregate results</title>
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+  </style>
+  <link rel="stylesheet" href="../../style.css" />
+  
+</head>
+<body>
+<p><a href="../../">Back to project landing</a></p>
+<h1 id="stakeholder-testing-results">Stakeholder Testing Results</h1>
+<p>This document reports the aggregate results of the stakeholder review
+summarised in Section 5.6 of the thesis. Eleven reviewers from the
+MEMORISE consortium and adjacent institutions completed the structured
+testing protocol on the live deployment at
+<code>https://curation-tool.memorise.sdu.dk</code> between April 23 and
+May 5, 2026, working with the same example transcript and the same
+step-by-step companion page. Each session produced a JSON export from
+the platform together with a four-section feedback form combining
+Likert-style ratings on the main UI affordances with open-text prompts.
+The form distinguished UI evaluation (controls, interactions, layout)
+from NLP evaluation (recall and precision of the model output) and asked
+reviewers to address only the former; the platform's stated contribution
+is the curation interface, and conflating it with the NLP pipeline would
+mix two independently configurable concerns.</p>
+<h2 id="1-demographics-and-coverage">1. Demographics and Coverage</h2>
+<p>The reviewer pool covered a mix of academic and engineering
+backgrounds, including computer scientists, computational linguists, and
+tooling-adjacent roles. Browsers were predominantly Chrome (n=7), with
+Firefox (n=3) and Safari (n=1) also represented. Coverage of the
+optional UI affordances was high.</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Reviewers who exercised it</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Translation UI (any)</td>
+<td>11 of 11</td>
+</tr>
+<tr>
+<td>Translation UI: single segment + whole document</td>
+<td>7 of 11</td>
+</tr>
+<tr>
+<td>Semantic tagging panel: actively reviewed or edited tags</td>
+<td>8 of 11</td>
+</tr>
+<tr>
+<td>Semantic tagging panel: glanced only</td>
+<td>2 of 11</td>
+</tr>
+<tr>
+<td>Semantic tagging panel: ran auto-tag and moved on</td>
+<td>1 of 11</td>
+</tr>
+</tbody>
+</table>
+<p>All reviewers performed the mandatory parts of the protocol
+(workspace creation, segmentation, NER, translation, tag review, export)
+in full. The translation flow was thus exercised end-to-end by every
+reviewer, and the semantic tagging flow was actively engaged with by a
+clear majority.</p>
+<h2 id="2-overall-ui-experience">2. Overall UI Experience</h2>
+<p>The form opened with three high-level Likert questions on
+satisfaction, cognitive load, and intent to use. Distributions and means
+are reported below over n=11 responses.</p>
+<table>
+<thead>
+<tr>
+<th>Question</th>
+<th>Mean</th>
+<th>Distribution (1-5)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Overall satisfaction with the curation interface</td>
+<td>4.27</td>
+<td>3:1, 4:6, 5:4</td>
+</tr>
+<tr>
+<td>Cognitive effort to operate the UI (1=very easy, 5=very hard)</td>
+<td>2.09</td>
+<td>1:3, 2:6, 4:2</td>
+</tr>
+<tr>
+<td>Likelihood to use for real work (assuming reliable APIs)</td>
+<td>4.45</td>
+<td>2:1, 4:3, 5:7</td>
+</tr>
+</tbody>
+</table>
+<p>Two readings stand out. First, satisfaction is consistently positive:
+no rating below 3, no neutral cluster, and a clean lean toward 4 and 5.
+Second, cognitive effort is rated low for nine of eleven reviewers (1 or
+2 on a five-point scale), with two outliers at 4. The combination is
+interpretable as a UI that most reviewers find easy to operate, with two
+reviewers reporting that learning the interaction model required
+noticeable effort. The likelihood-to-use rating is the strongest single
+quantitative signal in the form, with seven of eleven reviewers
+selecting 5 and ten of eleven selecting 4 or above.</p>
+<h2 id="3-per-feature-clarity-and-ease-of-use">3. Per-Feature Clarity
+and Ease of Use</h2>
+<p>Section 3 of the form rated the clarity or ease of ten distinct UI
+surfaces on a one-to-five scale, where 1 means very hard or confusing
+and 5 means very easy or clear. The full distribution is reported
+below.</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>n</th>
+<th>Mean</th>
+<th>Distribution (1-5)</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ease of creating a workspace and pasting text</td>
+<td>11</td>
+<td>4.91</td>
+<td>4:1, 5:10</td>
+</tr>
+<tr>
+<td>Clarity of the top toolbar</td>
+<td>11</td>
+<td>4.27</td>
+<td>4:8, 5:3</td>
+</tr>
+<tr>
+<td>Clarity of the per-segment header</td>
+<td>11</td>
+<td>4.45</td>
+<td>4:6, 5:5</td>
+</tr>
+<tr>
+<td>Ease of editing segmentation (merge / split / shift)</td>
+<td>11</td>
+<td>3.73</td>
+<td>3:5, 4:4, 5:2</td>
+</tr>
+<tr>
+<td>Ease of correcting NER spans</td>
+<td>10</td>
+<td>4.20</td>
+<td>2:1, 3:1, 4:3, 5:5</td>
+</tr>
+<tr>
+<td>Clarity of the NER category colours</td>
+<td>11</td>
+<td>4.82</td>
+<td>4:2, 5:9</td>
+</tr>
+<tr>
+<td>Clarity of the semantic tagging panel</td>
+<td>11</td>
+<td>3.82</td>
+<td>3:5, 4:3, 5:3</td>
+</tr>
+<tr>
+<td>Clarity of the per-segment translation controls</td>
+<td>11</td>
+<td>4.09</td>
+<td>2:1, 3:2, 4:3, 5:5</td>
+</tr>
+<tr>
+<td>Ease of moving between layers (original vs. translation)</td>
+<td>11</td>
+<td>4.18</td>
+<td>2:1, 3:2, 4:2, 5:6</td>
+</tr>
+<tr>
+<td>Ease of exporting workspace as JSON</td>
+<td>11</td>
+<td>4.91</td>
+<td>4:1, 5:10</td>
+</tr>
+</tbody>
+</table>
+<p>The strongest ratings are concentrated on the start-to-end workflow
+boundaries (workspace creation 4.91, JSON export 4.91) and on the entity
+colour palette (4.82). The two weakest ratings are the
+segmentation-editing controls (3.73) and the semantic tagging panel
+(3.82), where the distributions tilt toward 3 rather than the otherwise
+dominant 4 and 5. The mid-range scores on translation controls (4.09)
+and layer switching (4.18) are accompanied by a tail of one or two low
+scores, consistent with the qualitative theme of parallel-view friction
+reported in Section 5.</p>
+<h2 id="4-specific-ui-moments">4. Specific UI Moments</h2>
+<p>Section 4 of the form asked closed questions about distinct UI
+moments that reviewers might or might not have triggered. The
+percentages below are over reviewers who could plausibly have
+encountered each moment.</p>
+<table>
+<thead>
+<tr>
+<th>UI moment</th>
+<th>Result</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Edited badge + locked re-translate</strong></td>
+<td>3 understood from the UI; 2 noticed but unsure of meaning; 2 found
+the UI unclear; 4 did not try</td>
+</tr>
+<tr>
+<td><strong>Conflict resolution dialog</strong></td>
+<td>3 saw it and found it clear; 8 never saw it (no conflicting NER
+reruns)</td>
+</tr>
+<tr>
+<td><strong>Drag-to-shift-boundary interaction</strong></td>
+<td>2 intuitive; 3 OK after instructions; 4 confusing; 2 did not
+try</td>
+</tr>
+<tr>
+<td><strong>Span editing popup (select vs. click)</strong></td>
+<td>6 clear with distinct flows; 3 slightly confusing (sometimes the
+wrong popup); 2 did not use</td>
+</tr>
+<tr>
+<td><strong>Undo / redo in the toolbar</strong></td>
+<td>8 used and behaved as expected; 2 did not notice the buttons; 1 did
+not need them</td>
+</tr>
+<tr>
+<td><strong>Autosave trustworthy</strong></td>
+<td>5 stopped thinking about saving; 5 neutral; 1 wanted a visible saved
+indicator</td>
+</tr>
+</tbody>
+</table>
+<p>The drag-to-shift interaction is the single biggest red flag in this
+section. Four reviewers explicitly described it as confusing, and two
+more skipped it altogether, leaving fewer than half the pool comfortable
+with the interaction as built. The span editing popup had a smaller
+version of the same effect, with three reviewers reporting they
+sometimes received the wrong popup. The Edited-badge UI was evenly split
+between reviewers who understood the lock-out and reviewers who did not,
+suggesting the affordance communicates the rule it enforces without yet
+making its purpose self-evident.</p>
+<p>The conflict resolution dialog was well-received by reviewers who
+reached it, but most did not, because the protocol did not force a
+re-NER pass over an already-annotated segment.</p>
+<h2 id="5-open-feedback-convergent-themes">5. Open Feedback: Convergent
+Themes</h2>
+<p>The open-text questions yielded substantial qualitative content. Five
+themes recur across multiple independent respondents.</p>
+<h3 id="51-parallel-view-translation-editing-n4-reviewers">5.1
+Parallel-view translation editing (n=4 reviewers)</h3>
+<p>The most strongly convergent gap. Four reviewers independently asked
+for a parallel-view layout displaying the original segment text and its
+current translation side by side, on the grounds that automatic
+translations contain corrections that are easier to make against the
+source visible at the same time.</p>
+<blockquote>
+<p><em>"As improvement could be added original text within a bubble
+showed over of the translated one. During corrections I made, it was
+required to switch between languages a bit often."</em> (R1)</p>
+</blockquote>
+<blockquote>
+<p><em>"Perhaps viewing the original text and translated texts next to
+each other. The Dutch version had quite some mistakes, editing this is
+quite a nuisance if you have to keep switching back and forth between
+the two texts."</em> (R3)</p>
+</blockquote>
+<blockquote>
+<p><em>"I think the translation editing view is not really functional in
+this way, as anybody who ever translated text will tell you, you need a
+parallel view. Clicking back and forth is extremely inefficient. I would
+propose to produce an option of a parallel view between selected pair of
+the original on the resulting translation."</em> (R4)</p>
+</blockquote>
+<blockquote>
+<p><em>"Translation UI is recommended to be redone in a way that allows
+side-by-side comparison... swapping between languages for checking slows
+down the work significantly."</em> (R8)</p>
+</blockquote>
+<h3 id="52-document-level-operation-visibility-n4">5.2 Document-level
+operation visibility (n=4)</h3>
+<p>Reviewers reported hesitation when global actions did not produce
+immediate visible feedback in the active segment, and noted that the
+auto-tag affordance appears outside the panel where reviewers expect to
+find it.</p>
+<blockquote>
+<p><em>"I struggled with understanding the functional differences of
+applying analysis on the document as a whole and in detail."</em>
+(R4)</p>
+</blockquote>
+<blockquote>
+<p><em>"NER tags not displayed on unhighlighted segments were
+counter-intuitive."</em> (R7)</p>
+</blockquote>
+<blockquote>
+<p><em>"Auto-tagging the document was a bit confusing. Initially, when
+you open the tag panel its empty and it's not immediately clear the
+auto-tagging option pops up as a new feature. Perhaps this feature would
+be more noticeable when the wand icon is located in the tag panel rather
+than in the main panel."</em> (R3)</p>
+</blockquote>
+<blockquote>
+<p><em>"NER can be done whole document at once, semantic tagging one has
+to click through each segment."</em> (R7, surfacing the
+per-segment-vs-global asymmetry)</p>
+</blockquote>
+<h3 id="53-boundary-editing-ux-n3">5.3 Boundary editing UX (n=3+)</h3>
+<p>The drag-handle for boundary shifting was confusing to multiple
+reviewers, consistent with the closed question result above.</p>
+<blockquote>
+<p><em>"The segment boundary-editing was very counterintuitive, I am
+still not sure if I operationalized it properly."</em> (R3)</p>
+</blockquote>
+<blockquote>
+<p><em>"The boundary setting function for segmentation modification is
+confusing to understand... I was not sure which set of buttons on the
+segments merging and boundary selection belongs to which segment. I was
+constantly clicking on the wrong one."</em> (R4)</p>
+</blockquote>
+<blockquote>
+<p><em>"Drag-to-change boundary"</em> (R6, listed as the single thing
+they would change)</p>
+</blockquote>
+<h3 id="54-span-editing-limitations-n2">5.4 Span editing limitations
+(n=2)</h3>
+<p>Two reviewers noted that adjusting the boundaries of an existing
+entity span requires deletion plus re-creation rather than direct
+editing, which complicates corrections of slightly mis-recognised
+spans.</p>
+<blockquote>
+<p><em>"With NER, span modifications was also unclear, I ended up always
+deleting the original annotation and re-annotating the span manually
+from scratch."</em> (R4)</p>
+</blockquote>
+<blockquote>
+<p><em>"If you want to make the span larger, I couldn't find how to do
+it, I had to delete the NER tag and create a new one with the right
+span."</em> (R7)</p>
+</blockquote>
+<h3 id="55-visible-button-labels-rather-than-icons-alone-n2">5.5 Visible
+button labels rather than icons alone (n=2)</h3>
+<p>Two reviewers, including one who works closely with non-technical
+users, asked for explicit text labels alongside or in place of the
+toolbar icons.</p>
+<blockquote>
+<p><em>"Instead of picture icons with text tool tips, I would prefer to
+have visible text at all times."</em> (R2)</p>
+</blockquote>
+<blockquote>
+<p><em>"More clarity. The interface is very button-intense. For me as a
+CS no problem, but for non-IT people this could be a problem. Why not
+make it explicit what the individual buttons mean. There is space to
+write NER, Translate, ... besides the button/s."</em> (R9)</p>
+</blockquote>
+<p>This sits in productive tension with another convergent finding:
+multiple reviewers cited the iconography itself as a strength of the
+interface (Section 6).</p>
+<h2 id="6-open-feedback-convergent-positives">6. Open Feedback:
+Convergent Positives</h2>
+<p>The "what did you like most" prompt elicited a clear pattern. Of
+eleven responses, ten were positive and substantive, and three
+independent themes recurred.</p>
+<h3 id="visual-cleanliness-and-density-balance">Visual cleanliness and
+density balance</h3>
+<blockquote>
+<p><em>"Nice and easy to look at... kind of un-messy, even though all
+the features needed is there."</em> (R5)</p>
+</blockquote>
+<blockquote>
+<p><em>"Good balance between overview and functionality. It is not
+cluttered at all even with quite a large feature set."</em> (R6)</p>
+</blockquote>
+<blockquote>
+<p><em>"Most of the workspace is occupied by text and other tools do not
+take much of the precious space for skimming over the text. The picked
+color scheme of UI and tags is not irritating and might work for longer
+sessions."</em> (R8)</p>
+</blockquote>
+<h3 id="iconography-and-visual-layout">Iconography and visual
+layout</h3>
+<blockquote>
+<p><em>"Clear iconography, lot of options to work in several parallel
+workflows at once, the idea of manual text segmentation editing is
+awesome, nice visual layout in general."</em> (R4)</p>
+</blockquote>
+<blockquote>
+<p><em>"Colors after running NER function."</em> (R11)</p>
+</blockquote>
+<h3 id="hybrid-automation-workflow-philosophy">Hybrid-automation
+workflow philosophy</h3>
+<blockquote>
+<p><em>"I can really see the benefits of the UI to people who work with
+oral history interviews or longer 'personal' texts in general... The
+ability to partially automate but still edit the NER and tags saves a
+lot of work while retaining the option to edit/add specific items
+relevant to your research."</em> (R3)</p>
+</blockquote>
+<blockquote>
+<p><em>"Its simplicity. You can (and should be able to) operate the tool
+without guidance. This is the strength of the tool."</em> (R9)</p>
+</blockquote>
+<h3 id="speed-and-responsiveness">Speed and responsiveness</h3>
+<blockquote>
+<p><em>"It is super fast, the ability to see and add new NER tags is
+amazing."</em> (R7)</p>
+</blockquote>
+<p>The pattern is consistent across eleven reviewers from heterogeneous
+backgrounds: the platform is perceived as fast, visually clean, and
+well-suited to the partial-automation workflow that the consortium
+practises in real curation work.</p>
+<h2 id="7-identified-defects">7. Identified Defects</h2>
+<p>Two interaction defects were identified across the eleven sessions
+and are scheduled for follow-up alongside the future-work items in the
+Conclusion.</p>
+<p>The first concerns the re-translation warning dialog described in Use
+Case UC-15. One reviewer reported that the per-segment Sync action
+overwrote manual edits on the translated layer without first triggering
+the confirmation step.</p>
+<blockquote>
+<p><em>"I didn't get this: Try the Sync icon (re-translate). On an
+edited segment, it now opens a confirmation dialog warning you that
+re-translating will overwrite your edits... it just deleted my changes
+back to the poor translation."</em> (R5)</p>
+</blockquote>
+<p>The second concerns the entity edit popup snippet. After running NER
+on a translation layer, the popup on the original layer began to display
+partial translation text rather than the original surface form of the
+span.</p>
+<blockquote>
+<p><em>"I might have taken the wrong steps here, but I was testing
+whether running the NER would also work on the translated texts.
+However, after using this feature, it messed up the text visible in the
+pop-up display for the original text (e.g. I translated it to Dutch, ran
+the NER again on the Dutch text, the pop up texts in the original text
+for the first NER 'Melbourne High' now reads a partial Dutch text 'voor
+Melbourne'). It is still possible to manually edit it."</em> (R3)</p>
+</blockquote>
+<p>A smaller third item was reported in passing: the thesaurus search
+returns no matches for queries that exactly equal an existing thesaurus
+entry of the same length, while shorter prefixes of the same query do
+return matches. This is a Fuse.js scoring boundary at the upper edge of
+the threshold parameter, addressable by a pre-check for exact match
+before delegating to the fuzzy-search path.</p>
+<blockquote>
+<p><em>"The thesaurus search is struggling to give a perfect match
+(encountered with children's occupations); until you give it only a
+partial string, it finds the tag successfully, once input a 100%
+matching string, it gives out zero results."</em> (R3)</p>
+</blockquote>
+<p>All three defects are confined to the presentation layer, do not
+affect the architectural seams that the thesis claims, and are listed in
+the future-work plan of the Conclusion.</p>
+<h2 id="8-summary">8. Summary</h2>
+<p>Across eleven reviewers, the platform was rated positively on overall
+satisfaction (mean 4.27), strongly positive on likelihood-to-use for
+real curation work (mean 4.45, with seven of eleven selecting 5), and
+predominantly low on cognitive effort to operate (mean 2.09, with nine
+of eleven at 1 or 2). Per-feature ratings were strongest on workspace
+creation, named entity colour clarity, and JSON export, where modal
+answers concentrated at 5. The two weakest features were the manual
+segmentation-editing controls (mean 3.73) and the semantic tagging panel
+(mean 3.82), with the qualitative comments converging on the
+boundary-shift drag handle and the auto-tag wand placement as the
+specific pain points.</p>
+<p>The most actionable convergent finding is the request for a
+parallel-view layout in translation post-editing, raised independently
+by four of eleven reviewers and supported by the lower scores on layer
+switching. The visual cleanliness of the interface, the
+partial-automation workflow philosophy, and the platform's
+responsiveness emerged as convergent positives across the open-text
+responses. Two interaction defects, plus a thesaurus-search scoring edge
+case, were identified and recorded for follow-up.</p>
+</body>
+</html>

@@ -2,6 +2,8 @@ import { Router } from 'express';
 import type { DbAdapter } from '../db/DbAdapter.js';
 import type { AdapterRegistry } from '../adapters/AdapterRegistry.js';
 import { authMiddleware, adminMiddleware } from '../middleware/authMiddleware.js';
+import { validateEntityPalette } from './validateEntityPalette.js';
+import type { EntityColor } from '../types.js';
 
 /**
  * Config routes mounted under `/api`: read the endpoint config, write it (admin only), probe endpoint health, and list registered adapters.
@@ -9,21 +11,50 @@ import { authMiddleware, adminMiddleware } from '../middleware/authMiddleware.js
 export function configRoutes(db: DbAdapter, registry: AdapterRegistry): Router {
   const router = Router();
 
-  /** `GET /api/config` - returns the configured NLP services. Public so the frontend can read it before login. */
+  /** `GET /api/config` - returns endpoints and the entity color palette. Public so the frontend can read it before login. */
   router.get('/config', async (_req, res) => {
-    const endpoints = await db.getEndpointConfig();
-    res.json({ endpoints });
+    const [endpoints, palette] = await Promise.all([
+      db.getEndpointConfig(),
+      db.getEntityPalette(),
+    ]);
+    res.json({ endpoints, palette });
   });
 
-  /** `PUT /api/config` - admin-only endpoint that replaces the full endpoint configuration. */
+  /**
+   * `PUT /api/config` - admin-only partial update of app config.
+   * Each section is optional: clients send only the slice they edited.
+   * Always returns the resulting full state so the cache stays in sync.
+   */
   router.put('/config', authMiddleware, adminMiddleware, async (req, res) => {
-    const { endpoints } = req.body as { endpoints?: unknown };
-    if (!Array.isArray(endpoints)) {
-      res.status(400).json({ error: 'endpoints array required' });
+    const { endpoints, palette } = req.body as { endpoints?: unknown; palette?: unknown };
+
+    if (endpoints === undefined && palette === undefined) {
+      res.status(400).json({ error: 'endpoints or palette required' });
       return;
     }
-    await db.saveEndpointConfig(endpoints);
-    res.json({ endpoints });
+
+    if (endpoints !== undefined) {
+      if (!Array.isArray(endpoints)) {
+        res.status(400).json({ error: 'endpoints must be an array' });
+        return;
+      }
+      await db.saveEndpointConfig(endpoints);
+    }
+
+    if (palette !== undefined) {
+      const error = validateEntityPalette(palette);
+      if (error) {
+        res.status(400).json({ error });
+        return;
+      }
+      await db.saveEntityPalette(palette as EntityColor[]);
+    }
+
+    const [savedEndpoints, savedPalette] = await Promise.all([
+      db.getEndpointConfig(),
+      db.getEntityPalette(),
+    ]);
+    res.json({ endpoints: savedEndpoints, palette: savedPalette });
   });
 
   /**

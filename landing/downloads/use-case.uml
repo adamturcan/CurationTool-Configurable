@@ -1,0 +1,88 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam usecase {
+  BackgroundColor #EEF4FF
+  BorderColor #336699
+  ArrowColor #333333
+}
+skinparam actor {
+  BorderColor #333333
+}
+
+actor Curator as C
+actor Administrator as A
+actor "NLP Service" as NLP <<system>>
+
+rectangle "Data Curation Platform" {
+
+  usecase "Register and Log In" as UC01
+  usecase "Access Administrator Screens" as UC02
+
+  usecase "Create Workspace" as UC03
+  usecase "Retrieve Workspace" as UC04
+  usecase "Delete Workspace" as UC05
+  usecase "Import Raw Text" as UC06
+  usecase "Auto-Save Application State" as UC07
+
+  usecase UC08 as "Request Automatic Segmentation
+  --
+  extension points
+    after-segmentation"
+  usecase "Adjust Segment Boundaries" as UC09
+  usecase "Split or Merge Segments" as UC10
+
+  usecase UC11 as "Request NER Analysis
+  --
+  extension points
+    on-conflict-detected"
+  usecase "Edit, Delete, or Add NER Annotations" as UC12
+  usecase "Resolve Annotation Conflicts" as UC13
+
+  usecase "Post-Edit Translation" as UC14
+  usecase "Confirm Re-Translation Overwrite" as UC15
+
+  usecase "Request Automatic Thesaurus Tagging" as UC16
+  usecase "Assign Thesaurus or Custom Tags" as UC17
+
+  usecase "Export Curated Workspace" as UC18
+
+  usecase "Configure NLP API Endpoints" as UC19
+
+  usecase "Call NLP Service" as UCAPI
+}
+
+C --> UC01
+C --> UC03
+C --> UC04
+C --> UC05
+C --> UC06
+C --> UC07
+C --> UC08
+C --> UC09
+C --> UC10
+C --> UC11
+C --> UC12
+C --> UC13
+C --> UC14
+C --> UC15
+C --> UC16
+C --> UC17
+C --> UC18
+
+A --> UC02
+A --> UC19
+
+NLP --> UCAPI
+
+UC08 ..> UCAPI : <<include>>
+UC11 ..> UCAPI : <<include>>
+UC14 ..> UCAPI : <<include>>
+UC16 ..> UCAPI : <<include>>
+
+UC09 ..> UC08 : <<extend>>\nat after-segmentation
+UC10 ..> UC08 : <<extend>>\nat after-segmentation
+UC13 ..> UC11 : <<extend>>\nat on-conflict-detected
+UC15 ..> UC14 : <<extend>>\non re-translation
+
+@enduml

@@ -1,10 +1,11 @@
 import type { Segment } from "../../types";
 
 /**
- * Pure functions for segment boundary math.
- * Covers global-offset computation, split/merge/join, and the "affected segments" predicate used by the action-guard before destructive shifts.
- * Inputs are Segment arrays; outputs are either numeric offsets or new arrays (no in-place mutation).
- * The non-obvious detail is that translation offsets are recomputed by summing translated lengths each call — they cannot be cached, because a translated segment has a different length than the original.
+ * Pure functions for segment boundary math. Covers global-offset computation, split/merge/join, and the "affected segments" predicate used by the action-guard before destructive shifts.
+ *
+ * Inputs are Segment arrays. Outputs are either numeric offsets or new arrays (nothing mutates in place).
+ *
+ * Translation offsets are recomputed by summing translated lengths on every call. They cannot be cached because a translated segment has a different length than the original.
  *
  * @category Entities
  */

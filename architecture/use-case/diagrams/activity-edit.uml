@@ -1,0 +1,95 @@
+@startuml
+skinparam ActivityBackgroundColor #EEF4FF
+skinparam ActivityBorderColor #336699
+skinparam ActivityDiamondBackgroundColor #FFFDE7
+skinparam ActivityDiamondBorderColor #336699
+skinparam ArrowColor #333333
+skinparam RoundCorner 10
+
+start
+:Curator opens existing workspace;
+:System loads saved application state;
+:Workspace displays segments with\nexisting annotations and translations;
+
+note right
+  Segment action remains disabled.
+end note
+
+while (Done editing?) is (no)
+
+  partition "Segment Editing" {
+    if (Edit segments?) then (yes)
+      if (Edit type?) then (merge)
+        :Curator clicks "Merge" button\nat the boundary between two segments;
+        if (Segments differ in translations?) then (yes)
+          :System opens warning dialog;
+          :Curator clicks "Add missing translation";
+          :System translates segments\nto the missing language;
+        else (no)
+        endif
+        :System merges segments\nand reassociates annotations and tags;
+      else (no)
+        if (Edit type = split?) then (yes)
+          :Curator highlights delimiter position\nwithin segment;
+          :System displays "Split" button;
+          :Curator clicks "Split" button;
+          if (Segment has translation?) then (yes)
+            :System opens warning dialog;
+            if (Action?) then (delete translation)
+              :System deletes translation;
+              :System inserts boundary\nat chosen position;
+            else (cancel)
+              :Split cancelled;
+            endif
+          else (no)
+            :System inserts boundary\nat chosen position;
+          endif
+        else (shift)
+          :Curator drags boundary\nmarker to new position;
+          :System recomputes segment\nextents in real time;
+        endif
+      endif
+    else (skip)
+    endif
+  }
+
+  partition "Manual Annotation" {
+    if (Annotate manually?) then (yes)
+      if (Type?) then (custom tag)
+        :Curator selects segment;
+        :Curator opens segment menu;
+        :Curator clicks "Tag" button;
+        :System opens Tag panel;
+        if (Thesaurus / Custom?) then (Thesaurus)
+          :Curator selects thesaurus search input;
+          :Curator searches for a semantic tag;
+          :System uses fuzzy search to find a tag;
+          :Curator selects desired tag;
+        else (Custom)
+          :Curator types custom tag title;
+          :Curator confirms selection;
+        endif
+        :System adds tag to the segment\nand displays it on the panel;
+      else (named entity)
+        :Curator highlights text span;
+        if (Already annotated?) then (yes)
+          :System opens dialog with options to\nchange entity type, text or delete it;
+          :Curator edits the annotation;
+          :Curator confirms the annotation;
+          :System updates the annotation;
+        else (no)
+          :System opens dialog to add\nnew entity type to the span;
+          :Curator selects an entity type;
+          :System creates a new annotation;
+        endif
+      endif
+    else (skip)
+    endif
+  }
+
+endwhile (yes)
+
+:Save application state;
+stop
+
+@enduml

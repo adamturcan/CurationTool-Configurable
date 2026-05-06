@@ -1,8 +1,9 @@
 /**
- * Singleton provider for ApiService — picks BrowserApiService (standalone build) or BackendProxyApiService (server build) based on `VITE_BACKEND_URL`.
- * Production code calls `getApiService()`; tests can substitute an implementation via `setApiProviderOverrides` and reset back via `resetApiProvider`.
- * The override path is checked first on every `getApiService()` call, so swapping in a fake mid-test takes effect immediately for the next consumer call.
- * The non-obvious detail is that setting an override clears the cached singleton — the next default-path call will re-create from environment, not return the previously cached production service.
+ * Singleton provider for ApiService. Picks BrowserApiService (standalone build) or BackendProxyApiService (server build) based on `VITE_BACKEND_URL`.
+ *
+ * Production code calls `getApiService()`. Tests can substitute an implementation via `setApiProviderOverrides` and reset back via `resetApiProvider`. The override path is checked first on every `getApiService()` call, so swapping in a fake mid-test takes effect immediately for the next consumer call.
+ *
+ * Setting an override also clears the cached singleton, so the next default-path call rebuilds from environment instead of returning the previously cached production service.
  *
  * @category Infrastructure
  */
@@ -19,7 +20,7 @@ let apiServiceSingleton: ApiService | null = null;
 let overrides: ApiProviderOverrides | null = null;
 
 /**
- * Substitutes the singleton ApiService used by the rest of the app — used in tests to inject a fake without touching real endpoints.
+ * Substitutes the singleton ApiService used by the rest of the app. Used in tests to inject a fake without touching real endpoints.
  *
  * @example
  * import { setApiProviderOverrides, resetApiProvider } from '@/infrastructure/providers/apiProvider';

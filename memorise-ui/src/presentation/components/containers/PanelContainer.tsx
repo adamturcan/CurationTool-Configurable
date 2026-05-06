@@ -93,10 +93,19 @@ const PanelContainer: React.FC = () => {
   const fetchThesaurus = useCallback(async (q: string): Promise<ThesaurusItem[]> => {
     if (!q.trim() || !thesaurusWorker.ready) return [];
     try {
-      return (await thesaurusWorker.search(q, 20)).map(item => ({
-        name: item.label, path: item.path, keywordId: item.id, parentId: item.parentId,
-        isPreferred: item.isPreferred, depth: item.depth
-      }));
+      const raw = await thesaurusWorker.search(q, 20);
+      const seen = new Set<string>();
+      const deduped: ThesaurusItem[] = [];
+      for (const item of raw) {
+        const key = `${item.id}::${item.parentId}::${item.label}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        deduped.push({
+          name: item.label, path: item.path, keywordId: item.id, parentId: item.parentId,
+          isPreferred: item.isPreferred, depth: item.depth,
+        });
+      }
+      return deduped;
     } catch {
       return [];
     }

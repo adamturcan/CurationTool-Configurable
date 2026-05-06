@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Menu, MenuItem, Divider, Box, TextField, InputAdornment, IconButton } from "@mui/material";
 import CheckIcon from "@mui/icons-material/Check";
-import { ENTITY_COLORS, CATEGORY_LIST } from "../../../../shared/constants/notationEditor";
+import { ENTITY_COLORS, getEntityPalette } from "../../../../shared/constants/notationEditor";
 import type { CategoryMenuProps } from "../../../../types/NotationEditor";
 
 // Add new props for text editing
@@ -102,12 +102,12 @@ const CategoryMenu: React.FC<ExtendedMenuProps> = ({
         </Box>
       )}
 
-      {/* --- EXISTING CATEGORIES --- */}
-      {CATEGORY_LIST.map((category: string) => (
+      {/* CONFIGURED CATEGORIES (driven by the runtime entity palette) */}
+      {getEntityPalette().map(({ key }) => (
         <MenuItem
-          key={category}          
+          key={key}
           onMouseDown={preventFocusLoss}
-          onClick={(e) => handleItemClick(e, category)}
+          onClick={(e) => handleItemClick(e, key)}
         >
           <Box
             component="span"
@@ -116,11 +116,11 @@ const CategoryMenu: React.FC<ExtendedMenuProps> = ({
               width: 10,
               height: 10,
               borderRadius: "50%",
-              bgcolor: ENTITY_COLORS[category] ?? "#64748B",
+              bgcolor: ENTITY_COLORS[key] ?? "#64748B",
               mr: 1,
             }}
           />
-          {category}
+          {key}
         </MenuItem>
       ))}
 

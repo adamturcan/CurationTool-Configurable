@@ -99,7 +99,7 @@ const TagThesaurusInput: React.FC<Props> = ({
         renderOption={(props, option) => {
           // eslint-disable-next-line @typescript-eslint/no-unused-vars
           const { key: _key, ...restProps } = props as React.HTMLAttributes<HTMLLIElement> & { key: string };
-          return <ThesaurusOption key={`${option.keywordId || 'noid'}::${option.name}`} liProps={restProps} option={option} />;
+          return <ThesaurusOption key={`${option.keywordId ?? 'noid'}::${option.parentId ?? 'np'}::${option.name}`} liProps={restProps} option={option} />;
         }}
         renderInput={(params) => (
           <TextField
