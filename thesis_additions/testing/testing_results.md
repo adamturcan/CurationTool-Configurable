@@ -14,7 +14,7 @@ header-includes:
 
 # Stakeholder Testing Results
 
-This document reports the aggregate results of the stakeholder review summarised in Section 5.6 of the thesis. Eleven reviewers from the MEMORISE consortium and adjacent institutions completed the structured testing protocol on the live deployment at `https://curation-tool.memorise.sdu.dk` between April 23 and May 5, 2026, working with the same example transcript and the same step-by-step companion page. Each session produced a JSON export from the platform together with a four-section feedback form combining Likert-style ratings on the main UI affordances with open-text prompts. The form distinguished UI evaluation (controls, interactions, layout) from NLP evaluation (recall and precision of the model output) and asked reviewers to address only the former; the platform's stated contribution is the curation interface, and conflating it with the NLP pipeline would mix two independently configurable concerns.
+This document reports the aggregate results of the stakeholder review summarised in Section 5.6 of the thesis. Eleven reviewers from the MEMORISE consortium and adjacent institutions completed the testing protocol on the live deployment at `https://curation-tool.memorise.sdu.dk` between April 23 and May 5, 2026, all working from the same example transcript and the same step-by-step companion page. Each session produced a JSON export and a four-section feedback form: Likert ratings on the main UI affordances, plus open-text prompts. The form intentionally asked about the UI (controls, interactions, layout) and not the NLP output, since the two are independently configurable and would otherwise be evaluated together.
 
 ## 1. Demographics and Coverage
 
@@ -28,7 +28,7 @@ The reviewer pool covered a mix of academic and engineering backgrounds, includi
 | Semantic tagging panel: glanced only | 2 of 11 |
 | Semantic tagging panel: ran auto-tag and moved on | 1 of 11 |
 
-All reviewers performed the mandatory parts of the protocol (workspace creation, segmentation, NER, translation, tag review, export) in full. The translation flow was thus exercised end-to-end by every reviewer, and the semantic tagging flow was actively engaged with by a clear majority.
+Every reviewer ran through the mandatory steps end-to-end: workspace creation, segmentation, NER, translation, tag review, and export. Translation was therefore exercised by all eleven; the semantic tagging panel was actively used by eight, glanced at by two, and used as an auto-tag-and-move-on shortcut by one.
 
 ## 2. Overall UI Experience
 
@@ -40,7 +40,7 @@ The form opened with three high-level Likert questions on satisfaction, cognitiv
 | Cognitive effort to operate the UI (1=very easy, 5=very hard) | 2.09 | 1:3, 2:6, 4:2 |
 | Likelihood to use for real work (assuming reliable APIs) | 4.45 | 2:1, 4:3, 5:7 |
 
-Two readings stand out. First, satisfaction is consistently positive: no rating below 3, no neutral cluster, and a clean lean toward 4 and 5. Second, cognitive effort is rated low for nine of eleven reviewers (1 or 2 on a five-point scale), with two outliers at 4. The combination is interpretable as a UI that most reviewers find easy to operate, with two reviewers reporting that learning the interaction model required noticeable effort. The likelihood-to-use rating is the strongest single quantitative signal in the form, with seven of eleven reviewers selecting 5 and ten of eleven selecting 4 or above.
+Satisfaction stayed positive across the pool. No reviewer rated below 3, and the distribution leans cleanly toward 4 and 5. Cognitive effort sits at the low end too — nine of eleven reviewers picked 1 or 2, with two outliers at 4 who reported that learning the interaction model took noticeable effort. The likelihood-to-use question gave the cleanest signal: seven reviewers picked 5, three picked 4, and one picked 2.
 
 ## 3. Per-Feature Clarity and Ease of Use
 
@@ -59,7 +59,7 @@ Section 3 of the form rated the clarity or ease of ten distinct UI surfaces on a
 | Ease of moving between layers (original vs. translation) | 11 | 4.18 | 2:1, 3:2, 4:2, 5:6 |
 | Ease of exporting workspace as JSON | 11 | 4.91 | 4:1, 5:10 |
 
-The strongest ratings are concentrated on the start-to-end workflow boundaries (workspace creation 4.91, JSON export 4.91) and on the entity colour palette (4.82). The two weakest ratings are the segmentation-editing controls (3.73) and the semantic tagging panel (3.82), where the distributions tilt toward 3 rather than the otherwise dominant 4 and 5. The mid-range scores on translation controls (4.09) and layer switching (4.18) are accompanied by a tail of one or two low scores, consistent with the qualitative theme of parallel-view friction reported in Section 5.
+Workspace creation and JSON export both averaged 4.91, with ten of eleven reviewers picking 5 in each case; the entity colour palette landed close behind at 4.82. The two weakest surfaces were segmentation editing (3.73) and the semantic tagging panel (3.82) — both with five reviewers parking at 3 rather than the 4-or-5 cluster seen elsewhere. Translation controls (4.09) and layer switching (4.18) sit in the middle but each carries three lower ratings (a 2 and two 3s), which lines up with the parallel-view complaints in Section 5.
 
 ## 4. Specific UI Moments
 
@@ -74,9 +74,11 @@ Section 4 of the form asked closed questions about distinct UI moments that revi
 | **Undo / redo in the toolbar** | 8 used and behaved as expected; 2 did not notice the buttons; 1 did not need them |
 | **Autosave trustworthy** | 5 stopped thinking about saving; 5 neutral; 1 wanted a visible saved indicator |
 
-The drag-to-shift interaction is the single biggest red flag in this section. Four reviewers explicitly described it as confusing, and two more skipped it altogether, leaving fewer than half the pool comfortable with the interaction as built. The span editing popup had a smaller version of the same effect, with three reviewers reporting they sometimes received the wrong popup. The Edited-badge UI was evenly split between reviewers who understood the lock-out and reviewers who did not, suggesting the affordance communicates the rule it enforces without yet making its purpose self-evident.
+The drag-to-shift interaction is the worst result in the section: four reviewers called it confusing outright, two avoided it, and only five of eleven were comfortable using it. The span-editing popup has a milder version of the same problem — three reviewers said the wrong popup sometimes appeared.
 
-The conflict resolution dialog was well-received by reviewers who reached it, but most did not, because the protocol did not force a re-NER pass over an already-annotated segment.
+The Edited badge split the seven who engaged with it: three understood the lock-out, four did not. The badge communicates that something is locked, just not why.
+
+The conflict-resolution dialog was rated highly by everyone who saw it, but eight reviewers never triggered it; the protocol did not force a re-NER pass over an already-annotated segment, so the dialog stayed dormant for most sessions.
 
 ## 5. Open Feedback: Convergent Themes
 
@@ -94,7 +96,7 @@ The most strongly convergent gap. Four reviewers independently asked for a paral
 
 > *"Translation UI is recommended to be redone in a way that allows side-by-side comparison... swapping between languages for checking slows down the work significantly."* (R8)
 
-### 5.2 Document-level operation visibility (n=4)
+### 5.2 Document-level operation visibility (n=3)
 
 Reviewers reported hesitation when global actions did not produce immediate visible feedback in the active segment, and noted that the auto-tag affordance appears outside the panel where reviewers expect to find it.
 
@@ -132,11 +134,11 @@ Two reviewers, including one who works closely with non-technical users, asked f
 
 > *"More clarity. The interface is very button-intense. For me as a CS no problem, but for non-IT people this could be a problem. Why not make it explicit what the individual buttons mean. There is space to write NER, Translate, ... besides the button/s."* (R9)
 
-This sits in productive tension with another convergent finding: multiple reviewers cited the iconography itself as a strength of the interface (Section 6).
+This contradicts another finding: several other reviewers actually praised the iconography as one of the things they liked most (Section 6).
 
 ## 6. Open Feedback: Convergent Positives
 
-The "what did you like most" prompt elicited a clear pattern. Of eleven responses, ten were positive and substantive, and three independent themes recurred.
+Ten of the eleven open-text answers to "what did you like most" were positive and concrete (the eleventh was a single word). Four themes recurred across them.
 
 ### Visual cleanliness and density balance
 
@@ -162,7 +164,7 @@ The "what did you like most" prompt elicited a clear pattern. Of eleven response
 
 > *"It is super fast, the ability to see and add new NER tags is amazing."* (R7)
 
-The pattern is consistent across eleven reviewers from heterogeneous backgrounds: the platform is perceived as fast, visually clean, and well-suited to the partial-automation workflow that the consortium practises in real curation work.
+The pattern holds across the heterogeneous reviewer pool: fast, clean, and a good fit for the partial-automation workflow the consortium uses in real curation.
 
 ## 7. Identified Defects
 
@@ -180,10 +182,10 @@ A smaller third item was reported in passing: the thesaurus search returns no ma
 
 > *"The thesaurus search is struggling to give a perfect match (encountered with children's occupations); until you give it only a partial string, it finds the tag successfully, once input a 100% matching string, it gives out zero results."* (R3)
 
-All three defects are confined to the presentation layer, do not affect the architectural seams that the thesis claims, and are listed in the future-work plan of the Conclusion.
+All three sit in the UI layer and are listed in the future-work plan of the Conclusion.
 
 ## 8. Summary
 
-Across eleven reviewers, the platform was rated positively on overall satisfaction (mean 4.27), strongly positive on likelihood-to-use for real curation work (mean 4.45, with seven of eleven selecting 5), and predominantly low on cognitive effort to operate (mean 2.09, with nine of eleven at 1 or 2). Per-feature ratings were strongest on workspace creation, named entity colour clarity, and JSON export, where modal answers concentrated at 5. The two weakest features were the manual segmentation-editing controls (mean 3.73) and the semantic tagging panel (mean 3.82), with the qualitative comments converging on the boundary-shift drag handle and the auto-tag wand placement as the specific pain points.
+Eleven reviewers, mean 4.27 on overall satisfaction, mean 4.45 on likelihood to use the tool for real curation work (seven picked 5), and mean 2.09 on cognitive effort (nine of eleven picked 1 or 2). Workspace creation, NER colour clarity, and JSON export came out on top. The two weakest surfaces were segmentation editing (3.73) and the semantic tagging panel (3.82); the drag-handle for boundary shifts and the placement of the auto-tag wand are the specific points the open feedback keeps coming back to.
 
-The most actionable convergent finding is the request for a parallel-view layout in translation post-editing, raised independently by four of eleven reviewers and supported by the lower scores on layer switching. The visual cleanliness of the interface, the partial-automation workflow philosophy, and the platform's responsiveness emerged as convergent positives across the open-text responses. Two interaction defects, plus a thesaurus-search scoring edge case, were identified and recorded for follow-up.
+The single most actionable finding is the parallel-view request for translation post-editing — four reviewers asked for it independently, and the lower scores on layer switching back the same complaint up. On the positive side, what reviewers liked most was the visual cleanliness of the interface, the hybrid-automation philosophy, and the speed of the tool. Two interaction defects and one thesaurus-search edge case are logged for follow-up.
